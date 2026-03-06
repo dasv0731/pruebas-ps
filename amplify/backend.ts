@@ -1,11 +1,10 @@
 import { defineBackend } from '@aws-amplify/backend';
 import { auth } from './auth/resource';
-import { data } from './data/resource';
+import { createInfrastructure } from './custom/infra/resource';
 
-/**
- * @see https://docs.amplify.aws/react/build-a-backend/ to add storage, functions, and more
- */
-defineBackend({
+const backend = defineBackend({
   auth,
-  data,
 });
+
+const customStack = backend.createStack('PeritoInfraStack');
+createInfrastructure(customStack);
