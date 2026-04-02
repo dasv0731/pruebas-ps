@@ -1,0 +1,64 @@
+<div *ngIf="loading" class="loading">Cargando resultados...</div>
+
+<div *ngIf="error" class="error-msg">{{ error }}</div>
+
+<div *ngIf="!loading && session" class="results-container">
+  <div class="card">
+    <div class="card-header">
+      <div class="title-row">
+        <button class="btn btn-secondary btn-sm" (click)="goBack()">← Volver</button>
+        <h2>Resultados: {{ assessment?.name }}</h2>
+      </div>
+    </div>
+
+    <div *ngIf="!scoring" class="empty-state">
+      Esta prueba aún no ha sido calificada.
+    </div>
+
+    <div *ngIf="scoring" class="results-content">
+      <!-- Score principal -->
+      <div class="score-card">
+        <div class="score-value">{{ scoring.totalScore }}</div>
+        <div class="score-label">Puntuación total</div>
+        <div class="score-max">de {{ getMaxPossibleScore() }} posibles</div>
+        <div class="score-percentage">{{ getPercentage() }}%</div>
+      </div>
+
+      <!-- Metadata -->
+      <div class="meta-grid">
+        <div class="meta-item">
+          <span class="meta-label">Fuente</span>
+          <span class="meta-value">{{ getSourceLabel() }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Versión</span>
+          <span class="meta-value">{{ scoring.version }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Fecha</span>
+          <span class="meta-value">{{ scoring.generatedAt | date:'medium' }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Estado</span>
+          <span class="meta-value">{{ scoring.status }}</span>
+        </div>
+      </div>
+
+      <!-- Detalle de respuestas -->
+      <div class="answers-section">
+        <h3>Detalle de respuestas</h3>
+        <div class="answers-grid">
+          <div *ngFor="let ans of answers; let i = index" class="answer-item">
+            <span class="answer-number">{{ i + 1 }}</span>
+            <span class="answer-value">{{ ans }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="results-actions">
+    <button class="btn btn-secondary" (click)="goBack()">Volver a pruebas</button>
+    <button class="btn btn-primary" (click)="goToCase()">Ir al caso</button>
+  </div>
+</div>

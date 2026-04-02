@@ -1,0 +1,44 @@
+<div class="card">
+  <div class="card-header">
+    <h2>Casos</h2>
+    <button class="btn btn-primary" (click)="goToNew()">+ Nuevo caso</button>
+  </div>
+
+  <div *ngIf="loading" class="loading">Cargando casos...</div>
+
+  <div *ngIf="error" class="error-msg">{{ error }}</div>
+
+  <div *ngIf="!loading && cases.length === 0 && !error" class="empty-state">
+    No hay casos registrados. Cree el primero.
+  </div>
+
+  <table *ngIf="!loading && cases.length > 0" class="cases-table">
+    <thead>
+      <tr>
+        <th>N° Caso</th>
+        <th>Juzgado</th>
+        <th>Tipo</th>
+        <th>Estado</th>
+        <th>Fecha inicio</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let c of cases" class="case-row" (click)="goToDetail(c.id)">
+        <td>{{ c.caseNumber }}</td>
+        <td>{{ c.court || '-' }}</td>
+        <td>{{ c.caseType || '-' }}</td>
+        <td>
+          <span class="badge" [ngClass]="getStatusClass(c.status)">
+            {{ statusLabels[c.status] || c.status }}
+          </span>
+        </td>
+        <td>{{ c.startDate || '-' }}</td>
+        <td class="actions" (click)="$event.stopPropagation()">
+          <button class="btn btn-secondary btn-sm" (click)="goToEdit(c.id)">Editar</button>
+          <button class="btn btn-danger btn-sm" (click)="onDelete(c.id)">Eliminar</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

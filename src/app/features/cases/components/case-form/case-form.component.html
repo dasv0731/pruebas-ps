@@ -1,0 +1,119 @@
+<div class="card">
+  <div class="card-header">
+    <h2>{{ isEdit ? 'Editar caso' : 'Nuevo caso' }}</h2>
+  </div>
+
+  <div *ngIf="loading" class="loading">Cargando...</div>
+
+  <div *ngIf="error" class="error-msg">{{ error }}</div>
+
+  <form *ngIf="!loading" (ngSubmit)="onSubmit()" class="case-form">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="caseNumber">N° de caso *</label>
+        <input
+          id="caseNumber"
+          type="text"
+          [(ngModel)]="form.caseNumber"
+          name="caseNumber"
+          required
+          placeholder="Ej: 2026-0001"
+        />
+      </div>
+      <div class="form-group">
+        <label for="status">Estado *</label>
+        <select id="status" [(ngModel)]="form.status" name="status">
+          <option *ngFor="let opt of statusOptions | keyvalue" [value]="opt.key">
+            {{ opt.value }}
+          </option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="court">Juzgado</label>
+        <input
+          id="court"
+          type="text"
+          [(ngModel)]="form.court"
+          name="court"
+          placeholder="Ej: Juzgado 1° de Familia"
+        />
+      </div>
+      <div class="form-group">
+        <label for="jurisdiction">Jurisdicción</label>
+        <input
+          id="jurisdiction"
+          type="text"
+          [(ngModel)]="form.jurisdiction"
+          name="jurisdiction"
+          placeholder="Ej: Quito"
+        />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="caseType">Tipo de juicio</label>
+        <input
+          id="caseType"
+          type="text"
+          [(ngModel)]="form.caseType"
+          name="caseType"
+          placeholder="Ej: Custodia, Adopción"
+        />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="startDate">Fecha inicio</label>
+        <input
+          id="startDate"
+          type="date"
+          [(ngModel)]="form.startDate"
+          name="startDate"
+        />
+      </div>
+      <div class="form-group">
+        <label for="endDate">Fecha fin</label>
+        <input
+          id="endDate"
+          type="date"
+          [(ngModel)]="form.endDate"
+          name="endDate"
+        />
+      </div>
+    </div>
+
+    <div class="form-group full-width">
+      <label for="description">Descripción</label>
+      <textarea
+        id="description"
+        [(ngModel)]="form.description"
+        name="description"
+        rows="3"
+        placeholder="Descripción general del caso"
+      ></textarea>
+    </div>
+
+    <div class="form-group full-width">
+      <label for="notes">Notas</label>
+      <textarea
+        id="notes"
+        [(ngModel)]="form.notes"
+        name="notes"
+        rows="2"
+        placeholder="Notas adicionales"
+      ></textarea>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-secondary" (click)="onCancel()">Cancelar</button>
+      <button type="submit" class="btn btn-primary" [disabled]="saving">
+        {{ saving ? 'Guardando...' : (isEdit ? 'Actualizar' : 'Crear caso') }}
+      </button>
+    </div>
+  </form>
+</div>

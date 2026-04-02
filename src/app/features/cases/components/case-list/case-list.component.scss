@@ -1,0 +1,56 @@
+.cases-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th, td {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  th {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: #718096;
+    font-weight: 600;
+  }
+
+  .case-row {
+    cursor: pointer;
+    transition: background-color 0.15s;
+
+    &:hover {
+      background-color: #f7fafc;
+    }
+  }
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 0.78rem;
+}
+
+.loading {
+  padding: 24px;
+  text-align: center;
+  color: #718096;
+}
+
+.error-msg {
+  padding: 12px;
+  background-color: #fed7d7;
+  color: #9b2c2c;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+
+.empty-state {
+  padding: 40px;
+  text-align: center;
+  color: #a0aec0;
+}

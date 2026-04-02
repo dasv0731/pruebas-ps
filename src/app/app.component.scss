@@ -1,0 +1,52 @@
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 24px;
+  background-color: #1a365d;
+  color: white;
+
+  h1 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .user-email {
+    font-size: 0.875rem;
+    opacity: 0.85;
+  }
+
+  .btn-logout {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: white;
+    }
+  }
+}
+
+.app-main {
+  flex: 1;
+  padding: 24px;
+  background-color: #f7f8fa;
+}

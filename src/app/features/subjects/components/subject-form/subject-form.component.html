@@ -1,0 +1,129 @@
+<div class="card">
+  <div class="card-header">
+    <h2>{{ isEdit ? 'Editar implicado' : 'Nuevo implicado' }}</h2>
+  </div>
+
+  <div *ngIf="loading" class="loading">Cargando...</div>
+
+  <div *ngIf="error" class="error-msg">{{ error }}</div>
+
+  <form *ngIf="!loading" (ngSubmit)="onSubmit()" class="subject-form">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="firstName">Nombre *</label>
+        <input
+          id="firstName"
+          type="text"
+          [(ngModel)]="form.firstName"
+          name="firstName"
+          required
+          placeholder="Nombre"
+        />
+      </div>
+      <div class="form-group">
+        <label for="lastName">Apellido *</label>
+        <input
+          id="lastName"
+          type="text"
+          [(ngModel)]="form.lastName"
+          name="lastName"
+          required
+          placeholder="Apellido"
+        />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="subjectType">Tipo *</label>
+        <select id="subjectType" [(ngModel)]="form.subjectType" name="subjectType">
+          <option *ngFor="let opt of typeOptions | keyvalue" [value]="opt.key">
+            {{ opt.value }}
+          </option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="status">Estado</label>
+        <select id="status" [(ngModel)]="form.status" name="status">
+          <option *ngFor="let opt of statusOptions | keyvalue" [value]="opt.key">
+            {{ opt.value }}
+          </option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="documentId">Identificación</label>
+        <input
+          id="documentId"
+          type="text"
+          [(ngModel)]="form.documentId"
+          name="documentId"
+          placeholder="Cédula o documento"
+        />
+      </div>
+      <div class="form-group">
+        <label for="dateOfBirth">Fecha de nacimiento</label>
+        <input
+          id="dateOfBirth"
+          type="date"
+          [(ngModel)]="form.dateOfBirth"
+          name="dateOfBirth"
+        />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="contactPhone">Teléfono</label>
+        <input
+          id="contactPhone"
+          type="tel"
+          [(ngModel)]="form.contactPhone"
+          name="contactPhone"
+          placeholder="Teléfono de contacto"
+        />
+      </div>
+      <div class="form-group">
+        <label for="contactEmail">Email</label>
+        <input
+          id="contactEmail"
+          type="email"
+          [(ngModel)]="form.contactEmail"
+          name="contactEmail"
+          placeholder="Email de contacto"
+        />
+      </div>
+    </div>
+
+    <div class="form-group full-width">
+      <label for="address">Dirección</label>
+      <input
+        id="address"
+        type="text"
+        [(ngModel)]="form.address"
+        name="address"
+        placeholder="Dirección"
+      />
+    </div>
+
+    <div class="form-group full-width">
+      <label for="notes">Notas</label>
+      <textarea
+        id="notes"
+        [(ngModel)]="form.notes"
+        name="notes"
+        rows="2"
+        placeholder="Observaciones sobre el implicado"
+      ></textarea>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-secondary" (click)="onCancel()">Cancelar</button>
+      <button type="submit" class="btn btn-primary" [disabled]="saving">
+        {{ saving ? 'Guardando...' : (isEdit ? 'Actualizar' : 'Agregar implicado') }}
+      </button>
+    </div>
+  </form>
+</div>

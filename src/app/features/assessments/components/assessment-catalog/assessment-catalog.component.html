@@ -1,0 +1,67 @@
+<div *ngIf="loading" class="loading">Cargando pruebas...</div>
+
+<div *ngIf="error" class="error-msg">{{ error }}</div>
+
+<div *ngIf="!loading" class="catalog-container">
+  <div class="card">
+    <div class="card-header">
+      <div class="title-row">
+        <button class="btn btn-secondary btn-sm" (click)="goBack()">← Volver</button>
+        <h2>Pruebas psicológicas</h2>
+      </div>
+      <span *ngIf="subject" class="subject-name">
+        {{ subject.firstName }} {{ subject.lastName }}
+      </span>
+    </div>
+
+    <div *ngIf="assessments.length === 0" class="empty-state">
+      No hay pruebas disponibles en el catálogo.
+    </div>
+    <button class="btn btn-primary" (click)="seedData()" style="margin-top: 12px;">
+      Cargar catálogo de pruebas
+    </button>
+
+    <div *ngIf="assessments.length > 0" class="assessments-grid">
+      <div *ngFor="let a of assessments" class="assessment-card">
+        <div class="assessment-info">
+          <h3>{{ a.name }}</h3>
+          <span class="assessment-short">{{ a.shortName }}</span>
+          <p *ngIf="a.description">{{ a.description }}</p>
+          <div class="assessment-meta">
+            <span>{{ a.totalQuestions }} preguntas</span>
+            <span class="scoring-type">
+              {{ a.scoringType === 'TEA' ? 'TEA Corrige' : 'Baremo local' }}
+            </span>
+          </div>
+        </div>
+
+        <div class="assessment-sessions">
+          <div *ngIf="getSessionForAssessment(a.id).length === 0" class="no-sessions">
+            Sin aplicaciones
+          </div>
+          <div *ngFor="let s of getSessionForAssessment(a.id)" class="session-item">
+            <span class="badge" [ngClass]="getStatusClass(s.status)">
+              {{ getStatusLabel(s.status) }}
+            </span>
+            <button
+              *ngIf="s.status === 'CREATED' || s.status === 'IN_PROGRESS'"
+              class="btn btn-primary btn-sm"
+              (click)="goToApply(s.id)">
+              Continuar
+            </button>
+            <button
+              *ngIf="s.status === 'SCORED'"
+              class="btn btn-secondary btn-sm"
+              (click)="goToResults(s.id)">
+              Ver resultados
+            </button>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" (click)="startAssessment(a)">
+          Aplicar prueba
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,93 @@
+<div *ngIf="loading" class="loading">Cargando caso...</div>
+
+<div *ngIf="error" class="error-msg">{{ error }}</div>
+
+<div *ngIf="!loading && caseData" class="detail-container">
+  <!-- Cabecera del caso -->
+  <div class="card">
+    <div class="card-header">
+      <div class="case-title">
+        <button class="btn btn-secondary btn-sm" (click)="goBack()">← Volver</button>
+        <h2>Caso {{ caseData.caseNumber }}</h2>
+        <span class="badge" [ngClass]="getStatusClass(caseData.status)">
+          {{ statusLabels[caseData.status] || caseData.status }}
+        </span>
+      </div>
+      <button class="btn btn-primary" (click)="goToEdit()">Editar caso</button>
+    </div>
+
+    <div class="case-info">
+      <div class="info-item" *ngIf="caseData.court">
+        <span class="info-label">Juzgado</span>
+        <span class="info-value">{{ caseData.court }}</span>
+      </div>
+      <div class="info-item" *ngIf="caseData.jurisdiction">
+        <span class="info-label">Jurisdicción</span>
+        <span class="info-value">{{ caseData.jurisdiction }}</span>
+      </div>
+      <div class="info-item" *ngIf="caseData.caseType">
+        <span class="info-label">Tipo</span>
+        <span class="info-value">{{ caseData.caseType }}</span>
+      </div>
+      <div class="info-item" *ngIf="caseData.startDate">
+        <span class="info-label">Fecha inicio</span>
+        <span class="info-value">{{ caseData.startDate }}</span>
+      </div>
+      <div class="info-item" *ngIf="caseData.endDate">
+        <span class="info-label">Fecha fin</span>
+        <span class="info-value">{{ caseData.endDate }}</span>
+      </div>
+    </div>
+
+    <div class="case-description" *ngIf="caseData.description">
+      <span class="info-label">Descripción</span>
+      <p>{{ caseData.description }}</p>
+    </div>
+
+    <div class="case-notes" *ngIf="caseData.notes">
+      <span class="info-label">Notas</span>
+      <p>{{ caseData.notes }}</p>
+    </div>
+  </div>
+
+  <!-- Implicados -->
+  <div class="card subjects-card">
+    <div class="card-header">
+      <h2>Implicados</h2>
+      <button class="btn btn-primary" (click)="goToNewSubject()">+ Agregar implicado</button>
+    </div>
+
+    <div *ngIf="subjects.length === 0" class="empty-state">
+      No hay implicados registrados en este caso.
+    </div>
+
+    <table *ngIf="subjects.length > 0" class="subjects-table">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Tipo</th>
+          <th>Identificación</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let s of subjects">
+          <td>{{ s.firstName }} {{ s.lastName }}</td>
+          <td>{{ subjectTypeLabels[s.subjectType] || s.subjectType }}</td>
+          <td>{{ s.documentId || '-' }}</td>
+          <td>
+            <span class="badge" [ngClass]="getStatusClass(s.status)">
+              {{ subjectStatusLabels[s.status] || s.status }}
+            </span>
+          </td>
+          <td class="actions">
+            <button class="btn btn-primary btn-sm" (click)="goToAssessments(s.id)">Pruebas</button>
+            <button class="btn btn-secondary btn-sm" (click)="goToEditSubject(s.id)">Editar</button>
+            <button class="btn btn-danger btn-sm" (click)="onDeleteSubject(s.id)">Eliminar</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
