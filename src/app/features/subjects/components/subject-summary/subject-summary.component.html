@@ -53,7 +53,7 @@
     </div>
 
     <div *ngIf="interpretations.length === 0" class="empty-state">
-      No hay interpretaciones de pruebas disponibles. Aplique pruebas y genere interpretaciones primero.
+      No hay interpretaciones de pruebas disponibles.
     </div>
 
     <div *ngIf="generatingAssessment" class="generating-msg">
@@ -61,11 +61,7 @@
     </div>
 
     <div *ngIf="editingAssessment && !generatingAssessment">
-      <textarea
-        class="report-editor"
-        [(ngModel)]="assessmentReportContent"
-        rows="15">
-      </textarea>
+      <textarea class="report-editor" [(ngModel)]="assessmentReportContent" rows="15"></textarea>
       <div class="edit-actions">
         <button class="btn btn-secondary" (click)="editingAssessment = false; assessmentReportContent = assessmentReport?.content || ''">Cancelar</button>
         <button class="btn btn-primary" (click)="saveAssessmentEdit()">Guardar cambios</button>
@@ -98,7 +94,7 @@
     </div>
 
     <div *ngIf="analyses.length === 0" class="empty-state">
-      No hay análisis de entrevistas disponibles. Registre entrevistas y genere análisis primero.
+      No hay análisis de entrevistas disponibles.
     </div>
 
     <div *ngIf="generatingInterview" class="generating-msg">
@@ -106,11 +102,7 @@
     </div>
 
     <div *ngIf="editingInterview && !generatingInterview">
-      <textarea
-        class="report-editor"
-        [(ngModel)]="interviewReportContent"
-        rows="15">
-      </textarea>
+      <textarea class="report-editor" [(ngModel)]="interviewReportContent" rows="15"></textarea>
       <div class="edit-actions">
         <button class="btn btn-secondary" (click)="editingInterview = false; interviewReportContent = interviewReport?.content || ''">Cancelar</button>
         <button class="btn btn-primary" (click)="saveInterviewEdit()">Guardar cambios</button>
@@ -119,6 +111,68 @@
 
     <div *ngIf="interviewReportContent && !editingInterview && !generatingInterview" class="report-content">
       {{ interviewReportContent }}
+    </div>
+  </div>
+
+  <!-- Informe final del implicado -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Informe final del implicado</h2>
+      <div class="header-actions">
+        <span *ngIf="subjectReport" class="badge" [ngClass]="getStatusClass(subjectReport.status)">
+          {{ getStatusLabel(subjectReport.status) }}
+        </span>
+        <button
+          *ngIf="subjectReportContent && !editingSubjectReport && !isSubjectReportLocked()"
+          class="btn btn-secondary btn-sm"
+          (click)="editingSubjectReport = true">
+          Editar
+        </button>
+        <button
+          *ngIf="!isSubjectReportLocked()"
+          class="btn btn-primary"
+          (click)="generateSubjectReport()"
+          [disabled]="generatingSubjectReport || !canGenerateSubjectReport()">
+          {{ generatingSubjectReport ? 'Generando...' : (subjectReport ? 'Regenerar con IA' : 'Generar con IA') }}
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="!canGenerateSubjectReport() && !subjectReportContent" class="empty-state">
+      Necesita los consolidados de pruebas y entrevistas para generar el informe final.
+    </div>
+
+    <div *ngIf="generatingSubjectReport" class="generating-msg">
+      Generando informe final del implicado con IA...
+    </div>
+
+    <div *ngIf="editingSubjectReport && !generatingSubjectReport">
+      <textarea class="report-editor" [(ngModel)]="subjectReportContent" rows="20"></textarea>
+      <div class="edit-actions">
+        <button class="btn btn-secondary" (click)="editingSubjectReport = false; subjectReportContent = subjectReport?.content || ''">Cancelar</button>
+        <button class="btn btn-primary" (click)="saveSubjectReportEdit()">Guardar cambios</button>
+      </div>
+    </div>
+
+    <div *ngIf="subjectReportContent && !editingSubjectReport && !generatingSubjectReport" class="report-content">
+      {{ subjectReportContent }}
+    </div>
+
+    <!-- Flujo de aprobación -->
+    <div *ngIf="subjectReport && !editingSubjectReport && !generatingSubjectReport" class="approval-flow">
+      <div *ngIf="subjectReport.status === 'DRAFT'" class="approval-actions">
+        <button class="btn btn-review" (click)="changeSubjectReportStatus('REVIEWED')">Marcar como revisado</button>
+      </div>
+      <div *ngIf="subjectReport.status === 'REVIEWED'" class="approval-actions">
+        <button class="btn btn-secondary" (click)="changeSubjectReportStatus('DRAFT')">Volver a borrador</button>
+        <button class="btn btn-approve" (click)="changeSubjectReportStatus('APPROVED')">Aprobar informe</button>
+      </div>
+      <div *ngIf="subjectReport.status === 'APPROVED'" class="approved-msg">
+        Este informe está aprobado y bloqueado. Para editarlo, debe desbloquearlo primero.
+        <button class="btn btn-secondary btn-sm" (click)="changeSubjectReportStatus('DRAFT')" style="margin-top: 8px;">
+          Desbloquear para edición
+        </button>
+      </div>
     </div>
   </div>
 </div>

@@ -115,6 +115,13 @@ export const routes: Routes = [
                 (m) => m.SubjectSummaryComponent
               ),
           },
+          {
+            path: 'report',
+            loadComponent: () =>
+              import('./features/cases/components/case-report/case-report.component').then(
+                (m) => m.CaseReportComponent
+              ),
+          },
         ],
       },
     ],

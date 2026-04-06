@@ -105,4 +105,8 @@ export class CaseDetailComponent implements OnInit {
   goToSummary(subjectId: string) {
     this.router.navigate(['/cases', this.caseId, 'subjects', subjectId, 'summary']);
   }
+
+  goToReport() {
+    this.router.navigate(['/cases', this.caseId, 'report']);
+  }
 }

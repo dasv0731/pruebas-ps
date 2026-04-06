@@ -1,0 +1,108 @@
+<div *ngIf="loading" class="loading">Cargando informe del caso...</div>
+
+<div *ngIf="error" class="error-msg">{{ error }}</div>
+
+<div *ngIf="!loading" class="report-container">
+  <!-- Header -->
+  <div class="card">
+    <div class="card-header">
+      <div class="title-row">
+        <button class="btn btn-secondary btn-sm" (click)="goBack()">← Volver</button>
+        <h2>Informe final: Caso {{ caseData?.caseNumber }}</h2>
+      </div>
+    </div>
+
+    <!-- Estado de implicados -->
+    <h3 class="section-title">Estado de informes por implicado</h3>
+    <table class="subjects-status-table">
+      <thead>
+        <tr>
+          <th>Implicado</th>
+          <th>Tipo</th>
+          <th>Estado del informe</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let sr of subjectReports">
+          <td>{{ sr.subjectName }}</td>
+          <td>{{ sr.subjectType }}</td>
+          <td>
+            <span class="badge" [ngClass]="getSubjectStatusClass(sr.status)">
+              {{ getSubjectStatusLabel(sr.status) }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="readiness-bar" [ngClass]="readiness.ready ? 'ready' : 'not-ready'">
+      <span *ngIf="readiness.ready">Todos los informes están aprobados. Puede generar el informe final del caso.</span>
+      <span *ngIf="!readiness.ready">{{ readiness.approved }} de {{ subjects.length }} informes aprobados. Faltan {{ readiness.missing }}.</span>
+    </div>
+  </div>
+
+  <!-- Informe del caso -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Informe pericial del caso</h2>
+      <div class="header-actions">
+        <span *ngIf="caseReport" class="badge" [ngClass]="getCaseStatusClass(caseReport.status)">
+          {{ getCaseStatusLabel(caseReport.status) }}
+        </span>
+        <button
+          *ngIf="caseReportContent && !editing && !isCaseReportLocked()"
+          class="btn btn-secondary btn-sm"
+          (click)="editing = true">
+          Editar
+        </button>
+        <button
+          *ngIf="!isCaseReportLocked()"
+          class="btn btn-primary"
+          (click)="generateCaseReport()"
+          [disabled]="generating || !readiness.ready">
+          {{ generating ? 'Generando...' : (caseReport ? 'Regenerar con IA' : 'Generar con IA') }}
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="!readiness.ready && !caseReportContent" class="empty-state">
+      Apruebe todos los informes de implicados para poder generar el informe final del caso.
+    </div>
+
+    <div *ngIf="generating" class="generating-msg">
+      Generando informe final del caso con IA...
+    </div>
+
+    <div *ngIf="editing && !generating">
+      <textarea class="report-editor" [(ngModel)]="caseReportContent" rows="25"></textarea>
+      <div class="edit-actions">
+        <button class="btn btn-secondary" (click)="editing = false; caseReportContent = caseReport?.content || ''">Cancelar</button>
+        <button class="btn btn-primary" (click)="saveCaseReportEdit()">Guardar cambios</button>
+      </div>
+    </div>
+
+    <div *ngIf="caseReportContent && !editing && !generating" class="report-content">
+      {{ caseReportContent }}
+    </div>
+
+    <!-- Flujo de aprobación -->
+    <div *ngIf="caseReport && !editing && !generating" class="approval-flow">
+      <div *ngIf="caseReport.status === 'DRAFT' || caseReport.status === 'STALE'" class="approval-actions">
+        <span *ngIf="caseReport.status === 'STALE'" class="stale-warning">
+          Un informe de implicado fue modificado. Regenere o revise este informe.
+        </span>
+        <button class="btn btn-review" (click)="changeStatus('REVIEWED')">Marcar como revisado</button>
+      </div>
+      <div *ngIf="caseReport.status === 'REVIEWED'" class="approval-actions">
+        <button class="btn btn-secondary" (click)="changeStatus('DRAFT')">Volver a borrador</button>
+        <button class="btn btn-approve" (click)="changeStatus('APPROVED')">Aprobar informe final</button>
+      </div>
+      <div *ngIf="caseReport.status === 'APPROVED'" class="approved-msg">
+        Este informe final está aprobado y bloqueado. Para editarlo, debe desbloquearlo primero.
+        <button class="btn btn-secondary btn-sm" (click)="changeStatus('DRAFT')" style="margin-top: 8px;">
+          Desbloquear para edición
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

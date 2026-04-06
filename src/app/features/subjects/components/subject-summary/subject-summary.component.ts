@@ -23,13 +23,17 @@ export class SubjectSummaryComponent implements OnInit {
   analyses: any[] = [];
   assessmentReport: any = null;
   interviewReport: any = null;
+  subjectReport: any = null;
   loading = true;
   generatingAssessment = false;
   generatingInterview = false;
+  generatingSubjectReport = false;
   editingAssessment = false;
   editingInterview = false;
+  editingSubjectReport = false;
   assessmentReportContent = '';
   interviewReportContent = '';
+  subjectReportContent = '';
   error = '';
 
   constructor(
@@ -55,7 +59,6 @@ export class SubjectSummaryComponent implements OnInit {
 
       this.subject = await this.subjectService.getById(this.subjectId);
 
-      // Cargar interpretaciones de pruebas
       const sessions = await this.assessmentService.listSessionsBySubject(this.subjectId);
       this.interpretations = [];
       for (const session of sessions) {
@@ -73,7 +76,6 @@ export class SubjectSummaryComponent implements OnInit {
         }
       }
 
-      // Cargar análisis de entrevistas
       const interviews = await this.interviewService.listBySubject(this.subjectId);
       this.analyses = [];
       for (const interview of interviews) {
@@ -88,7 +90,6 @@ export class SubjectSummaryComponent implements OnInit {
         }
       }
 
-      // Cargar consolidados existentes
       this.assessmentReport = await this.subjectReportService.getAssessmentReport(this.subjectId);
       if (this.assessmentReport) {
         this.assessmentReportContent = this.assessmentReport.content;
@@ -99,6 +100,11 @@ export class SubjectSummaryComponent implements OnInit {
         this.interviewReportContent = this.interviewReport.content;
       }
 
+      this.subjectReport = await this.subjectReportService.getSubjectReport(this.subjectId);
+      if (this.subjectReport) {
+        this.subjectReportContent = this.subjectReport.content;
+      }
+
     } catch (err: any) {
       this.error = err.message || 'Error al cargar datos';
     } finally {
@@ -106,82 +112,36 @@ export class SubjectSummaryComponent implements OnInit {
     }
   }
 
+  // ── Consolidado pruebas ──
+
   async generateAssessmentReport() {
     if (this.interpretations.length === 0) {
-      this.error = 'No hay interpretaciones de pruebas para consolidar. Genere interpretaciones primero.';
+      this.error = 'No hay interpretaciones de pruebas para consolidar.';
       return;
     }
-
     try {
       this.generatingAssessment = true;
       this.error = '';
-
-      const texts = this.interpretations.map(
-        (i) => `--- ${i.assessmentName} ---\n${i.content}`
-      );
-
+      const texts = this.interpretations.map((i) => `--- ${i.assessmentName} ---\n${i.content}`);
       const response: AIResponse = await this.aiService.generateSubjectAssessmentReport(texts);
-
       if (response.success && response.content) {
-        await this.subjectReportService.saveAssessmentReport(
-          this.subjectId,
-          response.content,
-          response.model || 'claude-sonnet-4-20250514'
-        );
+        await this.subjectReportService.saveAssessmentReport(this.subjectId, response.content, response.model || 'claude-sonnet-4-20250514');
         this.assessmentReportContent = response.content;
         this.assessmentReport = { content: response.content };
       } else {
-        this.error = response.error || 'Error al generar consolidado de pruebas';
+        this.error = response.error || 'Error al generar consolidado';
       }
     } catch (err: any) {
-      this.error = err.message || 'Error al generar consolidado de pruebas';
+      this.error = err.message || 'Error al generar consolidado';
     } finally {
       this.generatingAssessment = false;
-    }
-  }
-
-  async generateInterviewReport() {
-    if (this.analyses.length === 0) {
-      this.error = 'No hay análisis de entrevistas para consolidar. Genere análisis primero.';
-      return;
-    }
-
-    try {
-      this.generatingInterview = true;
-      this.error = '';
-
-      const texts = this.analyses.map(
-        (a) => `--- Entrevista ${a.date} ---\n${a.content}`
-      );
-
-      const response: AIResponse = await this.aiService.generateSubjectInterviewReport(texts);
-
-      if (response.success && response.content) {
-        await this.subjectReportService.saveInterviewReport(
-          this.subjectId,
-          response.content,
-          response.model || 'claude-sonnet-4-20250514'
-        );
-        this.interviewReportContent = response.content;
-        this.interviewReport = { content: response.content };
-      } else {
-        this.error = response.error || 'Error al generar consolidado de entrevistas';
-      }
-    } catch (err: any) {
-      this.error = err.message || 'Error al generar consolidado de entrevistas';
-    } finally {
-      this.generatingInterview = false;
     }
   }
 
   async saveAssessmentEdit() {
     try {
       this.error = '';
-      await this.subjectReportService.saveAssessmentReport(
-        this.subjectId,
-        this.assessmentReportContent,
-        'MANUAL'
-      );
+      await this.subjectReportService.saveAssessmentReport(this.subjectId, this.assessmentReportContent, 'MANUAL');
       this.assessmentReport = { content: this.assessmentReportContent };
       this.editingAssessment = false;
     } catch (err: any) {
@@ -189,19 +149,130 @@ export class SubjectSummaryComponent implements OnInit {
     }
   }
 
+  // ── Consolidado entrevistas ──
+
+  async generateInterviewReport() {
+    if (this.analyses.length === 0) {
+      this.error = 'No hay análisis de entrevistas para consolidar.';
+      return;
+    }
+    try {
+      this.generatingInterview = true;
+      this.error = '';
+      const texts = this.analyses.map((a) => `--- Entrevista ${a.date} ---\n${a.content}`);
+      const response: AIResponse = await this.aiService.generateSubjectInterviewReport(texts);
+      if (response.success && response.content) {
+        await this.subjectReportService.saveInterviewReport(this.subjectId, response.content, response.model || 'claude-sonnet-4-20250514');
+        this.interviewReportContent = response.content;
+        this.interviewReport = { content: response.content };
+      } else {
+        this.error = response.error || 'Error al generar consolidado';
+      }
+    } catch (err: any) {
+      this.error = err.message || 'Error al generar consolidado';
+    } finally {
+      this.generatingInterview = false;
+    }
+  }
+
   async saveInterviewEdit() {
     try {
       this.error = '';
-      await this.subjectReportService.saveInterviewReport(
-        this.subjectId,
-        this.interviewReportContent,
-        'MANUAL'
-      );
+      await this.subjectReportService.saveInterviewReport(this.subjectId, this.interviewReportContent, 'MANUAL');
       this.interviewReport = { content: this.interviewReportContent };
       this.editingInterview = false;
     } catch (err: any) {
       this.error = err.message || 'Error al guardar';
     }
+  }
+
+  // ── Informe final del implicado ──
+
+  canGenerateSubjectReport(): boolean {
+    return !!this.assessmentReportContent && !!this.interviewReportContent;
+  }
+
+  async generateSubjectReport() {
+    if (!this.canGenerateSubjectReport()) {
+      this.error = 'Necesita ambos consolidados (pruebas y entrevistas) para generar el informe final.';
+      return;
+    }
+    try {
+      this.generatingSubjectReport = true;
+      this.error = '';
+      const response: AIResponse = await this.aiService.generateSubjectReport(
+        this.assessmentReportContent,
+        this.interviewReportContent
+      );
+      if (response.success && response.content) {
+        await this.subjectReportService.saveSubjectReport(
+          this.subjectId, this.caseId, response.content, response.model || 'claude-sonnet-4-20250514'
+        );
+        this.subjectReportContent = response.content;
+        this.subjectReport = { content: response.content, status: 'DRAFT' };
+      } else {
+        this.error = response.error || 'Error al generar informe final';
+      }
+    } catch (err: any) {
+      this.error = err.message || 'Error al generar informe final';
+    } finally {
+      this.generatingSubjectReport = false;
+    }
+  }
+
+  async saveSubjectReportEdit() {
+    try {
+      this.error = '';
+      await this.subjectReportService.saveSubjectReport(
+        this.subjectId, this.caseId, this.subjectReportContent, 'MANUAL'
+      );
+      this.subjectReport = { content: this.subjectReportContent, status: 'DRAFT' };
+      this.editingSubjectReport = false;
+    } catch (err: any) {
+      this.error = err.message || 'Error al guardar';
+    }
+  }
+
+  async changeSubjectReportStatus(newStatus: string) {
+    if (!this.subjectReport?.id) return;
+    try {
+      this.error = '';
+
+      // Si se desaprueba (de APPROVED a DRAFT), invalidar CaseReport
+      if (this.subjectReport.status === 'APPROVED' && newStatus === 'DRAFT') {
+        const caseReport = await this.subjectReportService.getCaseReport(this.caseId);
+        if (caseReport && (caseReport.status === 'APPROVED' || caseReport.status === 'REVIEWED')) {
+          await this.subjectReportService.updateCaseReportStatus(caseReport.id, 'STALE');
+        }
+      }
+
+      await this.subjectReportService.updateSubjectReportStatus(this.subjectReport.id, newStatus);
+      this.subjectReport.status = newStatus;
+    } catch (err: any) {
+      this.error = err.message || 'Error al cambiar estado';
+    }
+  }
+
+  isSubjectReportLocked(): boolean {
+    return this.subjectReport?.status === 'APPROVED';
+  }
+
+  getStatusLabel(status: string): string {
+    const map: Record<string, string> = {
+      DRAFT: 'Borrador',
+      REVIEWED: 'Revisado',
+      APPROVED: 'Aprobado',
+    };
+    return map[status] || status;
+  }
+
+  getStatusClass(status: string): string {
+    const map: Record<string, string> = {
+      DRAFT: 'badge-pending',
+      REVIEWED: 'badge-in-progress',
+      APPROVED: 'badge-active',
+    };
+    return map[status] || '';
   }
 
   goBack() {

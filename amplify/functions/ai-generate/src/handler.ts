@@ -27,10 +27,10 @@ async function callClaude(systemPrompt: string, userMessage: string): Promise<st
     },
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 4096,
+      max_tokens: 2048,
       system: systemPrompt,
       messages: [
-        { role: 'user', content: userMessage },
+        { role: 'user', content: userMessage.substring(0, 8000) },
       ],
     }),
   });
@@ -96,16 +96,7 @@ Genera un informe pericial que:
 - Use lenguaje formal, técnico y objetivo
 - Escriba en español`,
 
-  CASE_REPORT: `Eres un psicólogo clínico forense experto en peritajes judiciales. Tu tarea es generar el informe pericial final de un caso judicial, integrando los informes de todos los implicados.
-
-Genera un informe pericial final del caso que:
-- Integre los informes de cada implicado evaluado
-- Presente una visión comparativa cuando sea pertinente
-- Proporcione conclusiones generales del caso
-- Incluya recomendaciones al juzgado si corresponde
-- Mantenga estructura formal de informe pericial judicial
-- Use lenguaje formal, técnico y objetivo
-- Escriba en español`,
+  CASE_REPORT: `Eres un psicólogo clínico forense. Genera un informe pericial final CONCISO del caso judicial integrando los informes de los implicados. Máximo 800 palabras. Incluye: resumen del caso, hallazgos principales por implicado, conclusiones generales y recomendaciones al juzgado. Escribe en español, lenguaje formal y técnico.`,
 };
 
 export const handler = async (event: any) => {

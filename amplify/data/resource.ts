@@ -258,13 +258,51 @@ const schema = a.schema({
   // ──────────────────────────────────────────────
   // SUBJECT INTERVIEW REPORT (Consolidado entrevistas)
   // ──────────────────────────────────────────────
-
-  SubjectInterviewReport: a
+SubjectInterviewReport: a
     .model({
       subjectId: a.id().required(),
       content: a.string().required(),
       source: a.ref('InterpretationSource').required(),
       status: a.ref('InterpretationStatus').required(),
+      version: a.integer().required(),
+      isCurrent: a.boolean().required(),
+      aiModel: a.string(),
+      generatedAt: a.datetime(),
+    })
+    .authorization((allow) => [
+      allow.owner(),
+    ]),
+
+  // ──────────────────────────────────────────────
+  // SUBJECT REPORT (Informe final por implicado)
+  // ──────────────────────────────────────────────
+
+  SubjectReport: a
+    .model({
+      subjectId: a.id().required(),
+      caseId: a.id().required(),
+      content: a.string().required(),
+      source: a.ref('InterpretationSource').required(),
+      status: a.enum(['DRAFT', 'REVIEWED', 'APPROVED']),
+      version: a.integer().required(),
+      isCurrent: a.boolean().required(),
+      aiModel: a.string(),
+      generatedAt: a.datetime(),
+    })
+    .authorization((allow) => [
+      allow.owner(),
+    ]),
+
+  // ──────────────────────────────────────────────
+  // CASE REPORT (Informe final del juicio)
+  // ──────────────────────────────────────────────
+
+  CaseReport: a
+    .model({
+      caseId: a.id().required(),
+      content: a.string().required(),
+      source: a.ref('InterpretationSource').required(),
+      status: a.enum(['BLOCKED', 'READY', 'DRAFT', 'REVIEWED', 'APPROVED', 'STALE']),
       version: a.integer().required(),
       isCurrent: a.boolean().required(),
       aiModel: a.string(),
