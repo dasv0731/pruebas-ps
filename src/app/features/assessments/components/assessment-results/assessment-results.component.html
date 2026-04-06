@@ -44,6 +44,31 @@
         </div>
       </div>
 
+      <!-- Interpretación IA -->
+      <div class="interpretation-section">
+        <div class="interpretation-header">
+          <h3>Interpretación clínica</h3>
+          <button
+            class="btn btn-primary"
+            (click)="generateInterpretation()"
+            [disabled]="generating">
+            {{ generating ? 'Generando...' : (interpretation ? 'Regenerar con IA' : 'Generar con IA') }}
+          </button>
+        </div>
+
+        <div *ngIf="generating" class="generating-msg">
+          Generando interpretación clínica con IA, esto puede tardar unos segundos...
+        </div>
+
+        <div *ngIf="interpretation && !generating" class="interpretation-content">
+          {{ interpretation }}
+        </div>
+
+        <div *ngIf="!interpretation && !generating" class="interpretation-empty">
+          No se ha generado una interpretación clínica. Haga clic en "Generar con IA" para crear una.
+        </div>
+      </div>
+
       <!-- Detalle de respuestas -->
       <div class="answers-section">
         <h3>Detalle de respuestas</h3>

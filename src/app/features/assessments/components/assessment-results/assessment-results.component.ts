@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AssessmentService } from '../../services/assessment.service';
+import { AIService, AIResponse } from '../../../../core/services/ai.service';
 
 @Component({
   selector: 'app-assessment-results',
@@ -18,13 +19,18 @@ export class AssessmentResultsComponent implements OnInit {
   assessment: any = null;
   scoring: any = null;
   answers: number[] = [];
+  interpretation = '';
+  interpretationVersion = 0;
+  interpretationDate = '';
   loading = true;
+  generating = false;
   error = '';
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private assessmentService: AssessmentService
+    private assessmentService: AssessmentService,
+    private aiService: AIService
   ) {}
 
   async ngOnInit() {
@@ -55,6 +61,16 @@ export class AssessmentResultsComponent implements OnInit {
           this.answers = [];
         }
       }
+
+      // Cargar interpretación guardada
+      if (this.scoring) {
+        const saved = await this.assessmentService.getInterpretation(this.scoring.id);
+        if (saved) {
+          this.interpretation = saved.content;
+          this.interpretationVersion = saved.version;
+          this.interpretationDate = saved.generatedAt || '';
+        }
+      }
     } catch (err: any) {
       this.error = err.message || 'Error al cargar resultados';
     } finally {
@@ -76,6 +92,49 @@ export class AssessmentResultsComponent implements OnInit {
   getSourceLabel(): string {
     if (!this.scoring) return '';
     return this.scoring.source === 'TEA' ? 'TEA Corrige' : 'Baremo local';
+  }
+
+  async generateInterpretation() {
+    if (!this.scoring) return;
+
+    try {
+      this.generating = true;
+      this.error = '';
+
+      const scores = {
+        assessmentName: this.assessment?.name,
+        totalScore: this.scoring.totalScore,
+        maxScore: this.getMaxPossibleScore(),
+        percentage: this.getPercentage(),
+        totalQuestions: this.assessment?.totalQuestions,
+        optionsPerQuestion: this.assessment?.optionsPerQuestion,
+        rawScores: this.scoring.scores ? JSON.parse(this.scoring.scores) : null,
+      };
+
+      const response: AIResponse = await this.aiService.generateAssessmentInterpretation(
+        this.assessment?.name || 'Prueba',
+        scores
+      );
+
+      if (response.success && response.content) {
+        // Guardar en base de datos
+        await this.assessmentService.saveInterpretation(
+          this.scoring.id,
+          response.content,
+          response.model || 'claude-sonnet-4-20250514'
+        );
+
+        this.interpretation = response.content;
+        this.interpretationVersion++;
+        this.interpretationDate = new Date().toISOString();
+      } else {
+        this.error = response.error || 'Error al generar interpretación';
+      }
+    } catch (err: any) {
+      this.error = err.message || 'Error al generar interpretación';
+    } finally {
+      this.generating = false;
+    }
   }
 
   goBack() {

@@ -1,4 +1,5 @@
 import { type ClientSchema, a, defineData } from '@aws-amplify/backend';
+import { aiGenerate } from '../functions/ai-generate/resource';
 
 const schema = a.schema({
 
@@ -51,6 +52,17 @@ const schema = a.schema({
   InterviewStatus: a.enum([
     'DRAFT',
     'COMPLETED',
+  ]),
+
+  InterpretationSource: a.enum([
+    'AI',
+    'MANUAL',
+  ]),
+
+  InterpretationStatus: a.enum([
+    'PENDING',
+    'COMPLETED',
+    'REVIEWED',
   ]),
 
   // ──────────────────────────────────────────────
@@ -161,6 +173,27 @@ const schema = a.schema({
       isCurrent: a.boolean().required(),
       generatedAt: a.datetime(),
       session: a.belongsTo('AssessmentSession', 'sessionId'),
+      interpretation: a.hasMany('AssessmentInterpretation', 'scoringId'),
+    })
+    .authorization((allow) => [
+      allow.owner(),
+    ]),
+
+  // ──────────────────────────────────────────────
+  // ASSESSMENT INTERPRETATION (Narrativa clínica)
+  // ──────────────────────────────────────────────
+
+  AssessmentInterpretation: a
+    .model({
+      scoringId: a.id().required(),
+      content: a.string().required(),
+      source: a.ref('InterpretationSource').required(),
+      status: a.ref('InterpretationStatus').required(),
+      version: a.integer().required(),
+      isCurrent: a.boolean().required(),
+      aiModel: a.string(),
+      generatedAt: a.datetime(),
+      scoring: a.belongsTo('AssessmentScoring', 'scoringId'),
     })
     .authorization((allow) => [
       allow.owner(),
@@ -177,9 +210,46 @@ const schema = a.schema({
       transcript: a.string(),
       status: a.ref('InterviewStatus').required(),
       subject: a.belongsTo('Subject', 'subjectId'),
+      analysis: a.hasMany('InterviewAnalysis', 'interviewId'),
     })
     .authorization((allow) => [
       allow.owner(),
+    ]),
+
+  // ──────────────────────────────────────────────
+  // INTERVIEW ANALYSIS (Análisis de entrevista)
+  // ──────────────────────────────────────────────
+
+  InterviewAnalysis: a
+    .model({
+      interviewId: a.id().required(),
+      content: a.string().required(),
+      source: a.ref('InterpretationSource').required(),
+      status: a.ref('InterpretationStatus').required(),
+      version: a.integer().required(),
+      isCurrent: a.boolean().required(),
+      aiModel: a.string(),
+      generatedAt: a.datetime(),
+      interview: a.belongsTo('Interview', 'interviewId'),
+    })
+    .authorization((allow) => [
+      allow.owner(),
+    ]),
+
+  // ──────────────────────────────────────────────
+  // AI GENERATION (Custom query)
+  // ──────────────────────────────────────────────
+
+  generateAIContent: a
+    .query()
+    .arguments({
+      type: a.string().required(),
+      data: a.string().required(),
+    })
+    .returns(a.json())
+    .handler(a.handler.function(aiGenerate))
+    .authorization((allow) => [
+      allow.authenticated(),
     ]),
 });
 

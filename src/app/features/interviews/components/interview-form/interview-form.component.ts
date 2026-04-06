@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { InterviewService, InterviewInput } from '../../services/interview.service';
+import { AIService, AIResponse } from '../../../../core/services/ai.service';
 
 @Component({
   selector: 'app-interview-form',
@@ -18,7 +19,11 @@ export class InterviewFormComponent implements OnInit {
   isEdit = false;
   loading = false;
   saving = false;
+  generating = false;
   error = '';
+  analysis = '';
+  analysisVersion = 0;
+  analysisDate = '';
 
   form: InterviewInput = {
     subjectId: '',
@@ -29,6 +34,7 @@ export class InterviewFormComponent implements OnInit {
 
   constructor(
     private interviewService: InterviewService,
+    private aiService: AIService,
     private route: ActivatedRoute,
     private router: Router
   ) {}
@@ -58,6 +64,14 @@ export class InterviewFormComponent implements OnInit {
           transcript: data.transcript ?? '',
           status: data.status as 'DRAFT' | 'COMPLETED',
         };
+
+        // Cargar análisis guardado
+        const saved = await this.interviewService.getAnalysis(this.interviewId);
+        if (saved) {
+          this.analysis = saved.content;
+          this.analysisVersion = saved.version;
+          this.analysisDate = saved.generatedAt || '';
+        }
       }
     } catch (err: any) {
       this.error = err.message || 'Error al cargar la entrevista';
@@ -79,10 +93,12 @@ export class InterviewFormComponent implements OnInit {
       if (this.isEdit) {
         await this.interviewService.update(this.interviewId, this.form);
       } else {
-        await this.interviewService.create(this.form);
+        const created = await this.interviewService.create(this.form);
+        if (created) {
+          this.interviewId = created.id;
+          this.isEdit = true;
+        }
       }
-
-      this.goBack();
     } catch (err: any) {
       this.error = err.message || 'Error al guardar la entrevista';
     } finally {
@@ -98,6 +114,47 @@ export class InterviewFormComponent implements OnInit {
 
     this.form.status = 'COMPLETED';
     await this.onSubmit();
+    this.goBack();
+  }
+
+  async generateAnalysis() {
+    if (!this.form.transcript || this.form.transcript.trim().length === 0) {
+      this.error = 'Debe escribir la transcripción antes de generar el análisis';
+      return;
+    }
+
+    // Guardar primero si no se ha guardado
+    if (!this.interviewId) {
+      await this.onSubmit();
+      if (!this.interviewId) return;
+    }
+
+    try {
+      this.generating = true;
+      this.error = '';
+
+      const response: AIResponse = await this.aiService.generateInterviewAnalysis(
+        this.form.transcript
+      );
+
+      if (response.success && response.content) {
+        await this.interviewService.saveAnalysis(
+          this.interviewId,
+          response.content,
+          response.model || 'claude-sonnet-4-20250514'
+        );
+
+        this.analysis = response.content;
+        this.analysisVersion++;
+        this.analysisDate = new Date().toISOString();
+      } else {
+        this.error = response.error || 'Error al generar análisis';
+      }
+    } catch (err: any) {
+      this.error = err.message || 'Error al generar análisis';
+    } finally {
+      this.generating = false;
+    }
   }
 
   goBack() {

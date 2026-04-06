@@ -246,4 +246,47 @@ export class AssessmentService {
       await this.createAssessment(a);
     }
   }
+
+  // ── INTERPRETATIONS ──
+
+  async getInterpretation(scoringId: string) {
+    const { data, errors } = await client.models.AssessmentInterpretation.list({
+      filter: {
+        scoringId: { eq: scoringId },
+        isCurrent: { eq: true },
+      },
+    });
+    if (errors) throw new Error(errors.map((e) => e.message).join(', '));
+    return data.length > 0 ? data[0] : null;
+  }
+
+  async saveInterpretation(scoringId: string, content: string, aiModel: string) {
+    // Marcar anteriores como no current
+    const existing = await client.models.AssessmentInterpretation.list({
+      filter: { scoringId: { eq: scoringId } },
+    });
+    if (existing.data) {
+      for (const item of existing.data) {
+        await client.models.AssessmentInterpretation.update({
+          id: item.id,
+          isCurrent: false,
+        });
+      }
+    }
+
+    const version = (existing.data?.length || 0) + 1;
+
+    const { data, errors } = await client.models.AssessmentInterpretation.create({
+      scoringId,
+      content,
+      source: 'AI' as const,
+      status: 'COMPLETED' as const,
+      version,
+      isCurrent: true,
+      aiModel,
+      generatedAt: new Date().toISOString(),
+    });
+    if (errors) throw new Error(errors.map((e) => e.message).join(', '));
+    return data;
+  }
 }

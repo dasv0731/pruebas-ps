@@ -53,4 +53,34 @@
       </button>
     </div>
   </form>
+
+  <!-- Análisis IA -->
+  <div *ngIf="isEdit && !loading" class="analysis-section">
+    <div class="analysis-header">
+      <h3>Análisis de entrevista</h3>
+      <div class="analysis-actions">
+        <span *ngIf="analysisVersion > 0" class="analysis-meta">
+          Versión {{ analysisVersion }} - {{ analysisDate | date:'medium' }}
+        </span>
+        <button
+          class="btn btn-primary"
+          (click)="generateAnalysis()"
+          [disabled]="generating">
+          {{ generating ? 'Generando...' : (analysis ? 'Regenerar con IA' : 'Generar análisis con IA') }}
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="generating" class="generating-msg">
+      Generando análisis con IA, esto puede tardar unos segundos...
+    </div>
+
+    <div *ngIf="analysis && !generating" class="analysis-content">
+      {{ analysis }}
+    </div>
+
+    <div *ngIf="!analysis && !generating" class="analysis-empty">
+      No se ha generado un análisis. Guarde la entrevista con transcripción y haga clic en "Generar análisis con IA".
+    </div>
+  </div>
 </div>
