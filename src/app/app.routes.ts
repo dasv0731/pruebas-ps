@@ -82,6 +82,32 @@ export const routes: Routes = [
               },
             ],
           },
+          {
+            path: 'subjects/:subjectId/interviews',
+            children: [
+              {
+                path: '',
+                loadComponent: () =>
+                  import('./features/interviews/components/interview-list/interview-list.component').then(
+                    (m) => m.InterviewListComponent
+                  ),
+              },
+              {
+                path: 'new',
+                loadComponent: () =>
+                  import('./features/interviews/components/interview-form/interview-form.component').then(
+                    (m) => m.InterviewFormComponent
+                  ),
+              },
+              {
+                path: ':interviewId/edit',
+                loadComponent: () =>
+                  import('./features/interviews/components/interview-form/interview-form.component').then(
+                    (m) => m.InterviewFormComponent
+                  ),
+              },
+            ],
+          },
         ],
       },
     ],

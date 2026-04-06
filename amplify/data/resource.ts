@@ -48,6 +48,11 @@ const schema = a.schema({
     'FAILED',
   ]),
 
+  InterviewStatus: a.enum([
+    'DRAFT',
+    'COMPLETED',
+  ]),
+
   // ──────────────────────────────────────────────
   // CASE (Juicio)
   // ──────────────────────────────────────────────
@@ -88,6 +93,7 @@ const schema = a.schema({
       notes: a.string(),
       case: a.belongsTo('Case', 'caseId'),
       assessmentSessions: a.hasMany('AssessmentSession', 'subjectId'),
+      interviews: a.hasMany('Interview', 'subjectId'),
     })
     .authorization((allow) => [
       allow.owner(),
@@ -155,6 +161,22 @@ const schema = a.schema({
       isCurrent: a.boolean().required(),
       generatedAt: a.datetime(),
       session: a.belongsTo('AssessmentSession', 'sessionId'),
+    })
+    .authorization((allow) => [
+      allow.owner(),
+    ]),
+
+  // ──────────────────────────────────────────────
+  // INTERVIEW (Entrevista)
+  // ──────────────────────────────────────────────
+
+  Interview: a
+    .model({
+      subjectId: a.id().required(),
+      interviewDate: a.date().required(),
+      transcript: a.string(),
+      status: a.ref('InterviewStatus').required(),
+      subject: a.belongsTo('Subject', 'subjectId'),
     })
     .authorization((allow) => [
       allow.owner(),

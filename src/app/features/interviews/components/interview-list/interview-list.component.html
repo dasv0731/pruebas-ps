@@ -1,0 +1,52 @@
+<div *ngIf="loading" class="loading">Cargando entrevistas...</div>
+
+<div *ngIf="error" class="error-msg">{{ error }}</div>
+
+<div *ngIf="!loading" class="interviews-container">
+  <div class="card">
+    <div class="card-header">
+      <div class="title-row">
+        <button class="btn btn-secondary btn-sm" (click)="goBack()">← Volver</button>
+        <h2>Entrevistas</h2>
+      </div>
+      <div class="header-right">
+        <span *ngIf="subject" class="subject-name">
+          {{ subject.firstName }} {{ subject.lastName }}
+        </span>
+        <button class="btn btn-primary" (click)="goToNew()">+ Nueva entrevista</button>
+      </div>
+    </div>
+
+    <div *ngIf="interviews.length === 0" class="empty-state">
+      No hay entrevistas registradas para este implicado.
+    </div>
+
+    <table *ngIf="interviews.length > 0" class="interviews-table">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Estado</th>
+          <th>Transcripción</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let i of interviews">
+          <td>{{ i.interviewDate }}</td>
+          <td>
+            <span class="badge" [ngClass]="getStatusClass(i.status)">
+              {{ getStatusLabel(i.status) }}
+            </span>
+          </td>
+          <td class="transcript-preview">
+            {{ i.transcript ? (i.transcript.length > 80 ? (i.transcript.substring(0, 80) + '...') : i.transcript) : 'Sin transcripción' }}
+          </td>
+          <td class="actions">
+            <button class="btn btn-secondary btn-sm" (click)="goToEdit(i.id)">Editar</button>
+            <button class="btn btn-danger btn-sm" (click)="onDelete(i.id)">Eliminar</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
