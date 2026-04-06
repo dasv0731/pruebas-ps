@@ -101,4 +101,8 @@ export class CaseDetailComponent implements OnInit {
   goToInterviews(subjectId: string) {
     this.router.navigate(['/cases', this.caseId, 'subjects', subjectId, 'interviews']);
   }
+
+  goToSummary(subjectId: string) {
+    this.router.navigate(['/cases', this.caseId, 'subjects', subjectId, 'summary']);
+  }
 }

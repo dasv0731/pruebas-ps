@@ -220,7 +220,7 @@ const schema = a.schema({
   // INTERVIEW ANALYSIS (Análisis de entrevista)
   // ──────────────────────────────────────────────
 
-  InterviewAnalysis: a
+ InterviewAnalysis: a
     .model({
       interviewId: a.id().required(),
       content: a.string().required(),
@@ -231,6 +231,44 @@ const schema = a.schema({
       aiModel: a.string(),
       generatedAt: a.datetime(),
       interview: a.belongsTo('Interview', 'interviewId'),
+    })
+    .authorization((allow) => [
+      allow.owner(),
+    ]),
+
+  // ──────────────────────────────────────────────
+  // SUBJECT ASSESSMENT REPORT (Consolidado pruebas)
+  // ──────────────────────────────────────────────
+
+  SubjectAssessmentReport: a
+    .model({
+      subjectId: a.id().required(),
+      content: a.string().required(),
+      source: a.ref('InterpretationSource').required(),
+      status: a.ref('InterpretationStatus').required(),
+      version: a.integer().required(),
+      isCurrent: a.boolean().required(),
+      aiModel: a.string(),
+      generatedAt: a.datetime(),
+    })
+    .authorization((allow) => [
+      allow.owner(),
+    ]),
+
+  // ──────────────────────────────────────────────
+  // SUBJECT INTERVIEW REPORT (Consolidado entrevistas)
+  // ──────────────────────────────────────────────
+
+  SubjectInterviewReport: a
+    .model({
+      subjectId: a.id().required(),
+      content: a.string().required(),
+      source: a.ref('InterpretationSource').required(),
+      status: a.ref('InterpretationStatus').required(),
+      version: a.integer().required(),
+      isCurrent: a.boolean().required(),
+      aiModel: a.string(),
+      generatedAt: a.datetime(),
     })
     .authorization((allow) => [
       allow.owner(),

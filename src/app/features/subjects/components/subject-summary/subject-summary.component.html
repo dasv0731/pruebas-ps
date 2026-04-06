@@ -1,0 +1,124 @@
+<div *ngIf="loading" class="loading">Cargando resumen del implicado...</div>
+
+<div *ngIf="error" class="error-msg">{{ error }}</div>
+
+<div *ngIf="!loading" class="summary-container">
+  <!-- Header -->
+  <div class="card">
+    <div class="card-header">
+      <div class="title-row">
+        <button class="btn btn-secondary btn-sm" (click)="goBack()">← Volver</button>
+        <h2>Resumen: {{ subject?.firstName }} {{ subject?.lastName }}</h2>
+      </div>
+    </div>
+
+    <div class="status-grid">
+      <div class="status-item">
+        <span class="status-number">{{ interpretations.length }}</span>
+        <span class="status-label">Pruebas interpretadas</span>
+      </div>
+      <div class="status-item">
+        <span class="status-number">{{ analyses.length }}</span>
+        <span class="status-label">Entrevistas analizadas</span>
+      </div>
+      <div class="status-item">
+        <span class="status-number">{{ assessmentReport ? 'Sí' : 'No' }}</span>
+        <span class="status-label">Consolidado pruebas</span>
+      </div>
+      <div class="status-item">
+        <span class="status-number">{{ interviewReport ? 'Sí' : 'No' }}</span>
+        <span class="status-label">Consolidado entrevistas</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Consolidado de pruebas -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Informe consolidado de pruebas</h2>
+      <div class="header-actions">
+        <button
+          *ngIf="assessmentReportContent && !editingAssessment"
+          class="btn btn-secondary btn-sm"
+          (click)="editingAssessment = true">
+          Editar
+        </button>
+        <button
+          class="btn btn-primary"
+          (click)="generateAssessmentReport()"
+          [disabled]="generatingAssessment || interpretations.length === 0">
+          {{ generatingAssessment ? 'Generando...' : (assessmentReport ? 'Regenerar con IA' : 'Generar con IA') }}
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="interpretations.length === 0" class="empty-state">
+      No hay interpretaciones de pruebas disponibles. Aplique pruebas y genere interpretaciones primero.
+    </div>
+
+    <div *ngIf="generatingAssessment" class="generating-msg">
+      Consolidando interpretaciones de pruebas con IA...
+    </div>
+
+    <div *ngIf="editingAssessment && !generatingAssessment">
+      <textarea
+        class="report-editor"
+        [(ngModel)]="assessmentReportContent"
+        rows="15">
+      </textarea>
+      <div class="edit-actions">
+        <button class="btn btn-secondary" (click)="editingAssessment = false; assessmentReportContent = assessmentReport?.content || ''">Cancelar</button>
+        <button class="btn btn-primary" (click)="saveAssessmentEdit()">Guardar cambios</button>
+      </div>
+    </div>
+
+    <div *ngIf="assessmentReportContent && !editingAssessment && !generatingAssessment" class="report-content">
+      {{ assessmentReportContent }}
+    </div>
+  </div>
+
+  <!-- Consolidado de entrevistas -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Informe consolidado de entrevistas</h2>
+      <div class="header-actions">
+        <button
+          *ngIf="interviewReportContent && !editingInterview"
+          class="btn btn-secondary btn-sm"
+          (click)="editingInterview = true">
+          Editar
+        </button>
+        <button
+          class="btn btn-primary"
+          (click)="generateInterviewReport()"
+          [disabled]="generatingInterview || analyses.length === 0">
+          {{ generatingInterview ? 'Generando...' : (interviewReport ? 'Regenerar con IA' : 'Generar con IA') }}
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="analyses.length === 0" class="empty-state">
+      No hay análisis de entrevistas disponibles. Registre entrevistas y genere análisis primero.
+    </div>
+
+    <div *ngIf="generatingInterview" class="generating-msg">
+      Consolidando análisis de entrevistas con IA...
+    </div>
+
+    <div *ngIf="editingInterview && !generatingInterview">
+      <textarea
+        class="report-editor"
+        [(ngModel)]="interviewReportContent"
+        rows="15">
+      </textarea>
+      <div class="edit-actions">
+        <button class="btn btn-secondary" (click)="editingInterview = false; interviewReportContent = interviewReport?.content || ''">Cancelar</button>
+        <button class="btn btn-primary" (click)="saveInterviewEdit()">Guardar cambios</button>
+      </div>
+    </div>
+
+    <div *ngIf="interviewReportContent && !editingInterview && !generatingInterview" class="report-content">
+      {{ interviewReportContent }}
+    </div>
+  </div>
+</div>

@@ -108,6 +108,13 @@ export const routes: Routes = [
               },
             ],
           },
+          {
+            path: 'subjects/:subjectId/summary',
+            loadComponent: () =>
+              import('./features/subjects/components/subject-summary/subject-summary.component').then(
+                (m) => m.SubjectSummaryComponent
+              ),
+          },
         ],
       },
     ],
