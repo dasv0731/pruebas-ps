@@ -16,7 +16,8 @@
       <span *ngFor="let l of section.legend">{{ l }}</span>
     </div>
 
-    <div class="questions-container">
+    <!-- Opciones numéricas (STAI) -->
+    <div *ngIf="questionType === 'NUMERIC'" class="questions-container">
       <div *ngFor="let q of section.questions" class="question-row">
         <div class="question-text">{{ q.text }}</div>
         <div class="options-group">
@@ -34,6 +35,27 @@
           </label>
         </div>
       </div>
+    </div>
+
+    <!-- Opciones textuales (CDI) -->
+    <div *ngIf="questionType === 'TEXT_OPTIONS'" class="questions-grid">
+      <fieldset *ngFor="let q of section.questions" class="question-item">
+        <div class="question-number">{{ q.index }}.</div>
+        <div class="options-wrapper">
+          <label
+            *ngFor="let opt of q.textOptions; let i = index"
+            class="text-option-label"
+            (click)="selectOption(q.index, i + 1)">
+            <input
+              type="radio"
+              [name]="'q' + q.index"
+              [value]="i + 1"
+              [checked]="isSelected(q.index, i + 1)"
+              (change)="selectOption(q.index, i + 1)">
+            <span>{{ opt }}</span>
+          </label>
+        </div>
+      </fieldset>
     </div>
   </div>
 

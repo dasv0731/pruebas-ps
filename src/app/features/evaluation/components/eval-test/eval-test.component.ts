@@ -7,6 +7,7 @@ interface Question {
   index: number;
   text: string;
   options: number;
+  textOptions?: string[];
 }
 
 interface Section {
@@ -32,6 +33,7 @@ export class EvalTestComponent implements OnInit {
   sections: Section[] = [];
   answers: Record<number, number> = {};
   totalQuestions = 0;
+  questionType = 'NUMERIC';
   loading = true;
   submitting = false;
   error = '';
@@ -101,9 +103,26 @@ export class EvalTestComponent implements OnInit {
       return;
     }
     try {
-      const parsed = JSON.parse(this.assessment.questions);
+      let parsed = this.assessment.questions;
+      // Deshacer doble stringify si es necesario
+      if (typeof parsed === 'string') {
+        parsed = JSON.parse(parsed);
+      }
+      if (typeof parsed === 'string') {
+        parsed = JSON.parse(parsed);
+      }
+
+      console.log('Final parsed:', parsed);
+      console.log('Type:', parsed.type);
+
+      this.questionType = parsed.type || 'NUMERIC';
+
       if (parsed.sections) {
-        this.sections = parsed.sections;
+        this.sections = parsed.sections.map((s: any) => ({
+          ...s,
+          legend: s.legend || [],
+          questions: s.questions || [],
+        }));
       } else if (Array.isArray(parsed)) {
         this.sections = [{
           title: this.assessment.name,
@@ -112,7 +131,8 @@ export class EvalTestComponent implements OnInit {
           questions: parsed,
         }];
       }
-    } catch {
+    } catch (e) {
+      console.error('Parse error:', e);
       this.sections = [];
     }
   }

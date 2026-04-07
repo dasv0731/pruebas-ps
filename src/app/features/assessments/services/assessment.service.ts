@@ -44,9 +44,17 @@ export class AssessmentService {
   }
 
   async getAssessment(id: string) {
+    console.log('getAssessment called with id:', id);
+    // Intentar con get
     const { data, errors } = await client.models.Assessment.get({ id });
-    if (errors) throw new Error(errors.map((e) => e.message).join(', '));
-    return data;
+    console.log('getAssessment result:', data, 'errors:', errors);
+    if (data) return data;
+    
+    // Fallback: buscar en la lista
+    const listResult = await client.models.Assessment.list();
+    console.log('All assessments:', listResult.data?.length);
+    const found = listResult.data?.find((a: any) => a.id === id);
+    return found || null;
   }
 
   async createAssessment(input: AssessmentInput) {
@@ -230,7 +238,79 @@ export class AssessmentService {
         optionsPerQuestion: 3,
         scoringType: 'LOCAL' as const,
         isActive: true,
-        questions: JSON.stringify({ sections: [] }),
+        questions: JSON.stringify({ sections: [
+            {
+        name: 'CDI - Inventario de Depresión Infantil',
+        shortName: 'CDI',
+        description: 'Evalúa síntomas depresivos en niños de 7 a 17 años',
+        totalQuestions: 27,
+        optionsPerQuestion: 3,
+        scoringType: 'LOCAL' as const,
+        isActive: true,
+        questions: JSON.stringify({
+          type: 'TEXT_OPTIONS',
+          instructions: 'Este es un cuestionario que tiene oraciones que están en grupos de tres. Escoge en cada grupo una oración, la que mejor diga cómo te has portado, cómo te has sentido en las ÚLTIMAS DOS SEMANAS, luego coloca una marca en los espacios que correspondan. No hay respuesta correcta ni falsa, solo trata de contestar con la mayor sinceridad, lo que es cierto para ti.',
+          populationNote: 'Población infantil de 7-17 años. Cuestionario autoadministrado.',
+          cutoffScore: 19,
+          cutoffDescription: 'Puntuación de 19 o superior indica posible trastorno depresivo',
+          subscales: {
+            disforia: { name: 'Disforia (D)', description: 'Ánimo triste, pesimismo', items: [1,2,3,4,6,10,11,12,16,17,18,19,20,21,22,26,27] },
+            autoestima: { name: 'Autoestima Negativa (A)', description: 'Sentimientos de inutilidad, ineficacia', items: [5,7,8,9,13,14,15,23,24,25] },
+          },
+          percentileRanges: [
+            { min: 0, max: 25, label: 'Sin síntomas depresivos significativos' },
+            { min: 26, max: 74, label: 'Presencia de síntomas leves a moderados' },
+            { min: 75, max: 89, label: 'Presencia de síntomas marcados o severos' },
+            { min: 90, max: 99, label: 'Presencia de síntomas en grado máximo' },
+          ],
+          scoring: [
+            [0, 1, 2],
+            [2, 1, 0],
+            [0, 1, 2],
+            null, null, null, null, null, null, null,
+            null, null, null, null, null, null, null,
+            null, null, null, null, null, null, null,
+            null, null, null
+          ],
+          sections: [
+            {
+              title: 'CDI - Inventario de Depresión Infantil',
+              instructions: 'Este es un cuestionario que tiene oraciones que están en grupos de tres. Escoge en cada grupo una oración, la que mejor diga cómo te has portado, cómo te has sentido en las ÚLTIMAS DOS SEMANAS. No hay respuesta correcta ni falsa, solo trata de contestar con la mayor sinceridad.',
+              legend: [],
+              questions: [
+                { index: 1, text: '', options: 3, textOptions: ["Estoy triste de vez en cuando.", "Estoy triste muchas veces.", "Estoy triste siempre."] },
+                { index: 2, text: '', options: 3, textOptions: ["Nunca me saldrá nada bien.", "No estoy seguro de si las cosas me saldrán bien.", "Las cosas me saldrán bien."] },
+                { index: 3, text: '', options: 3, textOptions: ["Hago bien la mayoría de las cosas.", "Hago mal muchas cosas.", "Todo lo hago mal."] },
+                { index: 4, text: '', options: 3, textOptions: ["Me divierten muchas cosas.", "Me divierten algunas cosas.", "Nada me divierte."] },
+                { index: 5, text: '', options: 3, textOptions: ["Soy malo siempre.", "Soy malo muchas veces.", "Soy malo algunas veces."] },
+                { index: 6, text: '', options: 3, textOptions: ["A veces pienso que me pueden ocurrir cosas malas.", "Me preocupa que me ocurran cosas malas.", "Estoy seguro de que me van a ocurrir cosas terribles."] },
+                { index: 7, text: '', options: 3, textOptions: ["Me odio.", "No me gusta como soy.", "Me gusta como soy."] },
+                { index: 8, text: '', options: 3, textOptions: ["Todas las cosas malas son culpa mía.", "Muchas cosas malas son culpa mía.", "Generalmente no tengo la culpa de que ocurran cosas malas."] },
+                { index: 9, text: '', options: 3, textOptions: ["No pienso en matarme.", "Pienso en matarme pero no lo haría.", "Quiero matarme."] },
+                { index: 10, text: '', options: 3, textOptions: ["Tengo ganas de llorar todos los días.", "Tengo ganas de llorar muchos días.", "Tengo ganas de llorar de cuando en cuando."] },
+                { index: 11, text: '', options: 3, textOptions: ["Las cosas me preocupan siempre.", "Las cosas me preocupan muchas veces.", "Las cosas me preocupan de cuando en cuando."] },
+                { index: 12, text: '', options: 3, textOptions: ["Me gusta estar con la gente.", "Muy a menudo no me gusta estar con la gente.", "No quiero en absoluto estar con la gente."] },
+                { index: 13, text: '', options: 3, textOptions: ["No puedo decidirme.", "Me cuesta decidirme.", "Me decido fácilmente."] },
+                { index: 14, text: '', options: 3, textOptions: ["Tengo buen aspecto.", "Hay algunas cosas de mi aspecto que no me gustan.", "Soy feo."] },
+                { index: 15, text: '', options: 3, textOptions: ["Siempre me cuesta ponerme a hacer los deberes.", "Muchas veces me cuesta ponerme a hacer los deberes.", "No me cuesta ponerme a hacer los deberes."] },
+                { index: 16, text: '', options: 3, textOptions: ["Todas las noches me cuesta dormirme.", "Muchas noches me cuesta dormirme.", "Duermo muy bien."] },
+                { index: 17, text: '', options: 3, textOptions: ["Estoy cansado de cuando en cuando.", "Estoy cansado muchos días.", "Estoy cansado siempre."] },
+                { index: 18, text: '', options: 3, textOptions: ["La mayoría de los días no tengo ganas de comer.", "Muchos días no tengo ganas de comer.", "Como muy bien."] },
+                { index: 19, text: '', options: 3, textOptions: ["No me preocupa el dolor ni la enfermedad.", "Muchas veces me preocupa el dolor y la enfermedad.", "Siempre me preocupa el dolor y la enfermedad."] },
+                { index: 20, text: '', options: 3, textOptions: ["Nunca me siento solo.", "Me siento solo muchas veces.", "Me siento solo siempre."] },
+                { index: 21, text: '', options: 3, textOptions: ["Nunca me divierto en el colegio.", "Me divierto en el colegio sólo de vez en cuando.", "Me divierto en el colegio muchas veces."] },
+                { index: 22, text: '', options: 3, textOptions: ["Tengo muchos amigos.", "Tengo muchos amigos pero me gustaría tener más.", "No tengo amigos."] },
+                { index: 23, text: '', options: 3, textOptions: ["Mi trabajo en el colegio es bueno.", "Mi trabajo en el colegio no es tan bueno como antes.", "Llevo muy mal las asignaturas que antes llevaba bien."] },
+                { index: 24, text: '', options: 3, textOptions: ["Nunca podré ser tan bueno como otros niños.", "Si quiero puedo ser tan bueno como otros niños.", "Soy tan bueno como otros niños."] },
+                { index: 25, text: '', options: 3, textOptions: ["Nadie me quiere.", "No estoy seguro de que alguien me quiera.", "Estoy seguro de que alguien me quiere."] },
+                { index: 26, text: '', options: 3, textOptions: ["Generalmente hago lo que me dicen.", "Muchas veces no hago lo que me dicen.", "Nunca hago lo que me dicen."] },
+                { index: 27, text: '', options: 3, textOptions: ["Me llevo bien con la gente.", "Me peleo muchas veces.", "Me peleo siempre."] },
+              ],
+            },
+          ],
+        }),
+      },
+        ] }),
       },
       {
         name: 'CUIDA - Cuestionario para la Evaluación de Adoptantes',

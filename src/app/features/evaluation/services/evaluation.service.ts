@@ -110,11 +110,18 @@ export class EvaluationService {
   }
 
   async getAssessmentPublic(assessmentId: string) {
-    const { data, errors } = await (publicClient.models as any).Assessment.get({
-      id: assessmentId,
-    });
-    if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
-    return data;
+    try {
+      console.log('Fetching assessment with id:', assessmentId);
+      const { data, errors } = await (publicClient.models as any).Assessment.list({
+        filter: { id: { eq: assessmentId } },
+      });
+      console.log('Assessment list result:', data, 'Errors:', errors);
+      if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
+      return data && data.length > 0 ? data[0] : null;
+    } catch (err: any) {
+      console.error('Assessment fetch error:', err);
+      return null;
+    }
   }
 
   async saveAnswersPublic(sessionId: string, answers: string, status: string) {

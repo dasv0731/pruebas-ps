@@ -8,6 +8,7 @@ interface Question {
   index: number;
   text: string;
   options: number;
+  textOptions?: string[];
 }
 
 interface Section {
@@ -35,6 +36,7 @@ export class AssessmentApplyComponent implements OnInit {
   totalQuestions = 0;
   loading = true;
   submitting = false;
+  questionType = 'NUMERIC';
   error = '';
   isTestMode = false;
 
@@ -56,13 +58,17 @@ export class AssessmentApplyComponent implements OnInit {
       this.loading = true;
       this.error = '';
 
+      console.log('Loading session:', this.sessionId);
       this.session = await this.assessmentService.getSession(this.sessionId);
+      console.log('Session:', this.session);
       if (!this.session) {
         this.error = 'Sesión no encontrada';
         return;
       }
 
+      console.log('Loading assessment:', this.session.assessmentId);
       this.assessment = await this.assessmentService.getAssessment(this.session.assessmentId);
+      console.log('Assessment:', this.assessment);
       if (!this.assessment) {
         this.error = 'Prueba no encontrada';
         return;
@@ -70,8 +76,10 @@ export class AssessmentApplyComponent implements OnInit {
 
       this.parseQuestions();
       this.totalQuestions = this.sections.reduce((sum, s) => sum + s.questions.length, 0);
+      console.log('Total questions:', this.totalQuestions, 'Sections:', this.sections.length);
 
     } catch (err: any) {
+      console.error('LoadData error:', err);
       this.error = err.message || 'Error al cargar la sesión';
     } finally {
       this.loading = false;
@@ -83,11 +91,27 @@ export class AssessmentApplyComponent implements OnInit {
       this.sections = [];
       return;
     }
-
     try {
-      const parsed = JSON.parse(this.assessment.questions);
+      let parsed = this.assessment.questions;
+      // Deshacer doble stringify si es necesario
+      if (typeof parsed === 'string') {
+        parsed = JSON.parse(parsed);
+      }
+      if (typeof parsed === 'string') {
+        parsed = JSON.parse(parsed);
+      }
+
+      console.log('Final parsed:', parsed);
+      console.log('Type:', parsed.type);
+
+      this.questionType = parsed.type || 'NUMERIC';
+
       if (parsed.sections) {
-        this.sections = parsed.sections;
+        this.sections = parsed.sections.map((s: any) => ({
+          ...s,
+          legend: s.legend || [],
+          questions: s.questions || [],
+        }));
       } else if (Array.isArray(parsed)) {
         this.sections = [{
           title: this.assessment.name,
@@ -96,7 +120,8 @@ export class AssessmentApplyComponent implements OnInit {
           questions: parsed,
         }];
       }
-    } catch {
+    } catch (e) {
+      console.error('Parse error:', e);
       this.sections = [];
     }
   }

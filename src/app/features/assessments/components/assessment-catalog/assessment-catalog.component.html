@@ -126,8 +126,7 @@
   </div>
 
   <!-- Catálogo (oculto por defecto, para seed) -->
-  <div class="card" *ngIf="assessments.length === 0">
-    <div class="empty-state">No hay pruebas disponibles en el catálogo.</div>
+  <div class="card">
     <button class="btn btn-secondary" (click)="seedData()" style="margin-top: 12px;">
       Recargar catálogo de pruebas
     </button>

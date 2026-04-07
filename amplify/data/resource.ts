@@ -121,7 +121,7 @@ const schema = a.schema({
   // ──────────────────────────────────────────────
   // ASSESSMENT (Catálogo de pruebas - GLOBAL)
   // ──────────────────────────────────────────────
-
+ 
   AssessmentQuestion: a.customType({
     index: a.integer().required(),
     text: a.string().required(),
@@ -140,9 +140,8 @@ const schema = a.schema({
       isActive: a.boolean().required(),
     })
     .authorization((allow) => [
-      allow.authenticated().to(['read']),
+      allow.authenticated(),
       allow.publicApiKey().to(['read']),
-      allow.owner(),
     ]),
 
   // ──────────────────────────────────────────────
