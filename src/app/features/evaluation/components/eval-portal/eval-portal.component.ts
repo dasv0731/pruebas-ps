@@ -17,6 +17,7 @@ export class EvalPortalComponent implements OnInit {
   assessmentSessions: any[] = [];
   loading = false;
   loadingTests = false;
+  initialLoading = true;
   error = '';
   codeValidated = false;
   allCompleted = false;
@@ -26,14 +27,16 @@ export class EvalPortalComponent implements OnInit {
     private router: Router,
     private evaluationService: EvaluationService
   ) {}
-
-  ngOnInit() {
+  
+  async ngOnInit() {
     const codeParam = this.route.snapshot.queryParams['code'];
     if (codeParam) {
       this.code = codeParam;
-      this.validateCode();
+      await this.validateCode();
     }
-  }
+    this.initialLoading = false;
+  }     
+
 
   async validateCode() {
     if (!this.code || this.code.length !== 6) {

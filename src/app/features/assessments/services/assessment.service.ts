@@ -89,6 +89,7 @@ export class AssessmentService {
   // ── SCORING ──
 
   async getScoring(sessionId: string) {
+    // Buscar primero con autenticación del owner
     const { data, errors } = await client.models.AssessmentScoring.list({
       filter: {
         sessionId: { eq: sessionId },
@@ -96,7 +97,18 @@ export class AssessmentService {
       },
     });
     if (errors) throw new Error(errors.map((e) => e.message).join(', '));
-    return data.length > 0 ? data[0] : null;
+    if (data.length > 0) return data[0];
+
+    // Si no encuentra, buscar con API key (scoring creado por el evaluado)
+    const publicClient = generateClient<Schema>({ authMode: 'apiKey' });
+    const pubResult = await publicClient.models.AssessmentScoring.list({
+      filter: {
+        sessionId: { eq: sessionId },
+        isCurrent: { eq: true },
+      },
+    });
+    if (pubResult.errors) throw new Error(pubResult.errors.map((e) => e.message).join(', '));
+    return pubResult.data.length > 0 ? pubResult.data[0] : null;
   }
 
   async scoreSession(sessionId: string, answers: number[]): Promise<number> {

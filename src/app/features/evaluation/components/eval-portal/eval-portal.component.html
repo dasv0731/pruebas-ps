@@ -1,10 +1,19 @@
 <div class="eval-container">
-  <div class="eval-header">
+  <!-- Loading inicial -->
+  <div *ngIf="initialLoading">
+    <div class="eval-header">
+      <h1>Evaluación Psicológica</h1>
+    </div>
+    <div class="loading">Cargando...</div>
+  </div>
+
+  <!-- Header (cuando no está en loading inicial) -->
+  <div *ngIf="!initialLoading" class="eval-header">
     <h1>Evaluación Psicológica</h1>
   </div>
 
   <!-- Ingreso de código -->
-  <div *ngIf="!codeValidated" class="code-section">
+  <div *ngIf="!codeValidated && !initialLoading" class="code-section">
     <div class="code-card">
       <h2>Ingrese su código de acceso</h2>
       <p>Su psicóloga le proporcionará un código de 6 dígitos para acceder a sus pruebas.</p>
@@ -31,7 +40,7 @@
   </div>
 
   <!-- Portal de pruebas -->
-  <div *ngIf="codeValidated" class="tests-section">
+  <div *ngIf="codeValidated && !initialLoading" class="tests-section">
     <div class="welcome-card">
       <h2>Bienvenido/a, {{ session.subjectName }}</h2>
       <p>A continuación encontrará las pruebas psicológicas que debe completar. Seleccione una prueba para comenzar.</p>
