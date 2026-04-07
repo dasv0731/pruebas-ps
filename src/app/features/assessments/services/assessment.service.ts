@@ -233,15 +233,6 @@ export class AssessmentService {
       {
         name: 'CDI - Inventario de Depresión Infantil',
         shortName: 'CDI',
-        description: 'Evalúa síntomas depresivos en niños',
-        totalQuestions: 20,
-        optionsPerQuestion: 3,
-        scoringType: 'LOCAL' as const,
-        isActive: true,
-        questions: JSON.stringify({ sections: [
-            {
-        name: 'CDI - Inventario de Depresión Infantil',
-        shortName: 'CDI',
         description: 'Evalúa síntomas depresivos en niños de 7 a 17 años',
         totalQuestions: 27,
         optionsPerQuestion: 3,
@@ -249,20 +240,13 @@ export class AssessmentService {
         isActive: true,
         questions: JSON.stringify({
           type: 'TEXT_OPTIONS',
-          instructions: 'Este es un cuestionario que tiene oraciones que están en grupos de tres. Escoge en cada grupo una oración, la que mejor diga cómo te has portado, cómo te has sentido en las ÚLTIMAS DOS SEMANAS, luego coloca una marca en los espacios que correspondan. No hay respuesta correcta ni falsa, solo trata de contestar con la mayor sinceridad, lo que es cierto para ti.',
-          populationNote: 'Población infantil de 7-17 años. Cuestionario autoadministrado.',
+          instructions: 'Este es un cuestionario que tiene oraciones que están en grupos de tres. Escoge en cada grupo una oración, la que mejor diga cómo te has portado, cómo te has sentido en las ÚLTIMAS DOS SEMANAS.',
           cutoffScore: 19,
           cutoffDescription: 'Puntuación de 19 o superior indica posible trastorno depresivo',
           subscales: {
             disforia: { name: 'Disforia (D)', description: 'Ánimo triste, pesimismo', items: [1,2,3,4,6,10,11,12,16,17,18,19,20,21,22,26,27] },
             autoestima: { name: 'Autoestima Negativa (A)', description: 'Sentimientos de inutilidad, ineficacia', items: [5,7,8,9,13,14,15,23,24,25] },
           },
-          percentileRanges: [
-            { min: 0, max: 25, label: 'Sin síntomas depresivos significativos' },
-            { min: 26, max: 74, label: 'Presencia de síntomas leves a moderados' },
-            { min: 75, max: 89, label: 'Presencia de síntomas marcados o severos' },
-            { min: 90, max: 99, label: 'Presencia de síntomas en grado máximo' },
-          ],
           scoring: [
             [0, 1, 2],
             [2, 1, 0],
@@ -275,7 +259,7 @@ export class AssessmentService {
           sections: [
             {
               title: 'CDI - Inventario de Depresión Infantil',
-              instructions: 'Este es un cuestionario que tiene oraciones que están en grupos de tres. Escoge en cada grupo una oración, la que mejor diga cómo te has portado, cómo te has sentido en las ÚLTIMAS DOS SEMANAS. No hay respuesta correcta ni falsa, solo trata de contestar con la mayor sinceridad.',
+              instructions: 'Escoge en cada grupo una oración, la que mejor diga cómo te has portado, cómo te has sentido en las ÚLTIMAS DOS SEMANAS. No hay respuesta correcta ni falsa.',
               legend: [],
               questions: [
                 { index: 1, text: '', options: 3, textOptions: ["Estoy triste de vez en cuando.", "Estoy triste muchas veces.", "Estoy triste siempre."] },
@@ -309,8 +293,6 @@ export class AssessmentService {
             },
           ],
         }),
-      },
-        ] }),
       },
       {
         name: 'CUIDA - Cuestionario para la Evaluación de Adoptantes',
