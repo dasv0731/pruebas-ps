@@ -3,20 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AssessmentService } from '../../services/assessment.service';
-
-interface Question {
-  index: number;
-  text: string;
-  options: number;
-  textOptions?: string[];
-}
-
-interface Section {
-  title: string;
-  instructions: string;
-  legend: string[];
-  questions: Question[];
-}
+import { TestLoaderService } from '../../services/test-loader.service';
+import { TestSection } from '../../models/test.interfaces';
 
 @Component({
   selector: 'app-assessment-apply',
@@ -31,19 +19,22 @@ export class AssessmentApplyComponent implements OnInit {
   sessionId = '';
   session: any = null;
   assessment: any = null;
-  sections: Section[] = [];
+  sections: TestSection[] = [];
   answers: Record<number, number> = {};
   totalQuestions = 0;
+  highlightUnanswered = false;
+  questionType = 'NUMERIC';
+  optionLabels: string[] = [];
   loading = true;
   submitting = false;
-  questionType = 'NUMERIC';
   error = '';
-  isTestMode = false;
+  shortName = '';
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private assessmentService: AssessmentService
+    private assessmentService: AssessmentService,
+    private testLoader: TestLoaderService
   ) {}
 
   async ngOnInit() {
@@ -58,76 +49,66 @@ export class AssessmentApplyComponent implements OnInit {
       this.loading = true;
       this.error = '';
 
-      console.log('Loading session:', this.sessionId);
       this.session = await this.assessmentService.getSession(this.sessionId);
-      console.log('Session:', this.session);
       if (!this.session) {
         this.error = 'Sesión no encontrada';
         return;
       }
 
-      console.log('Loading assessment:', this.session.assessmentId);
       this.assessment = await this.assessmentService.getAssessment(this.session.assessmentId);
-      console.log('Assessment:', this.assessment);
       if (!this.assessment) {
         this.error = 'Prueba no encontrada';
         return;
       }
 
-      this.parseQuestions();
-      this.totalQuestions = this.sections.reduce((sum, s) => sum + s.questions.length, 0);
-      console.log('Total questions:', this.totalQuestions, 'Sections:', this.sections.length);
+      // Cargar desde el registro local
+      this.shortName = this.assessment.shortName;
+      const config = this.testLoader.getConfig(this.shortName);
+
+      if (config) {
+        this.sections = config.sections;
+        this.questionType = config.questionType;
+        this.totalQuestions = this.testLoader.getTotalQuestions(this.shortName);
+        this.optionLabels = config.optionLabels || [];
+      } else {
+        // Fallback: parsear del JSON de la DB
+        this.parseQuestionsFromDB();
+      }
 
     } catch (err: any) {
-      console.error('LoadData error:', err);
       this.error = err.message || 'Error al cargar la sesión';
     } finally {
       this.loading = false;
     }
   }
 
-  parseQuestions() {
-    if (!this.assessment.questions) {
-      this.sections = [];
-      return;
-    }
+  parseQuestionsFromDB() {
+    if (!this.assessment.questions) return;
     try {
       let parsed = this.assessment.questions;
-      // Deshacer doble stringify si es necesario
-      if (typeof parsed === 'string') {
-        parsed = JSON.parse(parsed);
-      }
-      if (typeof parsed === 'string') {
-        parsed = JSON.parse(parsed);
-      }
-
-      console.log('Final parsed:', parsed);
-      console.log('Type:', parsed.type);
+      if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+      if (typeof parsed === 'string') parsed = JSON.parse(parsed);
 
       this.questionType = parsed.type || 'NUMERIC';
-
       if (parsed.sections) {
         this.sections = parsed.sections.map((s: any) => ({
           ...s,
           legend: s.legend || [],
           questions: s.questions || [],
         }));
-      } else if (Array.isArray(parsed)) {
-        this.sections = [{
-          title: this.assessment.name,
-          instructions: '',
-          legend: [],
-          questions: parsed,
-        }];
       }
-    } catch (e) {
-      console.error('Parse error:', e);
+      this.totalQuestions = this.sections.reduce((sum, s) => sum + s.questions.length, 0);
+    } catch {
       this.sections = [];
     }
   }
 
   selectOption(questionIndex: number, value: number) {
     this.answers[questionIndex] = value;
+    if (this.highlightUnanswered && this.isComplete()) {
+      this.highlightUnanswered = false;
+      this.error = '';
+    }
   }
 
   isSelected(questionIndex: number, value: number): boolean {
@@ -157,15 +138,21 @@ export class AssessmentApplyComponent implements OnInit {
   async onSubmit() {
     if (!this.isComplete()) {
       const unanswered = this.getUnanswered();
-      this.error = `Faltan ${unanswered.length} preguntas por responder: ${unanswered.slice(0, 5).join(', ')}${unanswered.length > 5 ? '...' : ''}`;
+      this.error = `Faltan ${unanswered.length} preguntas por responder.`;
+      this.highlightUnanswered = true;
+      setTimeout(() => {
+        const el = document.querySelector('.unanswered');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
       return;
     }
 
     try {
       this.submitting = true;
       this.error = '';
+      this.highlightUnanswered = false;
 
-      const answersArray = [];
+      const answersArray: number[] = [];
       for (let i = 1; i <= this.totalQuestions; i++) {
         answersArray.push(this.answers[i] || 0);
       }
@@ -176,7 +163,7 @@ export class AssessmentApplyComponent implements OnInit {
         completedAt: new Date().toISOString(),
       });
 
-      await this.assessmentService.scoreSession(this.sessionId, answersArray);
+      await this.assessmentService.scoreSession(this.sessionId, answersArray, this.shortName);
 
       this.router.navigate([
         '/cases', this.caseId,

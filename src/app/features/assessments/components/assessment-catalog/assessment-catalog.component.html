@@ -19,7 +19,7 @@
           <input
             type="checkbox"
             [checked]="isAssessmentSelected(a.id)"
-            [disabled]="isAssessmentCompleted(a.id)"
+            [disabled]="isAssessmentSelected(a.id) || hasActiveEvaluationSession()"
             (change)="toggleAssessment(a, $event)"
           />
           <div class="select-info">

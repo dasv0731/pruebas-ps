@@ -2,20 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { EvaluationService } from '../../services/evaluation.service';
-
-interface Question {
-  index: number;
-  text: string;
-  options: number;
-  textOptions?: string[];
-}
-
-interface Section {
-  title: string;
-  instructions: string;
-  legend: string[];
-  questions: Question[];
-}
+import { TestLoaderService } from '../../../assessments/services/test-loader.service';
+import { TestSection } from '../../../assessments/models/test.interfaces';
 
 @Component({
   selector: 'app-eval-test',
@@ -30,10 +18,13 @@ export class EvalTestComponent implements OnInit {
   code = '';
   session: any = null;
   assessment: any = null;
-  sections: Section[] = [];
+  sections: TestSection[] = [];
   answers: Record<number, number> = {};
   totalQuestions = 0;
+  highlightUnanswered = false;
   questionType = 'NUMERIC';
+  optionLabels: string[] = [];
+  shortName = '';
   loading = true;
   submitting = false;
   error = '';
@@ -41,7 +32,8 @@ export class EvalTestComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private evaluationService: EvaluationService
+    private evaluationService: EvaluationService,
+    private testLoader: TestLoaderService
   ) {}
 
   async ngOnInit() {
@@ -63,7 +55,6 @@ export class EvalTestComponent implements OnInit {
       this.loading = true;
       this.error = '';
 
-      // Validar que la sesión sigue activa
       const evalSession = await this.evaluationService.validateCode(this.code);
       if (!evalSession) {
         this.error = 'La sesión ha expirado o no es válida';
@@ -81,14 +72,24 @@ export class EvalTestComponent implements OnInit {
         return;
       }
 
-      this.assessment = await this.evaluationService.getAssessmentPublic(this.session.assessmentId);
-      if (!this.assessment) {
-        this.error = 'Datos de la prueba no encontrados';
-        return;
-      }
+      // Intentar cargar desde el registro local por shortName
+      this.shortName = this.extractShortName(this.session.assessmentName);
+      const config = this.testLoader.getConfig(this.shortName);
 
-      this.parseQuestions();
-      this.totalQuestions = this.sections.reduce((sum, s) => sum + s.questions.length, 0);
+      if (config) {
+        this.sections = config.sections;
+        this.questionType = config.questionType;
+        this.totalQuestions = this.testLoader.getTotalQuestions(this.shortName);
+        this.optionLabels = config.optionLabels || [];
+      } else {
+        // Fallback: cargar desde DB
+        this.assessment = await this.evaluationService.getAssessmentPublic(this.session.assessmentId);
+        if (!this.assessment) {
+          this.error = 'Datos de la prueba no encontrados';
+          return;
+        }
+        this.parseQuestionsFromDB();
+      }
 
     } catch (err: any) {
       this.error = err.message || 'Error al cargar la prueba';
@@ -97,48 +98,39 @@ export class EvalTestComponent implements OnInit {
     }
   }
 
-  parseQuestions() {
-    if (!this.assessment.questions) {
-      this.sections = [];
-      return;
-    }
+  extractShortName(assessmentName: string): string {
+    // Extraer shortName del nombre: "STAI - Inventario..." → "STAI"
+    const match = assessmentName.match(/^(\w+)\s*-/);
+    return match ? match[1] : assessmentName;
+  }
+
+  parseQuestionsFromDB() {
+    if (!this.assessment?.questions) return;
     try {
       let parsed = this.assessment.questions;
-      // Deshacer doble stringify si es necesario
-      if (typeof parsed === 'string') {
-        parsed = JSON.parse(parsed);
-      }
-      if (typeof parsed === 'string') {
-        parsed = JSON.parse(parsed);
-      }
-
-      console.log('Final parsed:', parsed);
-      console.log('Type:', parsed.type);
+      if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+      if (typeof parsed === 'string') parsed = JSON.parse(parsed);
 
       this.questionType = parsed.type || 'NUMERIC';
-
       if (parsed.sections) {
         this.sections = parsed.sections.map((s: any) => ({
           ...s,
           legend: s.legend || [],
           questions: s.questions || [],
         }));
-      } else if (Array.isArray(parsed)) {
-        this.sections = [{
-          title: this.assessment.name,
-          instructions: '',
-          legend: [],
-          questions: parsed,
-        }];
       }
-    } catch (e) {
-      console.error('Parse error:', e);
+      this.totalQuestions = this.sections.reduce((sum, s) => sum + s.questions.length, 0);
+    } catch {
       this.sections = [];
     }
   }
 
   selectOption(questionIndex: number, value: number) {
     this.answers[questionIndex] = value;
+    if (this.highlightUnanswered && this.isComplete()) {
+      this.highlightUnanswered = false;
+      this.error = '';
+    }
   }
 
   isSelected(questionIndex: number, value: number): boolean {
@@ -168,13 +160,20 @@ export class EvalTestComponent implements OnInit {
   async onSubmit() {
     if (!this.isComplete()) {
       const unanswered = this.getUnanswered();
-      this.error = `Faltan ${unanswered.length} preguntas por responder: ${unanswered.slice(0, 5).join(', ')}${unanswered.length > 5 ? '...' : ''}`;
+      this.error = `Faltan ${unanswered.length} preguntas por responder.`;
+      this.highlightUnanswered = true;
+      // Scroll al primer sin responder
+      setTimeout(() => {
+        const el = document.querySelector('.unanswered');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
       return;
     }
 
     try {
       this.submitting = true;
       this.error = '';
+      this.highlightUnanswered = false;
 
       const answersArray: number[] = [];
       for (let i = 1; i <= this.totalQuestions; i++) {

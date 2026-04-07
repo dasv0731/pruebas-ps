@@ -5,12 +5,14 @@
 
   <div *ngIf="loading" class="loading">Cargando prueba...</div>
 
-  <div *ngIf="error" class="error-section">
+  <!-- Error crítico (no se pudo cargar la prueba) -->
+  <div *ngIf="error && sections.length === 0 && !loading" class="error-section">
     <div class="error-msg">{{ error }}</div>
   </div>
 
-  <div *ngIf="!loading && assessment && !error" class="test-content">
-    <h2>{{ assessment.name }}</h2>
+  <div *ngIf="!loading && sections.length > 0" class="test-content">
+
+    <h2>{{ assessment?.name || session?.assessmentName }}</h2>
 
     <div *ngFor="let section of sections" class="section">
       <h3>{{ section.title }}</h3>
@@ -23,16 +25,17 @@
         <span *ngFor="let l of section.legend">{{ l }}</span>
       </div>
 
-      <!-- Opciones numéricas (STAI) -->
+      <!-- Opciones numéricas (STAI, TAMAI) -->
       <div *ngIf="questionType === 'NUMERIC'" class="questions-container">
-        <div *ngFor="let q of section.questions" class="question-row">
+        <div *ngFor="let q of section.questions" class="question-row"
+          [ngClass]="{ 'unanswered': highlightUnanswered && answers[q.index] === undefined }">
           <div class="question-text">{{ q.text }}</div>
           <div class="options-group">
             <label
               *ngFor="let opt of [].constructor(q.options); let i = index"
               class="option-label"
               (click)="selectOption(q.index, i + 1)">
-              <span>{{ i + 1 }}</span>
+              <span>{{ optionLabels.length > 0 ? optionLabels[i] : (i + 1) }}</span>
               <input
                 type="radio"
                 [name]="'q' + q.index"
@@ -46,7 +49,8 @@
 
       <!-- Opciones textuales (CDI) -->
       <div *ngIf="questionType === 'TEXT_OPTIONS'" class="questions-grid">
-        <fieldset *ngFor="let q of section.questions" class="question-item">
+        <fieldset *ngFor="let q of section.questions" class="question-item"
+          [ngClass]="{ 'unanswered': highlightUnanswered && answers[q.index] === undefined }">
           <div class="question-number">{{ q.index }}.</div>
           <div class="options-wrapper">
             <label
@@ -70,7 +74,7 @@
       <span>{{ getAnsweredCount() }} de {{ totalQuestions }} respondidas</span>
     </div>
 
-    <div *ngIf="error" class="error-msg" style="margin-bottom: 16px;">{{ error }}</div>
+    <div *ngIf="error" class="error-msg validation-error">{{ error }}</div>
 
     <button
       class="submit-btn"

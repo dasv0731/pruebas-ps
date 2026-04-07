@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AssessmentService } from '../../services/assessment.service';
@@ -12,7 +12,7 @@ import { EvaluationService } from '../../../evaluation/services/evaluation.servi
   templateUrl: './assessment-catalog.component.html',
   styleUrl: './assessment-catalog.component.scss',
 })
-export class AssessmentCatalogComponent implements OnInit {
+export class AssessmentCatalogComponent implements OnInit, OnDestroy {
   caseId = '';
   subjectId = '';
   subject: any = null;
@@ -32,10 +32,39 @@ export class AssessmentCatalogComponent implements OnInit {
     private evaluationService: EvaluationService
   ) {}
 
+  private pollingInterval: any = null;
+
   async ngOnInit() {
     this.caseId = this.route.snapshot.params['caseId'];
     this.subjectId = this.route.snapshot.params['subjectId'];
     await this.loadData();
+    this.startPolling();
+  }
+
+  ngOnDestroy() {
+    this.stopPolling();
+  }
+
+  private startPolling() {
+    this.pollingInterval = setInterval(async () => {
+      if (this.evaluationSession && this.evaluationSession.status === 'ACTIVE') {
+        const previousSessions = JSON.stringify(this.sessions.map((s: any) => s.status));
+        this.sessions = await this.assessmentService.listSessionsBySubject(this.subjectId);
+        const currentSessions = JSON.stringify(this.sessions.map((s: any) => s.status));
+        
+        if (previousSessions !== currentSessions) {
+          // Algo cambió, recargar sesión de evaluación también
+          this.evaluationSession = await this.evaluationService.getEvaluationSessionBySubject(this.subjectId);
+        }
+      }
+    }, 5000); // Cada 5 segundos
+  }
+
+  private stopPolling() {
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
+    }
   }
 
   async loadData() {
@@ -242,5 +271,10 @@ export class AssessmentCatalogComponent implements OnInit {
 
   goBack() {
     this.router.navigate(['/cases', this.caseId]);
+  }
+
+  hasActiveEvaluationSession(): boolean {
+    return this.evaluationSession && 
+      (this.evaluationSession.status === 'ACTIVE' || this.evaluationSession.status === 'PAUSED');
   }
 }
