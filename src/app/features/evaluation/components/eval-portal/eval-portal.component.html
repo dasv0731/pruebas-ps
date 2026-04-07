@@ -1,0 +1,80 @@
+<div class="eval-container">
+  <div class="eval-header">
+    <h1>Evaluación Psicológica</h1>
+  </div>
+
+  <!-- Ingreso de código -->
+  <div *ngIf="!codeValidated" class="code-section">
+    <div class="code-card">
+      <h2>Ingrese su código de acceso</h2>
+      <p>Su psicóloga le proporcionará un código de 6 dígitos para acceder a sus pruebas.</p>
+
+      <div *ngIf="error" class="error-msg">{{ error }}</div>
+
+      <div class="code-input-group">
+        <input
+          type="text"
+          [(ngModel)]="code"
+          maxlength="6"
+          placeholder="000000"
+          class="code-input"
+          (keyup.enter)="validateCode()"
+        />
+        <button
+          class="btn-access"
+          (click)="validateCode()"
+          [disabled]="loading">
+          {{ loading ? 'Verificando...' : 'Acceder' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Portal de pruebas -->
+  <div *ngIf="codeValidated" class="tests-section">
+    <div class="welcome-card">
+      <h2>Bienvenido/a, {{ session.subjectName }}</h2>
+      <p>A continuación encontrará las pruebas psicológicas que debe completar. Seleccione una prueba para comenzar.</p>
+    </div>
+
+    <div *ngIf="error" class="error-msg">{{ error }}</div>
+
+    <div *ngIf="loadingTests" class="loading">Cargando pruebas...</div>
+
+    <div *ngIf="!loadingTests" class="tests-list">
+      <div *ngFor="let s of assessmentSessions" class="test-card" [ngClass]="{ 'test-completed': !isTestAvailable(s) }">
+        <div class="test-info">
+          <h3>{{ s.assessmentData?.name || s.assessmentName }}</h3>
+          <p>{{ s.assessmentData?.description || '' }}</p>
+          <div class="test-meta">
+            <span>{{ s.assessmentData?.totalQuestions || '?' }} preguntas</span>
+            <span class="test-status" [ngClass]="getStatusClass(s.status)">
+              {{ getStatusLabel(s.status) }}
+            </span>
+          </div>
+        </div>
+        <div class="test-action">
+          <button
+            *ngIf="isTestAvailable(s)"
+            class="btn-start"
+            (click)="startTest(s)">
+            {{ s.status === 'IN_PROGRESS' ? 'Continuar' : 'Iniciar prueba' }}
+          </button>
+          <span *ngIf="!isTestAvailable(s)" class="completed-check">Completada</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="finish-section">
+      <button
+        class="btn-finish"
+        [disabled]="!allCompleted || loading"
+        (click)="finishAllTests()">
+        {{ loading ? 'Finalizando...' : 'Finalizar todas las pruebas' }}
+      </button>
+      <p *ngIf="!allCompleted" class="finish-hint">
+        Complete todas las pruebas para poder finalizar la sesión.
+      </p>
+    </div>
+  </div>
+</div>

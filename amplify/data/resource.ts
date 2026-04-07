@@ -65,6 +65,13 @@ const schema = a.schema({
     'REVIEWED',
   ]),
 
+  EvalSessionStatus: a.enum([
+    'ACTIVE',
+    'PAUSED',
+    'COMPLETED',
+    'EXPIRED',
+  ]),
+
   // ──────────────────────────────────────────────
   // CASE (Juicio)
   // ──────────────────────────────────────────────
@@ -134,6 +141,7 @@ const schema = a.schema({
     })
     .authorization((allow) => [
       allow.authenticated().to(['read']),
+      allow.publicApiKey().to(['read']),
       allow.owner(),
     ]),
 
@@ -151,11 +159,13 @@ const schema = a.schema({
       status: a.ref('SessionStatus').required(),
       startedAt: a.datetime(),
       completedAt: a.datetime(),
+      evaluationSessionId: a.id(),
       subject: a.belongsTo('Subject', 'subjectId'),
       scoring: a.hasMany('AssessmentScoring', 'sessionId'),
     })
     .authorization((allow) => [
       allow.owner(),
+      allow.publicApiKey().to(['read', 'update']),
     ]),
 
   // ──────────────────────────────────────────────
@@ -177,6 +187,7 @@ const schema = a.schema({
     })
     .authorization((allow) => [
       allow.owner(),
+      allow.publicApiKey().to(['create']),
     ]),
 
   // ──────────────────────────────────────────────
@@ -220,7 +231,7 @@ const schema = a.schema({
   // INTERVIEW ANALYSIS (Análisis de entrevista)
   // ──────────────────────────────────────────────
 
- InterviewAnalysis: a
+  InterviewAnalysis: a
     .model({
       interviewId: a.id().required(),
       content: a.string().required(),
@@ -258,7 +269,8 @@ const schema = a.schema({
   // ──────────────────────────────────────────────
   // SUBJECT INTERVIEW REPORT (Consolidado entrevistas)
   // ──────────────────────────────────────────────
-SubjectInterviewReport: a
+
+  SubjectInterviewReport: a
     .model({
       subjectId: a.id().required(),
       content: a.string().required(),
@@ -313,6 +325,26 @@ SubjectInterviewReport: a
     ]),
 
   // ──────────────────────────────────────────────
+  // EVALUATION SESSION (Sesión de evaluación pública)
+  // ──────────────────────────────────────────────
+
+  EvaluationSession: a
+    .model({
+      subjectId: a.id().required(),
+      caseId: a.id().required(),
+      accessCode: a.string().required(),
+      status: a.ref('EvalSessionStatus').required(),
+      expiresAt: a.datetime().required(),
+      assessmentSessionIds: a.json().required(),
+      subjectName: a.string().required(),
+      createdAt: a.datetime(),
+    })
+    .authorization((allow) => [
+      allow.owner(),
+      allow.publicApiKey().to(['read', 'update']),
+    ]),
+
+  // ──────────────────────────────────────────────
   // AI GENERATION (Custom query)
   // ──────────────────────────────────────────────
 
@@ -335,5 +367,8 @@ export const data = defineData({
   schema,
   authorizationModes: {
     defaultAuthorizationMode: 'userPool',
+    apiKeyAuthorizationMode: {
+      expiresInDays: 365,
+    },
   },
 });

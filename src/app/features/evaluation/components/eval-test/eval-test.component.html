@@ -1,0 +1,60 @@
+<div class="eval-test-container">
+  <div class="eval-header">
+    <h1>Evaluación Psicológica</h1>
+  </div>
+
+  <div *ngIf="loading" class="loading">Cargando prueba...</div>
+
+  <div *ngIf="error" class="error-section">
+    <div class="error-msg">{{ error }}</div>
+  </div>
+
+  <div *ngIf="!loading && assessment && !error" class="test-content">
+    <h2>{{ assessment.name }}</h2>
+
+    <div *ngFor="let section of sections" class="section">
+      <h3>{{ section.title }}</h3>
+
+      <div *ngIf="section.instructions" class="instructions">
+        <p>{{ section.instructions }}</p>
+      </div>
+
+      <div *ngIf="section.legend.length > 0" class="legend">
+        <span *ngFor="let l of section.legend">{{ l }}</span>
+      </div>
+
+      <div class="questions-container">
+        <div *ngFor="let q of section.questions" class="question-row">
+          <div class="question-text">{{ q.text }}</div>
+          <div class="options-group">
+            <label
+              *ngFor="let opt of [].constructor(q.options); let i = index"
+              class="option-label"
+              (click)="selectOption(q.index, i + 1)">
+              <span>{{ i + 1 }}</span>
+              <input
+                type="radio"
+                [name]="'q' + q.index"
+                [value]="i + 1"
+                [checked]="isSelected(q.index, i + 1)"
+                (change)="selectOption(q.index, i + 1)">
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="progress-footer">
+      <span>{{ getAnsweredCount() }} de {{ totalQuestions }} respondidas</span>
+    </div>
+
+    <div *ngIf="error" class="error-msg" style="margin-bottom: 16px;">{{ error }}</div>
+
+    <button
+      class="submit-btn"
+      (click)="onSubmit()"
+      [disabled]="submitting">
+      {{ submitting ? 'Enviando respuestas...' : 'Finalizar y Enviar Respuestas' }}
+    </button>
+  </div>
+</div>

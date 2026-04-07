@@ -7,6 +7,34 @@ export const routes: Routes = [
     redirectTo: 'cases',
     pathMatch: 'full',
   },
+  // ── Rutas públicas del evaluado ──
+  {
+    path: 'evaluate',
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./features/evaluation/components/eval-portal/eval-portal.component').then(
+            (m) => m.EvalPortalComponent
+          ),
+      },
+      {
+        path: 'test/:sessionId',
+        loadComponent: () =>
+          import('./features/evaluation/components/eval-test/eval-test.component').then(
+            (m) => m.EvalTestComponent
+          ),
+      },
+      {
+        path: 'thanks',
+        loadComponent: () =>
+          import('./features/evaluation/components/eval-thanks/eval-thanks.component').then(
+            (m) => m.EvalThanksComponent
+          ),
+      },
+    ],
+  },
+  // ── Rutas autenticadas de la psicóloga ──
   {
     path: 'cases',
     canActivate: [AuthGuard],
@@ -40,6 +68,13 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./features/cases/components/case-form/case-form.component').then(
                 (m) => m.CaseFormComponent
+              ),
+          },
+          {
+            path: 'report',
+            loadComponent: () =>
+              import('./features/cases/components/case-report/case-report.component').then(
+                (m) => m.CaseReportComponent
               ),
           },
           {
@@ -113,13 +148,6 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./features/subjects/components/subject-summary/subject-summary.component').then(
                 (m) => m.SubjectSummaryComponent
-              ),
-          },
-          {
-            path: 'report',
-            loadComponent: () =>
-              import('./features/cases/components/case-report/case-report.component').then(
-                (m) => m.CaseReportComponent
               ),
           },
         ],
