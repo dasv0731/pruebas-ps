@@ -18,18 +18,20 @@
         <label class="select-label">
           <input
             type="checkbox"
-            [checked]="isAssessmentSelected(a.id)"
-            [disabled]="isAssessmentSelected(a.id) || hasActiveEvaluationSession()"
-            (change)="toggleAssessment(a, $event)"
+            [checked]="isCheckboxSelected(a.id)"
+            [disabled]="isCheckboxDisabled(a.id)"
+            (change)="toggleAssessment(a.id, $event)"
           />
           <div class="select-info">
             <span class="select-name">{{ a.shortName }} - {{ a.name }}</span>
             <span class="select-meta">{{ a.totalQuestions }} preguntas | {{ a.scoringType === 'TEA' ? 'TEA Corrige' : 'Baremo local' }}</span>
           </div>
         </label>
-        <span *ngIf="isAssessmentCompleted(a.id)" class="badge badge-active">Calificada</span>
-        <span *ngIf="isAssessmentPending(a.id) && !isAssessmentCompleted(a.id)" class="badge badge-pending">Pendiente</span>
       </div>
+    </div>
+
+    <div *ngIf="getNewSelections().length > 0 && !hasActiveEvaluationSession()" class="selection-summary">
+      {{ getNewSelections().length }} prueba(s) nueva(s) seleccionada(s)
     </div>
   </div>
 
@@ -39,16 +41,16 @@
       <h2>Sesión de evaluación</h2>
     </div>
 
-    <div *ngIf="!evaluationSession && getPendingSessions().length === 0" class="eval-action">
+    <div *ngIf="!evaluationSession && getSelectionCount() === 0" class="eval-action">
       <p>Seleccione las pruebas arriba y luego genere la sesión para el evaluado.</p>
     </div>
 
-    <div *ngIf="!evaluationSession && getPendingSessions().length > 0" class="eval-action">
-      <p>Hay {{ getPendingSessions().length }} prueba(s) pendientes listas para el evaluado.</p>
+    <div *ngIf="!evaluationSession && getSelectionCount() > 0" class="eval-action">
+      <p>{{ getSelectionCount() }} prueba(s) seleccionada(s). Genere la sesión para que el evaluado pueda resolverlas.</p>
       <button
         class="btn btn-primary"
         (click)="generateEvaluationSession()"
-        [disabled]="generatingSession">
+        [disabled]="generatingSession || caseLocked">
         {{ generatingSession ? 'Generando...' : 'Generar sesión de evaluación' }}
       </button>
     </div>
@@ -110,7 +112,8 @@
             <button
               *ngIf="s.status === 'CREATED' || s.status === 'IN_PROGRESS'"
               class="btn btn-primary btn-sm"
-              (click)="goToApply(s.id)">
+              (click)="goToApply(s.id)"
+               [disabled]="caseLocked">
               Aplicar
             </button>
             <button
@@ -131,7 +134,7 @@
     </table>
   </div>
 
-  <!-- Catálogo (oculto por defecto, para seed) -->
+  <!-- Recargar catálogo -->
   <div class="card">
     <button class="btn btn-secondary" (click)="seedData()" style="margin-top: 12px;">
       Recargar catálogo de pruebas

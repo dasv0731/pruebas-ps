@@ -52,6 +52,7 @@ const schema = a.schema({
   InterviewStatus: a.enum([
     'DRAFT',
     'COMPLETED',
+    'ANALYZED',
   ]),
 
   InterpretationSource: a.enum([

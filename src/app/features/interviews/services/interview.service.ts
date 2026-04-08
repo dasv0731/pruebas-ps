@@ -4,7 +4,7 @@ import type { Schema } from '../../../../../amplify/data/resource';
 
 const client = generateClient<Schema>();
 
-type InterviewStatus = 'DRAFT' | 'COMPLETED';
+type InterviewStatus = 'DRAFT' | 'COMPLETED' | 'ANALYZED';
 
 export interface InterviewInput {
   subjectId: string;

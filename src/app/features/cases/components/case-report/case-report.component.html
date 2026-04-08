@@ -10,6 +10,12 @@
         <button class="btn btn-secondary btn-sm" (click)="goBack()">← Volver</button>
         <h2>Informe final: Caso {{ caseData?.caseNumber }}</h2>
       </div>
+      <button
+        *ngIf="caseReport && caseReport.status === 'APPROVED'"
+        class="btn btn-danger"
+        (click)="reopenCase()">
+        Reabrir caso
+      </button>
     </div>
 
     <!-- Estado de implicados -->
@@ -98,10 +104,7 @@
         <button class="btn btn-approve" (click)="changeStatus('APPROVED')">Aprobar informe final</button>
       </div>
       <div *ngIf="caseReport.status === 'APPROVED'" class="approved-msg">
-        Este informe final está aprobado y bloqueado. Para editarlo, debe desbloquearlo primero.
-        <button class="btn btn-secondary btn-sm" (click)="changeStatus('DRAFT')" style="margin-top: 8px;">
-          Desbloquear para edición
-        </button>
+        Este informe final está aprobado. El caso está cerrado y todas las ediciones están bloqueadas.
       </div>
     </div>
   </div>

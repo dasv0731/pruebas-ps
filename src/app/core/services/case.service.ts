@@ -65,4 +65,9 @@ export class CaseService {
     }
     return data;
   }
+
+  async isLocked(id: string): Promise<boolean> {
+    const caseData = await this.getById(id);
+    return caseData?.status === 'COMPLETED';
+  }
 }

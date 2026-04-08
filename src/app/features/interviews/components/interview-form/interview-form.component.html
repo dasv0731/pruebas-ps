@@ -1,6 +1,12 @@
 <div class="card">
   <div class="card-header">
-    <h2>{{ isEdit ? 'Editar entrevista' : 'Nueva entrevista' }}</h2>
+    <div class="title-row">
+      <button class="btn btn-secondary btn-sm" (click)="goBack()">← Volver</button>
+      <h2>{{ isEdit ? 'Entrevista' : 'Nueva entrevista' }}</h2>
+    </div>
+    <span *ngIf="isEdit" class="badge" [ngClass]="getStatusClass()">
+      {{ getStatusLabel() }}
+    </span>
   </div>
 
   <div *ngIf="loading" class="loading">Cargando...</div>
@@ -17,13 +23,8 @@
           [(ngModel)]="form.interviewDate"
           name="interviewDate"
           required
+          [disabled]="isCompleted()"
         />
-      </div>
-      <div class="form-group">
-        <label>Estado</label>
-        <span class="badge" [ngClass]="form.status === 'COMPLETED' ? 'badge-active' : 'badge-pending'">
-          {{ form.status === 'COMPLETED' ? 'Completada' : 'Borrador' }}
-        </span>
       </div>
     </div>
 
@@ -35,16 +36,23 @@
         name="transcript"
         rows="18"
         placeholder="Escriba aquí la transcripción completa de la entrevista..."
+        [disabled]="isCompleted()"
       ></textarea>
     </div>
 
     <div class="form-actions">
       <button type="button" class="btn btn-secondary" (click)="goBack()">Cancelar</button>
-      <button type="submit" class="btn btn-primary" [disabled]="saving">
+
+      <!-- Solo visible en DRAFT -->
+      <button
+        *ngIf="isEditable()"
+        type="submit"
+        class="btn btn-primary"
+        [disabled]="saving">
         {{ saving ? 'Guardando...' : (isEdit ? 'Guardar cambios' : 'Guardar borrador') }}
       </button>
       <button
-        *ngIf="form.status !== 'COMPLETED'"
+        *ngIf="isEditable()"
         type="button"
         class="btn btn-complete"
         (click)="onSaveAndComplete()"
@@ -53,6 +61,11 @@
       </button>
     </div>
   </form>
+
+  <!-- Aviso de bloqueo -->
+  <div *ngIf="isCompleted() && !loading" class="locked-msg">
+    La transcripción está bloqueada. Para editarla debe crear una nueva entrevista.
+  </div>
 
   <!-- Análisis IA -->
   <div *ngIf="isEdit && !loading" class="analysis-section">
@@ -65,10 +78,14 @@
         <button
           class="btn btn-primary"
           (click)="generateAnalysis()"
-          [disabled]="generating">
+          [disabled]="generating || !canGenerateAnalysis()">
           {{ generating ? 'Generando...' : (analysis ? 'Regenerar con IA' : 'Generar análisis con IA') }}
         </button>
       </div>
+    </div>
+
+    <div *ngIf="!canGenerateAnalysis() && !analysis" class="analysis-empty">
+      Complete la entrevista con "Guardar y completar" para poder generar el análisis con IA.
     </div>
 
     <div *ngIf="generating" class="generating-msg">
@@ -77,10 +94,6 @@
 
     <div *ngIf="analysis && !generating" class="analysis-content">
       {{ analysis }}
-    </div>
-
-    <div *ngIf="!analysis && !generating" class="analysis-empty">
-      No se ha generado un análisis. Guarde la entrevista con transcripción y haga clic en "Generar análisis con IA".
     </div>
   </div>
 </div>

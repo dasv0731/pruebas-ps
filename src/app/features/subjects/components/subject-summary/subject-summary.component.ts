@@ -7,6 +7,7 @@ import { AssessmentService } from '../../../assessments/services/assessment.serv
 import { InterviewService } from '../../../interviews/services/interview.service';
 import { SubjectReportService } from '../../services/subject-report.service';
 import { AIService, AIResponse } from '../../../../core/services/ai.service';
+import { CaseService } from '../../../../core/services/case.service';
 
 @Component({
   selector: 'app-subject-summary',
@@ -25,6 +26,7 @@ export class SubjectSummaryComponent implements OnInit {
   interviewReport: any = null;
   subjectReport: any = null;
   loading = true;
+  caseLocked = false;
   generatingAssessment = false;
   generatingInterview = false;
   generatingSubjectReport = false;
@@ -43,7 +45,8 @@ export class SubjectSummaryComponent implements OnInit {
     private assessmentService: AssessmentService,
     private interviewService: InterviewService,
     private subjectReportService: SubjectReportService,
-    private aiService: AIService
+    private aiService: AIService,
+    private caseService: CaseService
   ) {}
 
   async ngOnInit() {
@@ -56,7 +59,8 @@ export class SubjectSummaryComponent implements OnInit {
     try {
       this.loading = true;
       this.error = '';
-
+      const caseData = await this.caseService.getById(this.caseId);
+      this.caseLocked = caseData?.status === 'COMPLETED';
       this.subject = await this.subjectService.getById(this.subjectId);
 
       const sessions = await this.assessmentService.listSessionsBySubject(this.subjectId);
@@ -79,7 +83,7 @@ export class SubjectSummaryComponent implements OnInit {
       const interviews = await this.interviewService.listBySubject(this.subjectId);
       this.analyses = [];
       for (const interview of interviews) {
-        if (interview.status === 'COMPLETED') {
+        if (interview.status === 'COMPLETED' || interview.status === 'ANALYZED') {
           const analysis = await this.interviewService.getAnalysis(interview.id);
           if (analysis) {
             this.analyses.push({
@@ -209,7 +213,8 @@ export class SubjectSummaryComponent implements OnInit {
           this.subjectId, this.caseId, response.content, response.model || 'claude-sonnet-4-20250514'
         );
         this.subjectReportContent = response.content;
-        this.subjectReport = { content: response.content, status: 'DRAFT' };
+        this.subjectReport = await this.subjectReportService.getSubjectReport(this.subjectId);
+        this.subjectReportContent = this.subjectReport?.content || response.content;
       } else {
         this.error = response.error || 'Error al generar informe final';
       }
@@ -226,7 +231,8 @@ export class SubjectSummaryComponent implements OnInit {
       await this.subjectReportService.saveSubjectReport(
         this.subjectId, this.caseId, this.subjectReportContent, 'MANUAL'
       );
-      this.subjectReport = { content: this.subjectReportContent, status: 'DRAFT' };
+      this.subjectReport = await this.subjectReportService.getSubjectReport(this.subjectId);
+      this.subjectReportContent = this.subjectReport?.content || this.subjectReportContent;
       this.editingSubjectReport = false;
     } catch (err: any) {
       this.error = err.message || 'Error al guardar';

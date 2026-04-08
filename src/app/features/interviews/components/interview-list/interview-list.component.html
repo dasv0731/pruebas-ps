@@ -13,7 +13,7 @@
         <span *ngIf="subject" class="subject-name">
           {{ subject.firstName }} {{ subject.lastName }}
         </span>
-        <button class="btn btn-primary" (click)="goToNew()">+ Nueva entrevista</button>
+        <button class="btn btn-primary" (click)="goToNew()" [disabled]="caseLocked">+ Nueva entrevista</button>
       </div>
     </div>
 
@@ -43,7 +43,7 @@
           </td>
           <td class="actions">
             <button class="btn btn-secondary btn-sm" (click)="goToEdit(i.id)">Editar</button>
-            <button class="btn btn-danger btn-sm" (click)="onDelete(i.id)">Eliminar</button>
+            <button class="btn btn-danger btn-sm" (click)="onDelete(i.id)" [disabled]="caseLocked">Eliminar</button>
           </td>
         </tr>
       </tbody>

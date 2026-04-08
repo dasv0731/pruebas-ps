@@ -24,8 +24,12 @@ export class AssessmentCatalogComponent implements OnInit, OnDestroy {
   evaluationUrl = '';
   loading = true;
   generatingSession = false;
+  caseLocked = false;
   error = '';
   private pollingInterval: any = null;
+
+  // Selección temporal antes de generar sesión
+  selectedAssessmentIds: Set<string> = new Set();
 
   constructor(
     private route: ActivatedRoute,
@@ -74,12 +78,19 @@ export class AssessmentCatalogComponent implements OnInit, OnDestroy {
       this.loading = true;
       this.error = '';
       this.subject = await this.subjectService.getById(this.subjectId);
+      const caseData = await this.caseService.getById(this.caseId);
+      this.caseLocked = caseData?.status === 'COMPLETED';
       this.assessments = await this.assessmentService.listAssessments();
       this.sessions = await this.assessmentService.listSessionsBySubject(this.subjectId);
       this.evaluationSession = await this.evaluationService.getEvaluationSessionBySubject(this.subjectId);
       if (this.evaluationSession) {
         this.evaluationUrl = `${window.location.origin}/evaluate?code=${this.evaluationSession.accessCode}`;
       }
+
+      // Marcar como seleccionados los assessments que ya tienen sesión
+      this.selectedAssessmentIds = new Set(
+        this.sessions.map((s: any) => s.assessmentId)
+      );
     } catch (err: any) {
       this.error = err.message || 'Error al cargar datos';
     } finally {
@@ -94,10 +105,6 @@ export class AssessmentCatalogComponent implements OnInit, OnDestroy {
     } catch (err: any) {
       this.error = err.message || 'Error al cargar catálogo';
     }
-  }
-
-  getSessionForAssessment(assessmentId: string) {
-    return this.sessions.filter((s) => s.assessmentId === assessmentId);
   }
 
   getPendingSessions(): any[] {
@@ -124,57 +131,72 @@ export class AssessmentCatalogComponent implements OnInit, OnDestroy {
     return map[status] || '';
   }
 
-  async generateSession(assessment: any) {
-    try {
-      await this.assessmentService.createSession({
-        subjectId: this.subjectId,
-        assessmentId: assessment.id,
-        assessmentName: assessment.name,
-        status: 'CREATED',
-        currentQuestion: 0,
-        startedAt: new Date().toISOString(),
-      });
-      await this.loadData();
-    } catch (err: any) {
-      this.error = err.message || 'Error al generar la sesión';
+  // ── Selección de pruebas ──
+
+  isCheckboxSelected(assessmentId: string): boolean {
+    return this.selectedAssessmentIds.has(assessmentId);
+  }
+
+  isCheckboxDisabled(assessmentId: string): boolean {
+    if (this.caseLocked) return true;
+    const hasSession = this.sessions.some((s: any) => s.assessmentId === assessmentId);
+    if (hasSession) return true;
+    if (this.hasActiveEvaluationSession()) return true;
+    return false;
+  }
+
+  toggleAssessment(assessmentId: string, event: any) {
+    if (event.target.checked) {
+      this.selectedAssessmentIds.add(assessmentId);
+    } else {
+      this.selectedAssessmentIds.delete(assessmentId);
     }
   }
 
-  async startAssessment(assessment: any) {
-    try {
-      const session = await this.assessmentService.createSession({
-        subjectId: this.subjectId,
-        assessmentId: assessment.id,
-        assessmentName: assessment.name,
-        status: 'CREATED',
-        currentQuestion: 0,
-        startedAt: new Date().toISOString(),
-      });
-      if (session) {
-        this.router.navigate([
-          '/cases', this.caseId,
-          'subjects', this.subjectId,
-          'assessments', session.id, 'apply',
-        ]);
-      }
-    } catch (err: any) {
-      this.error = err.message || 'Error al iniciar la prueba';
-    }
+  getNewSelections(): any[] {
+    // Assessments seleccionados que NO tienen sesión aún
+    return this.assessments.filter(
+      (a) => this.selectedAssessmentIds.has(a.id) &&
+        !this.sessions.some((s: any) => s.assessmentId === a.id)
+    );
   }
+
+  getSelectionCount(): number {
+    return this.selectedAssessmentIds.size;
+  }
+
+  // ── Sesión de evaluación ──
 
   async generateEvaluationSession() {
-    const pendingSessions = this.sessions.filter(
-      (s) => s.status === 'CREATED' || s.status === 'IN_PROGRESS'
-    );
+    const newSelections = this.getNewSelections();
 
-    if (pendingSessions.length === 0) {
-      this.error = 'No hay pruebas pendientes. Agregue pruebas primero.';
+    if (newSelections.length === 0 && this.getPendingSessions().length === 0) {
+      this.error = 'Seleccione al menos una prueba para generar la sesión.';
       return;
     }
 
     try {
       this.generatingSession = true;
       this.error = '';
+
+      // Crear sesiones para las nuevas selecciones
+      for (const assessment of newSelections) {
+        await this.assessmentService.createSession({
+          subjectId: this.subjectId,
+          assessmentId: assessment.id,
+          assessmentName: assessment.name,
+          status: 'CREATED',
+          currentQuestion: 0,
+          startedAt: new Date().toISOString(),
+        });
+      }
+
+      // Recargar sesiones
+      this.sessions = await this.assessmentService.listSessionsBySubject(this.subjectId);
+
+      const pendingSessions = this.sessions.filter(
+        (s) => s.status === 'CREATED' || s.status === 'IN_PROGRESS'
+      );
 
       const subjectName = `${this.subject.firstName} ${this.subject.lastName}`;
       const sessionIds = pendingSessions.map((s) => s.id);
@@ -187,6 +209,12 @@ export class AssessmentCatalogComponent implements OnInit, OnDestroy {
       );
 
       this.evaluationUrl = `${window.location.origin}/evaluate?code=${this.evaluationSession.accessCode}`;
+
+      // Actualizar selección
+      this.selectedAssessmentIds = new Set(
+        this.sessions.map((s: any) => s.assessmentId)
+      );
+
     } catch (err: any) {
       this.error = err.message || 'Error al generar sesión de evaluación';
     } finally {
@@ -215,9 +243,16 @@ export class AssessmentCatalogComponent implements OnInit, OnDestroy {
     }
   }
 
+  hasActiveEvaluationSession(): boolean {
+    return this.evaluationSession &&
+      (this.evaluationSession.status === 'ACTIVE' || this.evaluationSession.status === 'PAUSED');
+  }
+
   copyUrl() {
     navigator.clipboard.writeText(this.evaluationUrl);
   }
+
+  // ── Navegación ──
 
   goToApply(sessionId: string) {
     this.router.navigate([
@@ -235,46 +270,11 @@ export class AssessmentCatalogComponent implements OnInit, OnDestroy {
     ]);
   }
 
-  isAssessmentSelected(assessmentId: string): boolean {
-    return this.sessions.some((s) => s.assessmentId === assessmentId);
+  goBack() {
+    this.router.navigate(['/cases', this.caseId]);
   }
 
-  isAssessmentPending(assessmentId: string): boolean {
-    return this.sessions.some(
-      (s) => s.assessmentId === assessmentId && (s.status === 'CREATED' || s.status === 'IN_PROGRESS')
-    );
-  }
-
-  isAssessmentCompleted(assessmentId: string): boolean {
-    return this.sessions.some(
-      (s) => s.assessmentId === assessmentId && s.status === 'SCORED'
-    );
-  }
-
-  async toggleAssessment(assessment: any, event: any) {
-    if (event.target.checked) {
-      try {
-        const session = await this.assessmentService.createSession({
-          subjectId: this.subjectId,
-          assessmentId: assessment.id,
-          assessmentName: assessment.name,
-          status: 'CREATED',
-          currentQuestion: 0,
-          startedAt: new Date().toISOString(),
-        });
-        if (session) {
-          this.sessions = [...this.sessions, session];
-        }
-      } catch (err: any) {
-        this.error = err.message || 'Error al agregar prueba';
-      }
-    }
-  }
-
-  hasActiveEvaluationSession(): boolean {
-    return this.evaluationSession &&
-      (this.evaluationSession.status === 'ACTIVE' || this.evaluationSession.status === 'PAUSED');
-  }
+  // ── Impresión ──
 
   async printAnswers(session: any) {
     try {
@@ -326,9 +326,5 @@ export class AssessmentCatalogComponent implements OnInit, OnDestroy {
     } catch (err: any) {
       this.error = err.message || 'Error al imprimir respuestas';
     }
-  }
-
-  goBack() {
-    this.router.navigate(['/cases', this.caseId]);
   }
 }

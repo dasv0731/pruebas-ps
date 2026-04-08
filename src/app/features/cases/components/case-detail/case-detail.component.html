@@ -3,6 +3,11 @@
 <div *ngIf="error" class="error-msg">{{ error }}</div>
 
 <div *ngIf="!loading && caseData" class="detail-container">
+  <!-- Aviso de caso bloqueado -->
+  <div *ngIf="caseLocked" class="locked-banner">
+    Este caso está cerrado. Todas las ediciones están bloqueadas. Para editar, reabra el caso desde el informe final.
+  </div>
+
   <!-- Cabecera del caso -->
   <div class="card">
     <div class="card-header">
@@ -13,8 +18,10 @@
           {{ statusLabels[caseData.status] || caseData.status }}
         </span>
       </div>
-      <button class="btn btn-primary" (click)="goToReport()">Informe final</button>
-      <button class="btn btn-primary" (click)="goToEdit()">Editar caso</button>
+      <div class="header-actions">
+        <button class="btn btn-primary" (click)="goToReport()">Informe final</button>
+        <button class="btn btn-primary" (click)="goToEdit()" [disabled]="caseLocked">Editar caso</button>
+      </div>
     </div>
 
     <div class="case-info">
@@ -55,7 +62,7 @@
   <div class="card subjects-card">
     <div class="card-header">
       <h2>Implicados</h2>
-      <button class="btn btn-primary" (click)="goToNewSubject()">+ Agregar implicados</button>
+      <button class="btn btn-primary" (click)="goToNewSubject()" [disabled]="caseLocked">+ Agregar implicados</button>
     </div>
 
     <div *ngIf="subjects.length === 0" class="empty-state">
@@ -74,7 +81,7 @@
       </thead>
       <tbody>
         <tr *ngFor="let s of subjects">
-          <td>{{ s.firstName }} {{ s.lastName }}</td>
+          <td class="clickable" (click)="goToSummary(s.id)">{{ s.firstName }} {{ s.lastName }}</td>
           <td>{{ subjectTypeLabels[s.subjectType] || s.subjectType }}</td>
           <td>{{ s.documentId || '-' }}</td>
           <td>
@@ -86,8 +93,8 @@
             <button class="btn btn-primary btn-sm" (click)="goToSummary(s.id)">Resumen</button>
             <button class="btn btn-primary btn-sm" (click)="goToAssessments(s.id)">Pruebas</button>
             <button class="btn btn-primary btn-sm" (click)="goToInterviews(s.id)">Entrevistas</button>
-            <button class="btn btn-secondary btn-sm" (click)="goToEditSubject(s.id)">Editar</button>
-            <button class="btn btn-danger btn-sm" (click)="onDeleteSubject(s.id)">Eliminar</button>
+            <button class="btn btn-secondary btn-sm" (click)="goToEditSubject(s.id)" [disabled]="caseLocked">Editar</button>
+            <button class="btn btn-danger btn-sm" (click)="onDeleteSubject(s.id)" [disabled]="caseLocked">Eliminar</button>
           </td>
         </tr>
       </tbody>

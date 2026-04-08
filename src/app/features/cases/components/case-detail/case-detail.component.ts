@@ -22,6 +22,7 @@ export class CaseDetailComponent implements OnInit {
   subjects: any[] = [];
   loading = true;
   error = '';
+  caseLocked = false;
   statusLabels: Record<string, string> = CASE_STATUS_LABELS;
   subjectTypeLabels: Record<string, string> = SUBJECT_TYPE_LABELS;
   subjectStatusLabels: Record<string, string> = SUBJECT_STATUS_LABELS;
@@ -43,6 +44,7 @@ export class CaseDetailComponent implements OnInit {
       this.loading = true;
       this.error = '';
       this.caseData = await this.caseService.getById(this.caseId);
+      this.caseLocked = this.caseData?.status === 'COMPLETED';
       this.subjects = await this.subjectService.listByCase(this.caseId);
     } catch (err: any) {
       this.error = err.message || 'Error al cargar el caso';

@@ -46,7 +46,7 @@
         <button
           class="btn btn-primary"
           (click)="generateAssessmentReport()"
-          [disabled]="generatingAssessment || interpretations.length === 0">
+          [disabled]="generatingAssessment || interpretations.length === 0 || caseLocked">
           {{ generatingAssessment ? 'Generando...' : (assessmentReport ? 'Regenerar con IA' : 'Generar con IA') }}
         </button>
       </div>
@@ -87,7 +87,7 @@
         <button
           class="btn btn-primary"
           (click)="generateInterviewReport()"
-          [disabled]="generatingInterview || analyses.length === 0">
+          [disabled]="generatingInterview || analyses.length === 0 || caseLocked">
           {{ generatingInterview ? 'Generando...' : (interviewReport ? 'Regenerar con IA' : 'Generar con IA') }}
         </button>
       </div>
@@ -132,7 +132,7 @@
           *ngIf="!isSubjectReportLocked()"
           class="btn btn-primary"
           (click)="generateSubjectReport()"
-          [disabled]="generatingSubjectReport || !canGenerateSubjectReport()">
+          [disabled]="generatingSubjectReport || !canGenerateSubjectReport() || caseLocked">
           {{ generatingSubjectReport ? 'Generando...' : (subjectReport ? 'Regenerar con IA' : 'Generar con IA') }}
         </button>
       </div>

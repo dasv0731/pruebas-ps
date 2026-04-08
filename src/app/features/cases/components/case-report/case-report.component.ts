@@ -107,7 +107,11 @@ export class CaseReportComponent implements OnInit {
           response.model || 'claude-sonnet-4-20250514'
         );
         this.caseReportContent = response.content;
-        this.caseReport = { content: response.content, status: 'DRAFT' };
+        // Recargar para obtener el id
+        this.caseReport = await this.subjectReportService.getCaseReport(this.caseId);
+        if (!this.caseReport) {
+          this.caseReport = { content: response.content, status: 'DRAFT' };
+        }
       } else {
         this.error = response.error || 'Error al generar informe del caso';
       }
@@ -124,7 +128,8 @@ export class CaseReportComponent implements OnInit {
       await this.subjectReportService.saveCaseReport(
         this.caseId, this.caseReportContent, 'MANUAL'
       );
-      this.caseReport = { ...this.caseReport, content: this.caseReportContent, status: 'DRAFT' };
+      this.caseReport = await this.subjectReportService.getCaseReport(this.caseId);
+      this.caseReportContent = this.caseReport?.content || this.caseReportContent;
       this.editing = false;
     } catch (err: any) {
       this.error = err.message || 'Error al guardar';
@@ -135,10 +140,56 @@ export class CaseReportComponent implements OnInit {
     if (!this.caseReport?.id) return;
     try {
       this.error = '';
+
+      // Si se aprueba, pedir confirmación
+      if (newStatus === 'APPROVED') {
+        const confirmed = confirm(
+          '¿Está segura de aprobar el informe final? Esto bloqueará todas las ediciones del caso.'
+        );
+        if (!confirmed) return;
+      }
+
       await this.subjectReportService.updateCaseReportStatus(this.caseReport.id, newStatus);
       this.caseReport.status = newStatus;
+
+      // Si se aprueba, establecer fecha de fin del caso
+      if (newStatus === 'APPROVED') {
+        await this.caseService.update(this.caseId, {
+          endDate: new Date().toISOString().split('T')[0],
+          status: 'COMPLETED',
+        });
+        if (this.caseData) {
+          this.caseData.endDate = new Date().toISOString().split('T')[0];
+          this.caseData.status = 'COMPLETED';
+        }
+      }
     } catch (err: any) {
       this.error = err.message || 'Error al cambiar estado';
+    }
+  }
+
+  async reopenCase() {
+    const confirmed = confirm(
+      '¿Está segura de reabrir el caso? Esto desbloqueará todas las ediciones y el informe final volverá a estado borrador.'
+    );
+    if (!confirmed) return;
+
+    try {
+      this.error = '';
+
+      // Cambiar estado del informe a DRAFT
+      await this.subjectReportService.updateCaseReportStatus(this.caseReport.id, 'DRAFT');
+      this.caseReport.status = 'DRAFT';
+
+      // Reabrir el caso
+      await this.caseService.update(this.caseId, {
+        status: 'IN_PROGRESS',
+      });
+      if (this.caseData) {
+        this.caseData.status = 'IN_PROGRESS';
+      }
+    } catch (err: any) {
+      this.error = err.message || 'Error al reabrir el caso';
     }
   }
 
