@@ -4,6 +4,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { AssessmentService } from '../../services/assessment.service';
 import { SubjectService } from '../../../../core/services/subject.service';
 import { EvaluationService } from '../../../evaluation/services/evaluation.service';
+import { PrintService, PrintData } from '../../services/print.service';
+import { CaseService } from '../../../../core/services/case.service';
 
 @Component({
   selector: 'app-assessment-catalog',
@@ -23,16 +25,17 @@ export class AssessmentCatalogComponent implements OnInit, OnDestroy {
   loading = true;
   generatingSession = false;
   error = '';
+  private pollingInterval: any = null;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private assessmentService: AssessmentService,
     private subjectService: SubjectService,
-    private evaluationService: EvaluationService
+    private evaluationService: EvaluationService,
+    private printService: PrintService,
+    private caseService: CaseService
   ) {}
-
-  private pollingInterval: any = null;
 
   async ngOnInit() {
     this.caseId = this.route.snapshot.params['caseId'];
@@ -51,13 +54,12 @@ export class AssessmentCatalogComponent implements OnInit, OnDestroy {
         const previousSessions = JSON.stringify(this.sessions.map((s: any) => s.status));
         this.sessions = await this.assessmentService.listSessionsBySubject(this.subjectId);
         const currentSessions = JSON.stringify(this.sessions.map((s: any) => s.status));
-        
+
         if (previousSessions !== currentSessions) {
-          // Algo cambió, recargar sesión de evaluación también
           this.evaluationSession = await this.evaluationService.getEvaluationSessionBySubject(this.subjectId);
         }
       }
-    }, 5000); // Cada 5 segundos
+    }, 5000);
   }
 
   private stopPolling() {
@@ -166,7 +168,7 @@ export class AssessmentCatalogComponent implements OnInit, OnDestroy {
     );
 
     if (pendingSessions.length === 0) {
-      this.error = 'No hay pruebas pendientes. Agregue pruebas primero usando "Aplicar prueba".';
+      this.error = 'No hay pruebas pendientes. Agregue pruebas primero.';
       return;
     }
 
@@ -269,12 +271,64 @@ export class AssessmentCatalogComponent implements OnInit, OnDestroy {
     }
   }
 
-  goBack() {
-    this.router.navigate(['/cases', this.caseId]);
+  hasActiveEvaluationSession(): boolean {
+    return this.evaluationSession &&
+      (this.evaluationSession.status === 'ACTIVE' || this.evaluationSession.status === 'PAUSED');
   }
 
-  hasActiveEvaluationSession(): boolean {
-    return this.evaluationSession && 
-      (this.evaluationSession.status === 'ACTIVE' || this.evaluationSession.status === 'PAUSED');
+  async printAnswers(session: any) {
+    try {
+      const fullSession = await this.assessmentService.getSession(session.id);
+      if (!fullSession || !fullSession.answers) {
+        this.error = 'No se encontraron respuestas para esta sesión.';
+        return;
+      }
+
+      const assessment = await this.assessmentService.getAssessment(fullSession.assessmentId);
+      if (!assessment) {
+        this.error = 'Prueba no encontrada.';
+        return;
+      }
+
+      let answers: number[] = [];
+      try {
+        const rawAnswers = fullSession.answers;
+        if (typeof rawAnswers === 'string') {
+          answers = JSON.parse(rawAnswers);
+        } else if (Array.isArray(rawAnswers)) {
+          answers = rawAnswers;
+        } else {
+          answers = JSON.parse(JSON.stringify(rawAnswers));
+        }
+      } catch {
+        this.error = 'Error al leer las respuestas.';
+        return;
+      }
+
+      const caseData = await this.caseService.getById(this.caseId);
+
+      const printData: PrintData = {
+        subjectName: `${this.subject.firstName} ${this.subject.lastName}`,
+        subjectDocumentId: this.subject.documentId || '',
+        subjectType: this.subject.subjectType,
+        caseNumber: caseData?.caseNumber || this.caseId,
+        assessmentName: assessment.name,
+        shortName: assessment.shortName,
+        date: fullSession.completedAt
+          ? new Date(fullSession.completedAt).toLocaleDateString('es-EC')
+          : new Date().toLocaleDateString('es-EC'),
+        answers,
+      };
+
+      const html = this.printService.generatePrintHtml(printData);
+      this.printService.openPrintWindow(html);
+
+    } catch (err: any) {
+      this.error = err.message || 'Error al imprimir respuestas';
+    }
+  }
+
+  goBack() {
+    this.router.navigate(['/cases', this.caseId]);
   }
 }
