@@ -28,6 +28,9 @@ export class SubjectSummaryComponent implements OnInit {
   loading = true;
   caseLocked = false;
   generatingAssessment = false;
+  totalScoredTests = 0;
+  totalInterviews = 0;
+  totalCompletedInterviews = 0;
   generatingInterview = false;
   generatingSubjectReport = false;
   editingAssessment = false;
@@ -64,6 +67,7 @@ export class SubjectSummaryComponent implements OnInit {
       this.subject = await this.subjectService.getById(this.subjectId);
 
       const sessions = await this.assessmentService.listSessionsBySubject(this.subjectId);
+      this.totalScoredTests = sessions.filter((s: any) => s.status === 'SCORED').length;
       this.interpretations = [];
       for (const session of sessions) {
         if (session.status === 'SCORED') {
@@ -81,6 +85,7 @@ export class SubjectSummaryComponent implements OnInit {
       }
 
       const interviews = await this.interviewService.listBySubject(this.subjectId);
+      this.totalInterviews = interviews.filter((i: any) => i.status === 'COMPLETED' || i.status === 'ANALYZED').length;
       this.analyses = [];
       for (const interview of interviews) {
         if (interview.status === 'COMPLETED' || interview.status === 'ANALYZED') {
@@ -93,6 +98,7 @@ export class SubjectSummaryComponent implements OnInit {
           }
         }
       }
+      this.totalCompletedInterviews = this.totalInterviews;
 
       this.assessmentReport = await this.subjectReportService.getAssessmentReport(this.subjectId);
       if (this.assessmentReport) {
@@ -108,7 +114,9 @@ export class SubjectSummaryComponent implements OnInit {
       if (this.subjectReport) {
         this.subjectReportContent = this.subjectReport.content;
       }
-
+    
+      console.log('Pruebas scored:', this.totalScoredTests, 'Interpretadas:', this.interpretations.length);
+      console.log('Entrevistas completadas:', this.totalCompletedInterviews, 'Analizadas:', this.analyses.length);
     } catch (err: any) {
       this.error = err.message || 'Error al cargar datos';
     } finally {

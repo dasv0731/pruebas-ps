@@ -23,6 +23,7 @@ export class AssessmentCatalogComponent implements OnInit, OnDestroy {
   evaluationSession: any = null;
   evaluationUrl = '';
   loading = true;
+  interpretationStatus: Record<string, boolean> = {};
   generatingSession = false;
   caseLocked = false;
   error = '';
@@ -82,6 +83,19 @@ export class AssessmentCatalogComponent implements OnInit, OnDestroy {
       this.caseLocked = caseData?.status === 'COMPLETED';
       this.assessments = await this.assessmentService.listAssessments();
       this.sessions = await this.assessmentService.listSessionsBySubject(this.subjectId);
+      // Verificar estado de interpretación IA por sesión
+      this.interpretationStatus = {};
+      for (const session of this.sessions) {
+        if (session.status === 'SCORED') {
+          const scoring = await this.assessmentService.getScoring(session.id);
+          if (scoring) {
+            const interp = await this.assessmentService.getInterpretation(scoring.id);
+            this.interpretationStatus[session.id] = !!interp;
+          } else {
+            this.interpretationStatus[session.id] = false;
+          }
+        }
+      }
       this.evaluationSession = await this.evaluationService.getEvaluationSessionBySubject(this.subjectId);
       if (this.evaluationSession) {
         this.evaluationUrl = `${window.location.origin}/evaluate?code=${this.evaluationSession.accessCode}`;

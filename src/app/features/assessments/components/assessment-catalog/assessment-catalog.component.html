@@ -97,6 +97,7 @@
         <tr>
           <th>Prueba</th>
           <th>Estado</th>
+          <th>Análisis IA</th>
           <th>Acciones</th>
         </tr>
       </thead>
@@ -108,12 +109,17 @@
               {{ getStatusLabel(s.status) }}
             </span>
           </td>
+          <td>
+            <span *ngIf="s.status === 'SCORED' && interpretationStatus[s.id]" class="badge badge-active">Interpretada</span>
+            <span *ngIf="s.status === 'SCORED' && !interpretationStatus[s.id]" class="badge badge-pending">Pendiente</span>
+            <span *ngIf="s.status !== 'SCORED'" class="badge badge-archived">—</span>
+          </td>
           <td class="actions">
             <button
               *ngIf="s.status === 'CREATED' || s.status === 'IN_PROGRESS'"
               class="btn btn-primary btn-sm"
               (click)="goToApply(s.id)"
-               [disabled]="caseLocked">
+              [disabled]="caseLocked">
               Aplicar
             </button>
             <button

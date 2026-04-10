@@ -14,11 +14,11 @@
 
     <div class="status-grid">
       <div class="status-item">
-        <span class="status-number">{{ interpretations.length }}</span>
+        <span class="status-number">{{ interpretations.length }} / {{ totalScoredTests }}</span>
         <span class="status-label">Pruebas interpretadas</span>
       </div>
       <div class="status-item">
-        <span class="status-number">{{ analyses.length }}</span>
+        <span class="status-number">{{ analyses.length }} / {{ totalCompletedInterviews }}</span>
         <span class="status-label">Entrevistas analizadas</span>
       </div>
       <div class="status-item">
@@ -46,14 +46,17 @@
         <button
           class="btn btn-primary"
           (click)="generateAssessmentReport()"
-          [disabled]="generatingAssessment || interpretations.length === 0 || caseLocked">
+          [disabled]="generatingAssessment || interpretations.length === 0 || interpretations.length < totalScoredTests || caseLocked">
           {{ generatingAssessment ? 'Generando...' : (assessmentReport ? 'Regenerar con IA' : 'Generar con IA') }}
         </button>
       </div>
     </div>
 
     <div *ngIf="interpretations.length === 0" class="empty-state">
-      No hay interpretaciones de pruebas disponibles.
+      No hay interpretaciones de pruebas disponibles. Genere las interpretaciones desde "Ver resultados" de cada prueba.
+    </div>
+    <div *ngIf="interpretations.length > 0 && interpretations.length < totalScoredTests" class="pending-msg">
+      Faltan {{ totalScoredTests - interpretations.length }} prueba(s) por interpretar con IA antes de consolidar.
     </div>
 
     <div *ngIf="generatingAssessment" class="generating-msg">
@@ -87,14 +90,17 @@
         <button
           class="btn btn-primary"
           (click)="generateInterviewReport()"
-          [disabled]="generatingInterview || analyses.length === 0 || caseLocked">
+          [disabled]="generatingInterview || analyses.length === 0 || analyses.length < totalCompletedInterviews || caseLocked">
           {{ generatingInterview ? 'Generando...' : (interviewReport ? 'Regenerar con IA' : 'Generar con IA') }}
         </button>
       </div>
     </div>
 
     <div *ngIf="analyses.length === 0" class="empty-state">
-      No hay análisis de entrevistas disponibles.
+      No hay análisis de entrevistas disponibles. Genere los análisis desde cada entrevista completada.
+    </div>
+    <div *ngIf="analyses.length > 0 && analyses.length < totalCompletedInterviews" class="pending-msg">
+      Faltan {{ totalCompletedInterviews - analyses.length }} entrevista(s) por analizar con IA antes de consolidar.
     </div>
 
     <div *ngIf="generatingInterview" class="generating-msg">
