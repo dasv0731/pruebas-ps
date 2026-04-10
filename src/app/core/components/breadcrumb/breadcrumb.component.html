@@ -1,0 +1,56 @@
+<div *ngIf="isVisible()" class="breadcrumb-container">
+  <nav class="breadcrumb-nav">
+    <span *ngFor="let crumb of breadcrumbs; let last = last; let i = index">
+      <!-- Item con dropdown para implicado -->
+      <span *ngIf="currentSubjectId && i === 2 && subjects.length > 1" class="crumb-dropdown-wrapper">
+        <button class="crumb-link crumb-dropdown-trigger" (click)="toggleDropdown()">
+          {{ crumb.label }} ▾
+        </button>
+        <div *ngIf="showSubjectDropdown" class="crumb-dropdown">
+          <button
+            *ngFor="let s of subjects"
+            class="crumb-dropdown-item"
+            [ngClass]="{ 'active': s.id === currentSubjectId }"
+            (click)="selectSubject(s)">
+            {{ s.name }}
+          </button>
+        </div>
+      </span>
+
+      <!-- Item normal -->
+      <span *ngIf="!(currentSubjectId && i === 2 && subjects.length > 1)">
+        <button
+          *ngIf="!last && crumb.url"
+          class="crumb-link"
+          (click)="navigate(crumb.url)">
+          {{ crumb.label }}
+        </button>
+        <span *ngIf="last || !crumb.url" class="crumb-current">{{ crumb.label }}</span>
+      </span>
+
+      <span *ngIf="!last" class="crumb-separator">›</span>
+    </span>
+  </nav>
+
+  <!-- Tabs de navegación del implicado -->
+  <div *ngIf="showTabs && currentSubjectId" class="tabs-nav">
+    <button
+      class="tab-btn"
+      [ngClass]="{ 'tab-active': activeTab === 'summary' }"
+      (click)="navigateTab('summary')">
+      Resumen
+    </button>
+    <button
+      class="tab-btn"
+      [ngClass]="{ 'tab-active': activeTab === 'assessments' }"
+      (click)="navigateTab('assessments')">
+      Pruebas
+    </button>
+    <button
+      class="tab-btn"
+      [ngClass]="{ 'tab-active': activeTab === 'interviews' }"
+      (click)="navigateTab('interviews')">
+      Entrevistas
+    </button>
+  </div>
+</div>

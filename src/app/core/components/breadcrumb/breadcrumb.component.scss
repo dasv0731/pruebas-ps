@@ -1,0 +1,130 @@
+.breadcrumb-container {
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0 24px;
+}
+
+.breadcrumb-nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 10px 0;
+  font-size: 0.85rem;
+}
+
+.crumb-link {
+  background: none;
+  border: none;
+  color: #2b6cb0;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 2px 0;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.crumb-current {
+  color: #4a5568;
+  font-weight: 600;
+}
+
+.crumb-separator {
+  margin: 0 8px;
+  color: #a0aec0;
+  font-size: 0.9rem;
+}
+
+.crumb-dropdown-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.crumb-dropdown-trigger {
+  background: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  color: #2b6cb0;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 3px 8px;
+
+  &:hover {
+    background: #f7fafc;
+    border-color: #2b6cb0;
+  }
+}
+
+.crumb-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  min-width: 200px;
+  z-index: 100;
+}
+
+.crumb-dropdown-item {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 8px 14px;
+  text-align: left;
+  font-size: 0.85rem;
+  color: #2d3748;
+  cursor: pointer;
+
+  &:hover {
+    background: #f7fafc;
+  }
+
+  &.active {
+    background: #ebf8ff;
+    color: #2b6cb0;
+    font-weight: 600;
+  }
+
+  &:first-child {
+    border-radius: 6px 6px 0 0;
+  }
+
+  &:last-child {
+    border-radius: 0 0 6px 6px;
+  }
+}
+
+.tabs-nav {
+  display: flex;
+  gap: 0;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 0;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: 10px 20px;
+  font-size: 0.85rem;
+  color: #718096;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+
+  &:hover {
+    color: #2d3748;
+    background: #f7fafc;
+  }
+
+  &.tab-active {
+    color: #2b6cb0;
+    border-bottom-color: #2b6cb0;
+    font-weight: 600;
+  }
+}

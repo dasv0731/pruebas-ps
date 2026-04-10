@@ -4,11 +4,13 @@ import { Router } from '@angular/router';
 import { CaseService } from '../../../../core/services/case.service';
 import { CASE_STATUS_LABELS, CaseStatus } from '../../../../core/models/types';
 import { SubjectReportService } from '../../../subjects/services/subject-report.service';
+import { FormsModule } from '@angular/forms';
+
 
 @Component({
   selector: 'app-case-list',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './case-list.component.html',
   styleUrl: './case-list.component.scss',
 })
@@ -16,6 +18,8 @@ export class CaseListComponent implements OnInit {
   cases: any[] = [];
   loading = true;
   error = '';
+  searchTerm = '';
+  filteredCases: any[] = [];
   caseReportStatus: Record<string, string> = {};
   statusLabels: Record<string, string> = CASE_STATUS_LABELS;
   
@@ -41,7 +45,7 @@ export class CaseListComponent implements OnInit {
         if (report) {
           this.caseReportStatus[c.id] = report.status;
         }
-      }
+      } this.filteredCases = this.cases;
     } catch (err: any) {
       this.error = err.message || 'Error al cargar los casos';
     } finally {
@@ -85,5 +89,18 @@ export class CaseListComponent implements OnInit {
 
   goToReport(caseId: string) {
     this.router.navigate(['/cases', caseId, 'report']);
+  }
+
+  filterCases() {
+    if (!this.searchTerm.trim()) {
+      this.filteredCases = this.cases;
+      return;
+    }
+    const term = this.searchTerm.toLowerCase().trim();
+    this.filteredCases = this.cases.filter((c) =>
+      c.caseNumber?.toLowerCase().includes(term) ||
+      c.court?.toLowerCase().includes(term) ||
+      c.caseType?.toLowerCase().includes(term)
+    );
   }
 }

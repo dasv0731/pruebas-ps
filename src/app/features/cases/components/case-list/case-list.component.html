@@ -4,6 +4,16 @@
     <button class="btn btn-primary" (click)="goToNew()">+ Nuevo caso</button>
   </div>
 
+  <div *ngIf="!loading && cases.length > 0" class="search-bar">
+    <input
+      type="text"
+      [(ngModel)]="searchTerm"
+      (input)="filterCases()"
+      placeholder="Buscar por N° caso, juzgado o tipo..."
+      class="search-input"
+    />
+  </div>
+
   <div *ngIf="loading" class="loading">Cargando casos...</div>
 
   <div *ngIf="error" class="error-msg">{{ error }}</div>
@@ -12,7 +22,11 @@
     No hay casos registrados. Cree el primero.
   </div>
 
-  <table *ngIf="!loading && cases.length > 0" class="cases-table">
+  <div *ngIf="!loading && cases.length > 0 && filteredCases.length === 0" class="empty-state">
+    No se encontraron casos que coincidan con "{{ searchTerm }}".
+  </div>
+
+  <table *ngIf="!loading && filteredCases.length > 0" class="cases-table">
     <thead>
       <tr>
         <th>N° Caso</th>
@@ -24,7 +38,7 @@
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let c of cases" class="case-row" (click)="goToDetail(c.id)">
+      <tr *ngFor="let c of filteredCases" class="case-row" (click)="goToDetail(c.id)">
         <td>{{ c.caseNumber }}</td>
         <td>{{ c.court || '-' }}</td>
         <td>{{ c.caseType || '-' }}</td>

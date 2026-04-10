@@ -54,3 +54,27 @@
   text-align: center;
   color: #a0aec0;
 }
+
+.search-bar {
+  margin-bottom: 16px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #2d3748;
+  transition: border-color 0.2s;
+
+  &:focus {
+    outline: none;
+    border-color: #2b6cb0;
+    box-shadow: 0 0 0 2px rgba(43, 108, 176, 0.15);
+  }
+
+  &::placeholder {
+    color: #a0aec0;
+  }
+}
