@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AssessmentService } from '../../services/assessment.service';
 import { AIService, AIResponse } from '../../../../core/services/ai.service';
+import { TestLoaderService } from '../../services/test-loader.service';
+import { getTestInterpretation } from '../../tests/test-registry';
 
 @Component({
   selector: 'app-assessment-results',
@@ -30,7 +32,8 @@ export class AssessmentResultsComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private assessmentService: AssessmentService,
-    private aiService: AIService
+    private aiService: AIService,
+    private testLoader: TestLoaderService
   ) {}
 
   async ngOnInit() {
@@ -101,23 +104,33 @@ export class AssessmentResultsComponent implements OnInit {
       this.generating = true;
       this.error = '';
 
-      const scores = {
-        assessmentName: this.assessment?.name,
-        totalScore: this.scoring.totalScore,
-        maxScore: this.getMaxPossibleScore(),
-        percentage: this.getPercentage(),
-        totalQuestions: this.assessment?.totalQuestions,
-        optionsPerQuestion: this.assessment?.optionsPerQuestion,
-        rawScores: this.scoring.scores ? JSON.parse(this.scoring.scores) : null,
-      };
+      const shortName = this.assessment?.shortName || '';
+      const interpretation = getTestInterpretation(shortName);
+
+      let aiData: string;
+      let systemPrompt: string | undefined;
+      let maxTokens: number | undefined;
+
+      if (interpretation) {
+        // Usar interpretación modular
+        const scoringResult = this.testLoader.score(shortName, this.answers);
+        if (scoringResult) {
+          const aiInput = interpretation.buildAIInput(scoringResult);
+          aiData = JSON.stringify(aiInput);
+          systemPrompt = interpretation.systemPrompt;
+          maxTokens = interpretation.maxTokens;
+        } else {
+          aiData = this.buildFallbackData();
+        }
+      } else {
+        aiData = this.buildFallbackData();
+      }
 
       const response: AIResponse = await this.aiService.generateAssessmentInterpretation(
-        this.assessment?.name || 'Prueba',
-        scores
+        aiData, systemPrompt, maxTokens
       );
 
       if (response.success && response.content) {
-        // Guardar en base de datos
         await this.assessmentService.saveInterpretation(
           this.scoring.id,
           response.content,
@@ -135,6 +148,15 @@ export class AssessmentResultsComponent implements OnInit {
     } finally {
       this.generating = false;
     }
+  }
+
+  private buildFallbackData(): string {
+    return JSON.stringify({
+      assessmentName: this.assessment?.name,
+      totalScore: this.scoring.totalScore,
+      maxScore: this.getMaxPossibleScore(),
+      percentage: this.getPercentage(),
+    });
   }
 
   goBack() {

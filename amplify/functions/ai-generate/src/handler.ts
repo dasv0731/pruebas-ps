@@ -3,16 +3,13 @@ import type { Schema } from '../../../data/resource';
 const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages';
 
 interface AIRequest {
-  type: 'ASSESSMENT_INTERPRETATION' | 'INTERVIEW_ANALYSIS' | 'SUBJECT_ASSESSMENT_REPORT' | 'SUBJECT_INTERVIEW_REPORT' | 'SUBJECT_REPORT' | 'CASE_REPORT';
-  data: any;
+  type: string;
+  data: string;
+  systemPrompt?: string;
+  maxTokens?: number;
 }
 
-interface ClaudeMessage {
-  role: string;
-  content: string;
-}
-
-async function callClaude(systemPrompt: string, userMessage: string): Promise<string> {
+async function callClaude(systemPrompt: string, userMessage: string, maxTokens: number): Promise<string> {
   const apiKey = process.env.CLAUDE_API_KEY;
   if (!apiKey) {
     throw new Error('CLAUDE_API_KEY not configured');
@@ -27,7 +24,7 @@ async function callClaude(systemPrompt: string, userMessage: string): Promise<st
     },
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 2048,
+      max_tokens: maxTokens,
       system: systemPrompt,
       messages: [
         { role: 'user', content: userMessage.substring(0, 8000) },
@@ -44,59 +41,42 @@ async function callClaude(systemPrompt: string, userMessage: string): Promise<st
   return result.content[0].text;
 }
 
-const PROMPTS: Record<string, string> = {
-  ASSESSMENT_INTERPRETATION: `Eres un psicólogo clínico forense experto en peritajes judiciales. Tu tarea es interpretar los resultados de una prueba psicológica.
+// Prompts de fallback para tipos que no envían prompt personalizado
+const FALLBACK_PROMPTS: Record<string, { system: string; maxTokens: number }> = {
+  ASSESSMENT_INTERPRETATION: {
+    system: 'Eres un psicólogo clínico forense. Genera una interpretación clínica concisa para un informe pericial judicial. Máximo 250 palabras. Español. Párrafos narrativos, sin viñetas.',
+    maxTokens: 500,
+  },
+  INTERVIEW_ANALYSIS: {
+    system: `Eres un psicólogo clínico forense. Analiza esta transcripción de entrevista para un informe pericial judicial. Máximo 300 palabras. Español.
 
-Genera una interpretación clínica narrativa basada en los scores proporcionados. La interpretación debe:
-- Ser profesional y técnica, adecuada para un informe pericial judicial
-- Describir qué significan los puntajes obtenidos
-- Identificar áreas de atención clínica si las hay
-- Usar lenguaje formal y preciso
-- Escribir en español
-- No inventar datos que no estén en los scores proporcionados`,
+Identifica: temas principales, indicadores emocionales/conductuales, coherencia del relato, observaciones clínicas relevantes. Párrafos narrativos, sin viñetas.`,
+    maxTokens: 600,
+  },
+  SUBJECT_ASSESSMENT_REPORT: {
+    system: `Eres un psicólogo clínico forense. Consolida las interpretaciones de múltiples pruebas psicológicas en un informe integrado. Máximo 400 palabras. Español.
 
-  INTERVIEW_ANALYSIS: `Eres un psicólogo clínico forense experto en peritajes judiciales. Tu tarea es analizar la transcripción de una entrevista psicológica.
+Integra hallazgos, identifica patrones consistentes, señala contradicciones si las hay. Concluye con perfil psicológico global. Párrafos narrativos, sin viñetas.`,
+    maxTokens: 800,
+  },
+  SUBJECT_INTERVIEW_REPORT: {
+    system: `Eres un psicólogo clínico forense. Consolida los análisis de múltiples entrevistas en un informe integrado. Máximo 300 palabras. Español.
 
-Genera un análisis clínico basado en la transcripción proporcionada. El análisis debe:
-- Identificar temas principales abordados
-- Detectar indicadores emocionales y conductuales relevantes
-- Señalar posibles áreas de preocupación clínica
-- Resumir la actitud y disposición del entrevistado
-- Usar lenguaje formal y técnico apropiado para un informe pericial judicial
-- Escribir en español
-- Basarse exclusivamente en lo que dice la transcripción, sin inventar información`,
+Integra hallazgos, identifica temas recurrentes, señala evolución entre entrevistas. Párrafos narrativos, sin viñetas.`,
+    maxTokens: 600,
+  },
+  SUBJECT_REPORT: {
+    system: `Eres un psicólogo clínico forense. Genera el informe pericial final de un implicado integrando pruebas y entrevistas. Máximo 500 palabras. Español.
 
-  SUBJECT_ASSESSMENT_REPORT: `Eres un psicólogo clínico forense experto en peritajes judiciales. Tu tarea es consolidar las interpretaciones de múltiples pruebas psicológicas aplicadas a un mismo implicado.
+Estructura: contexto de evaluación, resultados de pruebas (resumen), resultados de entrevistas (resumen), integración clínica, conclusiones, recomendaciones. Párrafos narrativos.`,
+    maxTokens: 1000,
+  },
+  CASE_REPORT: {
+    system: `Eres un psicólogo clínico forense. Genera el informe pericial final del caso judicial. Máximo 600 palabras. Español.
 
-Genera un informe consolidado que:
-- Integre los hallazgos de todas las pruebas
-- Identifique patrones consistentes entre pruebas
-- Señale contradicciones si las hay
-- Proporcione una visión global del perfil psicológico basado en las pruebas
-- Use lenguaje formal y técnico para un informe pericial judicial
-- Escriba en español`,
-
-  SUBJECT_INTERVIEW_REPORT: `Eres un psicólogo clínico forense experto en peritajes judiciales. Tu tarea es consolidar los análisis de múltiples entrevistas realizadas a un mismo implicado.
-
-Genera un informe consolidado que:
-- Integre los hallazgos de todas las entrevistas
-- Identifique temas recurrentes
-- Señale evolución o cambios entre entrevistas si los hay
-- Proporcione una visión narrativa global del implicado basada en las entrevistas
-- Use lenguaje formal y técnico para un informe pericial judicial
-- Escriba en español`,
-
-  SUBJECT_REPORT: `Eres un psicólogo clínico forense experto en peritajes judiciales. Tu tarea es generar el informe pericial final de un implicado, integrando los resultados de pruebas psicológicas y entrevistas.
-
-Genera un informe pericial que:
-- Integre el informe consolidado de pruebas y el informe consolidado de entrevistas
-- Proporcione conclusiones clínicas fundamentadas
-- Incluya recomendaciones si corresponde
-- Mantenga estructura de informe pericial judicial
-- Use lenguaje formal, técnico y objetivo
-- Escriba en español`,
-
-  CASE_REPORT: `Eres un psicólogo clínico forense. Genera un informe pericial final CONCISO del caso judicial integrando los informes de los implicados. Máximo 800 palabras. Incluye: resumen del caso, hallazgos principales por implicado, conclusiones generales y recomendaciones al juzgado. Escribe en español, lenguaje formal y técnico.`,
+Estructura: datos del caso, síntesis por implicado (breve), análisis relacional entre implicados, conclusiones generales, recomendaciones al juzgado. Párrafos narrativos.`,
+    maxTokens: 1200,
+  },
 };
 
 export const handler = async (event: any) => {
@@ -105,16 +85,26 @@ export const handler = async (event: any) => {
       ? JSON.parse(event.arguments)
       : event.arguments;
 
-    const { type, data } = request;
+    const { type, data, systemPrompt, maxTokens } = request;
 
-    const systemPrompt = PROMPTS[type];
-    if (!systemPrompt) {
-      throw new Error(`Unknown request type: ${type}`);
+    // Usar prompt personalizado si viene, sino usar fallback
+    let finalSystemPrompt: string;
+    let finalMaxTokens: number;
+
+    if (systemPrompt) {
+      finalSystemPrompt = systemPrompt;
+      finalMaxTokens = maxTokens || 500;
+    } else {
+      const fallback = FALLBACK_PROMPTS[type];
+      if (!fallback) {
+        throw new Error(`Unknown request type: ${type}`);
+      }
+      finalSystemPrompt = fallback.system;
+      finalMaxTokens = fallback.maxTokens;
     }
 
     const userMessage = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-
-    const aiResponse = await callClaude(systemPrompt, userMessage);
+    const aiResponse = await callClaude(finalSystemPrompt, userMessage, finalMaxTokens);
 
     return {
       success: true,

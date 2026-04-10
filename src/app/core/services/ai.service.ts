@@ -18,13 +18,12 @@ export interface AIResponse {
 })
 export class AIService {
 
-  async generateAssessmentInterpretation(assessmentName: string, scores: any): Promise<AIResponse> {
-    const data = JSON.stringify({
-      assessmentName,
-      scores,
-    });
-
-    return this.callAI('ASSESSMENT_INTERPRETATION', data);
+  async generateAssessmentInterpretation(
+    data: string,
+    systemPrompt?: string,
+    maxTokens?: number
+  ): Promise<AIResponse> {
+    return this.callAI('ASSESSMENT_INTERPRETATION', data, systemPrompt, maxTokens);
   }
 
   async generateInterviewAnalysis(transcript: string): Promise<AIResponse> {
@@ -32,46 +31,37 @@ export class AIService {
   }
 
   async generateSubjectAssessmentReport(interpretations: string[]): Promise<AIResponse> {
-    const data = JSON.stringify({
-      interpretations,
-    });
-
+    const data = JSON.stringify({ interpretations });
     return this.callAI('SUBJECT_ASSESSMENT_REPORT', data);
   }
 
   async generateSubjectInterviewReport(analyses: string[]): Promise<AIResponse> {
-    const data = JSON.stringify({
-      analyses,
-    });
-
+    const data = JSON.stringify({ analyses });
     return this.callAI('SUBJECT_INTERVIEW_REPORT', data);
   }
 
   async generateSubjectReport(assessmentReport: string, interviewReport: string): Promise<AIResponse> {
-    const data = JSON.stringify({
-      assessmentReport,
-      interviewReport,
-    });
-
+    const data = JSON.stringify({ assessmentReport, interviewReport });
     return this.callAI('SUBJECT_REPORT', data);
   }
 
   async generateCaseReport(subjectReports: { subjectName: string; report: string }[]): Promise<AIResponse> {
-    const data = JSON.stringify({
-      subjectReports,
-    });
-
+    const data = JSON.stringify({ subjectReports });
     return this.callAI('CASE_REPORT', data);
   }
 
-  private async callAI(type: string, data: string): Promise<AIResponse> {
+  private async callAI(
+    type: string,
+    data: string,
+    systemPrompt?: string,
+    maxTokens?: number
+  ): Promise<AIResponse> {
     try {
-      const response = await client.queries.generateAIContent({
-        type,
-        data,
-      });
+      const payload: any = { type, data };
+      if (systemPrompt) payload.systemPrompt = systemPrompt;
+      if (maxTokens) payload.maxTokens = maxTokens;
 
-      console.log('AI Response:', JSON.stringify(response, null, 2));
+      const response = await client.queries.generateAIContent(payload);
 
       if (response.errors) {
         throw new Error(response.errors.map((e: any) => e.message).join(', '));
