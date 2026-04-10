@@ -54,7 +54,30 @@ export interface TestScoring {
   score(answers: number[]): ScoringResult;
 }
 
+export interface ClinicalRule {
+  condition: (result: ScoringResult) => boolean;
+  finding: string;
+  severity: 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL';
+}
+
+export interface AIInput {
+  testName: string;
+  testDescription: string;
+  scores: Record<string, number>;
+  clinicalFindings: string[];
+  cutoffResult?: string;
+  context: string;
+}
+
+export interface InterpretationConfig {
+  clinicalRules: ClinicalRule[];
+  buildAIInput: (result: ScoringResult) => AIInput;
+  systemPrompt: string;
+  maxTokens: number;
+}
+
 export interface TestDefinition {
   config: TestConfig;
   scoring: TestScoring;
+  interpretation?: InterpretationConfig;
 }

@@ -131,7 +131,6 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
         if (segments[4] === 'assessments') {
           this.activeTab = 'assessments';
           if (segments[5]) {
-            // Estamos en apply o results
             if (segments[6] === 'apply') {
               this.breadcrumbs.push({ label: 'Aplicar prueba', url: '' });
             } else if (segments[6] === 'results') {
@@ -154,7 +153,6 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
         }
       }
     } catch {
-      // Si falla la carga, mostrar breadcrumb básico
     }
   }
 
