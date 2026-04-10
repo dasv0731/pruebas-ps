@@ -35,6 +35,12 @@
         </td>
         <td>{{ c.startDate || '-' }}</td>
         <td class="actions" (click)="$event.stopPropagation()">
+          <button
+            *ngIf="caseReportStatus[c.id]"
+            class="btn btn-primary btn-sm"
+            (click)="goToReport(c.id)">
+            Informe final
+          </button>
           <button class="btn btn-secondary btn-sm" (click)="goToEdit(c.id)">Editar</button>
           <button class="btn btn-danger btn-sm" (click)="onDelete(c.id)">Eliminar</button>
         </td>

@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CaseService } from '../../../../core/services/case.service';
 import { SubjectService } from '../../../../core/services/subject.service';
+import { AssessmentService } from '../../../assessments/services/assessment.service';
+import { InterviewService } from '../../../interviews/services/interview.service';
 import {
   CASE_STATUS_LABELS,
   SUBJECT_TYPE_LABELS,
@@ -23,6 +25,8 @@ export class CaseDetailComponent implements OnInit {
   loading = true;
   error = '';
   caseLocked = false;
+  subjectTestStatus: Record<string, { scored: number; total: number }> = {};
+  subjectInterviewStatus: Record<string, string> = {};
   statusLabels: Record<string, string> = CASE_STATUS_LABELS;
   subjectTypeLabels: Record<string, string> = SUBJECT_TYPE_LABELS;
   subjectStatusLabels: Record<string, string> = SUBJECT_STATUS_LABELS;
@@ -31,7 +35,9 @@ export class CaseDetailComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private caseService: CaseService,
-    private subjectService: SubjectService
+    private subjectService: SubjectService,
+    private assessmentService: AssessmentService,
+    private interviewService: InterviewService
   ) {}
 
   async ngOnInit() {
@@ -46,6 +52,30 @@ export class CaseDetailComponent implements OnInit {
       this.caseData = await this.caseService.getById(this.caseId);
       this.caseLocked = this.caseData?.status === 'COMPLETED';
       this.subjects = await this.subjectService.listByCase(this.caseId);
+      // Cargar estado de pruebas y entrevistas por implicado
+      this.subjectTestStatus = {};
+      this.subjectInterviewStatus = {};
+      for (const s of this.subjects) {
+        const sessions = await this.assessmentService.listSessionsBySubject(s.id);
+        const total = sessions.length;
+        const scored = sessions.filter((sess: any) => sess.status === 'SCORED').length;
+        this.subjectTestStatus[s.id] = { scored, total };
+
+        const interviews = await this.interviewService.listBySubject(s.id);
+        if (interviews.length === 0) {
+          this.subjectInterviewStatus[s.id] = 'SIN_ENTREVISTAS';
+        } else {
+          const allAnalyzed = interviews.every((i: any) => i.status === 'ANALYZED');
+          const allCompleted = interviews.every((i: any) => i.status === 'COMPLETED' || i.status === 'ANALYZED');
+          if (allAnalyzed) {
+            this.subjectInterviewStatus[s.id] = 'ANALYZED';
+          } else if (allCompleted) {
+            this.subjectInterviewStatus[s.id] = 'COMPLETED';
+          } else {
+            this.subjectInterviewStatus[s.id] = 'DRAFT';
+          }
+        }
+      }
     } catch (err: any) {
       this.error = err.message || 'Error al cargar el caso';
     } finally {
@@ -110,5 +140,39 @@ export class CaseDetailComponent implements OnInit {
 
   goToReport() {
     this.router.navigate(['/cases', this.caseId, 'report']);
+  }
+
+  getTestStatusLabel(subjectId: string): string {
+    const status = this.subjectTestStatus[subjectId];
+    if (!status || status.total === 0) return 'Sin pruebas';
+    if (status.scored === status.total) return 'Aplicadas';
+    return `${status.scored}/${status.total} calificadas`;
+  }
+
+  getTestStatusClass(subjectId: string): string {
+    const status = this.subjectTestStatus[subjectId];
+    if (!status || status.total === 0) return 'badge-archived';
+    if (status.scored === status.total) return 'badge-active';
+    return 'badge-pending';
+  }
+
+  getInterviewStatusLabel(subjectId: string): string {
+    const map: Record<string, string> = {
+      SIN_ENTREVISTAS: 'Sin entrevistas',
+      DRAFT: 'Borrador',
+      COMPLETED: 'Sin análisis',
+      ANALYZED: 'Analizadas',
+    };
+    return map[this.subjectInterviewStatus[subjectId]] || 'Sin entrevistas';
+  }
+
+  getInterviewStatusClass(subjectId: string): string {
+    const map: Record<string, string> = {
+      SIN_ENTREVISTAS: 'badge-archived',
+      DRAFT: 'badge-pending',
+      COMPLETED: 'badge-in-progress',
+      ANALYZED: 'badge-active',
+    };
+    return map[this.subjectInterviewStatus[subjectId]] || 'badge-archived';
   }
 }

@@ -74,8 +74,8 @@
         <tr>
           <th>Nombre</th>
           <th>Tipo</th>
-          <th>Identificación</th>
-          <th>Estado</th>
+          <th>Pruebas</th>
+          <th>Entrevistas</th>
           <th>Acciones</th>
         </tr>
       </thead>
@@ -83,14 +83,17 @@
         <tr *ngFor="let s of subjects">
           <td class="clickable" (click)="goToSummary(s.id)">{{ s.firstName }} {{ s.lastName }}</td>
           <td>{{ subjectTypeLabels[s.subjectType] || s.subjectType }}</td>
-          <td>{{ s.documentId || '-' }}</td>
           <td>
-            <span class="badge" [ngClass]="getStatusClass(s.status)">
-              {{ subjectStatusLabels[s.status] || s.status }}
+            <span class="badge" [ngClass]="getTestStatusClass(s.id)">
+              {{ getTestStatusLabel(s.id) }}
+            </span>
+          </td>
+          <td>
+            <span class="badge" [ngClass]="getInterviewStatusClass(s.id)">
+              {{ getInterviewStatusLabel(s.id) }}
             </span>
           </td>
           <td class="actions">
-            <button class="btn btn-primary btn-sm" (click)="goToSummary(s.id)">Resumen</button>
             <button class="btn btn-primary btn-sm" (click)="goToAssessments(s.id)">Pruebas</button>
             <button class="btn btn-primary btn-sm" (click)="goToInterviews(s.id)">Entrevistas</button>
             <button class="btn btn-secondary btn-sm" (click)="goToEditSubject(s.id)" [disabled]="caseLocked">Editar</button>

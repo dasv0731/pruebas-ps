@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { CaseService } from '../../../../core/services/case.service';
 import { CASE_STATUS_LABELS, CaseStatus } from '../../../../core/models/types';
+import { SubjectReportService } from '../../../subjects/services/subject-report.service';
 
 @Component({
   selector: 'app-case-list',
@@ -15,11 +16,13 @@ export class CaseListComponent implements OnInit {
   cases: any[] = [];
   loading = true;
   error = '';
+  caseReportStatus: Record<string, string> = {};
   statusLabels: Record<string, string> = CASE_STATUS_LABELS;
   
   constructor(
     private caseService: CaseService,
-    private router: Router
+    private router: Router,
+    private subjectReportService: SubjectReportService
   ) {}
 
   async ngOnInit() {
@@ -31,6 +34,14 @@ export class CaseListComponent implements OnInit {
       this.loading = true;
       this.error = '';
       this.cases = await this.caseService.list();
+      // Cargar estado de informe final por caso
+      this.caseReportStatus = {};
+      for (const c of this.cases) {
+        const report = await this.subjectReportService.getCaseReport(c.id);
+        if (report) {
+          this.caseReportStatus[c.id] = report.status;
+        }
+      }
     } catch (err: any) {
       this.error = err.message || 'Error al cargar los casos';
     } finally {
@@ -70,5 +81,9 @@ export class CaseListComponent implements OnInit {
       ARCHIVED: 'badge-archived',
     };
     return map[status] || '';
+  }
+
+  goToReport(caseId: string) {
+    this.router.navigate(['/cases', caseId, 'report']);
   }
 }
