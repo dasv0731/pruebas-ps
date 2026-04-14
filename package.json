@@ -3,6 +3,8 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
+    "prestart": "node scripts/ensure-amplify-outputs.cjs",
+    "prebuild": "node scripts/ensure-amplify-outputs.cjs",
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
