@@ -189,6 +189,17 @@ export class AssessmentCatalogComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Validar que el Subject tenga los datos requeridos para aplicar pruebas
+    if (!this.subject?.sex) {
+      this.error = 'El implicado debe tener sexo registrado antes de aplicar pruebas. Edite el implicado primero.';
+      return;
+    }
+
+    if (!this.subject?.dateOfBirth) {
+      this.error = 'El implicado debe tener fecha de nacimiento registrada antes de aplicar pruebas. Edite el implicado primero.';
+      return;
+    }
+
     try {
       this.generatingSession = true;
       this.error = '';
@@ -215,10 +226,15 @@ export class AssessmentCatalogComponent implements OnInit, OnDestroy {
       const subjectName = `${this.subject.firstName} ${this.subject.lastName}`;
       const sessionIds = pendingSessions.map((s) => s.id);
 
+      // Calcular edad al momento de crear la sesión de evaluación
+      const ageYears = this.calculateAgeYears(this.subject.dateOfBirth);
+
       this.evaluationSession = await this.evaluationService.createEvaluationSession(
         this.subjectId,
         this.caseId,
         subjectName,
+        ageYears,
+        this.subject.sex,
         sessionIds
       );
 
@@ -234,6 +250,17 @@ export class AssessmentCatalogComponent implements OnInit, OnDestroy {
     } finally {
       this.generatingSession = false;
     }
+  }
+
+  private calculateAgeYears(dateOfBirth: string): number {
+    const birth = new Date(dateOfBirth);
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    return age;
   }
 
   async pauseEvaluationSession() {

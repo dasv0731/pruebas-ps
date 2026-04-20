@@ -157,11 +157,10 @@ export class AssessmentApplyComponent implements OnInit {
         answersArray.push(this.answers[i] || 0);
       }
 
-      await this.assessmentService.updateSession(this.sessionId, {
-        answers: JSON.stringify(answersArray),
-        status: 'COMPLETED',
-        completedAt: new Date().toISOString(),
-      });
+      await this.assessmentService.completeSession(
+        this.sessionId,
+        JSON.stringify(answersArray)
+      );
 
       await this.assessmentService.scoreSession(this.sessionId, answersArray, this.shortName);
 

@@ -73,6 +73,18 @@ const schema = a.schema({
     'EXPIRED',
   ]),
 
+  Sex: a.enum([
+    'MALE',
+    'FEMALE',
+  ]),
+
+  ReportMode: a.enum([
+    'COMPLETE',
+    'PARTIAL_NO_NORM',
+    'PARTIAL_INSUFFICIENT',
+    'NOT_INTERPRETABLE',
+  ]),
+
   // ──────────────────────────────────────────────
   // CASE (Juicio)
   // ──────────────────────────────────────────────
@@ -104,6 +116,7 @@ const schema = a.schema({
       firstName: a.string().required(),
       lastName: a.string().required(),
       dateOfBirth: a.date(),
+      sex: a.ref('Sex'),
       documentId: a.string(),
       subjectType: a.ref('SubjectType').required(),
       status: a.ref('SubjectStatus').required(),
@@ -159,6 +172,8 @@ const schema = a.schema({
       status: a.ref('SessionStatus').required(),
       startedAt: a.datetime(),
       completedAt: a.datetime(),
+      subjectAgeYears: a.integer(),
+      subjectSex: a.ref('Sex'),
       evaluationSessionId: a.id(),
       subject: a.belongsTo('Subject', 'subjectId'),
       scoring: a.hasMany('AssessmentScoring', 'sessionId'),
@@ -182,6 +197,8 @@ const schema = a.schema({
       version: a.integer().required(),
       isCurrent: a.boolean().required(),
       generatedAt: a.datetime(),
+      scoringVersion: a.integer(),
+      reportMode: a.ref('ReportMode'),
       session: a.belongsTo('AssessmentSession', 'sessionId'),
       interpretation: a.hasMany('AssessmentInterpretation', 'scoringId'),
     })
@@ -337,6 +354,8 @@ const schema = a.schema({
       expiresAt: a.datetime().required(),
       assessmentSessionIds: a.json().required(),
       subjectName: a.string().required(),
+      subjectAgeYears: a.integer(),
+      subjectSex: a.ref('Sex'),
       createdAt: a.datetime(),
     })
     .authorization((allow) => [

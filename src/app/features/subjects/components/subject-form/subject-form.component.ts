@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { SubjectService, SubjectInput } from '../../../../core/services/subject.service';
-import { SUBJECT_TYPE_LABELS, SUBJECT_STATUS_LABELS } from '../../../../core/models/types';
+import { SUBJECT_TYPE_LABELS, SUBJECT_STATUS_LABELS, SEX_LABELS } from '../../../../core/models/types';
 
 @Component({
   selector: 'app-subject-form',
@@ -21,12 +21,14 @@ export class SubjectFormComponent implements OnInit {
   error = '';
   typeOptions = SUBJECT_TYPE_LABELS;
   statusOptions = SUBJECT_STATUS_LABELS;
+  sexOptions = SEX_LABELS;
 
   form: SubjectInput = {
     caseId: '',
     firstName: '',
     lastName: '',
     dateOfBirth: '',
+    sex: undefined,
     documentId: '',
     subjectType: 'MADRE',
     status: 'PENDING',
@@ -35,6 +37,7 @@ export class SubjectFormComponent implements OnInit {
     address: '',
     notes: '',
   };
+  sexTouched = false;
 
   constructor(
     private subjectService: SubjectService,
@@ -63,6 +66,7 @@ export class SubjectFormComponent implements OnInit {
           firstName: data.firstName,
           lastName: data.lastName,
           dateOfBirth: data.dateOfBirth ?? '',
+          sex: data.sex ?? undefined,
           documentId: data.documentId ?? '',
           subjectType: data.subjectType,
           status: data.status,
@@ -80,8 +84,20 @@ export class SubjectFormComponent implements OnInit {
   }
 
   async onSubmit() {
+    this.sexTouched = true;
+
     if (!this.form.firstName || !this.form.lastName) {
       this.error = 'Nombre y apellido son obligatorios';
+      return;
+    }
+
+    if (!this.form.sex) {
+      this.error = 'El sexo es obligatorio';
+      return;
+    }
+
+    if (!this.form.dateOfBirth) {
+      this.error = 'La fecha de nacimiento es obligatoria';
       return;
     }
 

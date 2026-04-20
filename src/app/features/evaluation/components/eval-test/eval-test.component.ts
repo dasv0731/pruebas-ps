@@ -183,7 +183,8 @@ export class EvalTestComponent implements OnInit {
       await this.evaluationService.saveAnswersPublic(
         this.sessionId,
         JSON.stringify(answersArray),
-        'COMPLETED'
+        'COMPLETED',
+        this.evalId
       );
 
       await this.evaluationService.scorePublic(this.sessionId, answersArray);
@@ -196,5 +197,6 @@ export class EvalTestComponent implements OnInit {
     } finally {
       this.submitting = false;
     }
+  
   }
 }

@@ -6,12 +6,14 @@ const client = generateClient<Schema>();
 
 type SubjectType = 'MADRE' | 'PADRE' | 'HIJO' | 'HIJA' | 'TUTOR' | 'OTRO';
 type SubjectStatus = 'PENDING' | 'IN_EVALUATION' | 'EVALUATED' | 'REPORT_DRAFT' | 'REPORT_APPROVED';
+type Sex = 'MALE' | 'FEMALE';
 
 export interface SubjectInput {
   caseId: string;
   firstName: string;
   lastName: string;
   dateOfBirth?: string;
+  sex?: Sex;
   documentId?: string;
   subjectType: SubjectType;
   status: SubjectStatus;

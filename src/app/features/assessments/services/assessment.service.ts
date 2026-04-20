@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../../../../amplify/data/resource';
 import { TestLoaderService } from './test-loader.service';
+import { SubjectService } from '../../../core/services/subject.service';
 
 const client = generateClient<Schema>();
 
@@ -25,7 +26,10 @@ export interface SessionInput {
 })
 export class AssessmentService {
 
-  constructor(private testLoader: TestLoaderService) {}
+  constructor(
+    private testLoader: TestLoaderService,
+    private subjectService: SubjectService
+  ) {}
 
   // ── CATÁLOGO ──
 
@@ -201,7 +205,52 @@ export class AssessmentService {
       aiModel,
       generatedAt: new Date().toISOString(),
     });
-    if (errors) throw new Error(errors.map((e) => e.message).join(', '));
+    if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
     return data;
+  }
+
+  // ── COMPLETE SESSION ──
+
+  /**
+   * Marca una sesión como COMPLETED y congela los datos del sujeto
+   * (edad y sexo) al momento de la aplicación. Usado en el flujo privado
+   * de la psicóloga. El flujo público (evaluado) usa EvaluationService.saveAnswersPublic.
+   */
+  async completeSession(sessionId: string, answers: string): Promise<void> {
+    const session = await this.getSession(sessionId);
+    if (!session) throw new Error('Sesión no encontrada');
+
+    const subject = await this.subjectService.getById(session.subjectId);
+    if (!subject) throw new Error('Implicado no encontrado');
+
+    if (!subject.sex) throw new Error('El implicado no tiene sexo registrado');
+    if (!subject.dateOfBirth) throw new Error('El implicado no tiene fecha de nacimiento registrada');
+
+    const ageYears = this.calculateAgeYears(subject.dateOfBirth);
+
+    const updatePayload = {
+      id: sessionId,
+      answers,
+      status: 'COMPLETED' as SessionStatus,
+      completedAt: new Date().toISOString(),
+      subjectAgeYears: ageYears,
+      subjectSex: subject.sex,
+    };
+    const { data, errors } = await client.models.AssessmentSession.update(updatePayload);
+    if (errors) throw new Error(errors.map((e) => e.message).join(', '));
+  }
+
+  /**
+   * Calcula años enteros cumplidos entre una fecha de nacimiento y hoy.
+   */
+  private calculateAgeYears(dateOfBirth: string): number {
+    const birth = new Date(dateOfBirth);
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    return age;
   }
 }

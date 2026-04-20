@@ -16,6 +16,8 @@ export class EvaluationService {
     subjectId: string,
     caseId: string,
     subjectName: string,
+    subjectAgeYears: number,
+    subjectSex: 'MALE' | 'FEMALE',
     assessmentSessionIds: string[]
   ) {
     const code = this.generateCode();
@@ -29,6 +31,8 @@ export class EvaluationService {
       expiresAt,
       assessmentSessionIds: JSON.stringify(assessmentSessionIds),
       subjectName,
+      subjectAgeYears,
+      subjectSex,
       createdAt: new Date().toISOString(),
     });
     if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
@@ -124,13 +128,38 @@ export class EvaluationService {
     }
   }
 
-  async saveAnswersPublic(sessionId: string, answers: string, status: string) {
-    const { data, errors } = await (publicClient.models as any).AssessmentSession.update({
+  async saveAnswersPublic(
+    sessionId: string,
+    answers: string,
+    status: string,
+    evaluationSessionId?: string
+  ) {
+    const updatePayload: any = {
       id: sessionId,
       answers,
       status,
-      completedAt: status === 'COMPLETED' ? new Date().toISOString() : undefined,
-    });
+    };
+
+    if (status === 'COMPLETED') {
+      updatePayload.completedAt = new Date().toISOString();
+
+      // Al completar, congelar edad y sexo desde la EvaluationSession
+      if (evaluationSessionId) {
+        const evalResult = await (publicClient.models as any).EvaluationSession.get({
+          id: evaluationSessionId,
+        });
+
+        if (evalResult.data) {
+          if (evalResult.data.subjectAgeYears != null) {
+            updatePayload.subjectAgeYears = evalResult.data.subjectAgeYears;
+          }
+          if (evalResult.data.subjectSex != null) {
+            updatePayload.subjectSex = evalResult.data.subjectSex;
+          }
+        }
+      }
+    }
+    const { data, errors } = await (publicClient.models as any).AssessmentSession.update(updatePayload);
     if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
     return data;
   }

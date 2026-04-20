@@ -32,3 +32,10 @@ export const SUBJECT_STATUS_LABELS: Record<SubjectStatus, string> = {
   REPORT_DRAFT: 'Informe borrador',
   REPORT_APPROVED: 'Informe aprobado',
 };
+
+export type Sex = 'MALE' | 'FEMALE';
+
+export const SEX_LABELS: Record<Sex, string> = {
+  MALE: 'Masculino',
+  FEMALE: 'Femenino',
+};
