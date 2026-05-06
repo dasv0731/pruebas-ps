@@ -10,6 +10,7 @@ export interface InterviewInput {
   subjectId: string;
   interviewDate: string;
   transcript?: string;
+  extractionRequest?: string;
   status: InterviewStatus;
 }
 

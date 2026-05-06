@@ -175,3 +175,44 @@
   padding: 4px 10px;
   font-size: 0.78rem;
 }
+
+.extraction-block {
+  margin-top: 8px;
+  padding: 16px;
+  background-color: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+
+  label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #2d3748;
+  }
+
+  .optional-tag {
+    font-weight: 400;
+    color: #a0aec0;
+    font-size: 0.78rem;
+    margin-left: 6px;
+  }
+
+  .hint {
+    margin: 4px 0 10px;
+    font-size: 0.78rem;
+    color: #718096;
+    line-height: 1.5;
+  }
+}
+
+.extraction-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+
+  .dirty-flag {
+    font-size: 0.78rem;
+    color: #c05621;
+    font-style: italic;
+  }
+}

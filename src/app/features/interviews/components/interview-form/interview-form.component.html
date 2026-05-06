@@ -9,9 +9,14 @@
     </span>
   </div>
 
-  <div *ngIf="loading" class="loading">Cargando...</div>
+  <app-skeleton *ngIf="loading" variant="card" [lines]="4" label="Cargando entrevista..."></app-skeleton>
 
-  <div *ngIf="error" class="error-msg">{{ error }}</div>
+  <app-error-state
+    *ngIf="error && !loading"
+    [message]="error"
+    secondaryLabel="Volver"
+    (secondary)="goBack()"
+  ></app-error-state>
 
   <form *ngIf="!loading" (ngSubmit)="onSubmit()" class="interview-form">
     <div class="form-row">
@@ -38,6 +43,41 @@
         placeholder="Escriba aquí la transcripción completa de la entrevista..."
         [disabled]="isCompleted()"
       ></textarea>
+    </div>
+
+    <div class="form-group full-width extraction-block" *ngIf="isEdit">
+      <label for="extractionRequest">
+        Aspectos a resaltar para el análisis con IA
+        <span class="optional-tag">(opcional)</span>
+      </label>
+      <p class="hint">
+        Indique aquí qué quiere que la IA destaque o profundice de esta entrevista
+        (p. ej. "evaluar coherencia de la versión sobre el incidente del 12 de marzo",
+        "identificar indicadores de victimización secundaria", "centrarse en la
+        relación con la madre"). Si lo deja vacío, el análisis se hará solo con la
+        metodología general.
+      </p>
+      <textarea
+        id="extractionRequest"
+        [(ngModel)]="form.extractionRequest"
+        (ngModelChange)="onExtractionChange()"
+        name="extractionRequest"
+        rows="4"
+        placeholder="Aspectos específicos a destacar de esta entrevista..."
+        [disabled]="!canEditExtractionRequest()"
+      ></textarea>
+      <div class="extraction-actions" *ngIf="canEditExtractionRequest()">
+        <button
+          type="button"
+          class="btn btn-secondary btn-sm"
+          (click)="saveExtractionRequest()"
+          [disabled]="!extractionDirty || savingExtraction">
+          {{ savingExtraction ? 'Guardando...' : 'Guardar focos' }}
+        </button>
+        <span *ngIf="extractionDirty && !savingExtraction" class="dirty-flag">
+          Hay cambios sin guardar.
+        </span>
+      </div>
     </div>
 
     <div class="form-actions">
@@ -84,16 +124,22 @@
       </div>
     </div>
 
-    <div *ngIf="!canGenerateAnalysis() && !analysis" class="analysis-empty">
-      Complete la entrevista con "Guardar y completar" para poder generar el análisis con IA.
-    </div>
+    <app-empty-state
+      *ngIf="!canGenerateAnalysis() && !analysis && !generating"
+      icon="document"
+      title="Aún no hay análisis de IA para esta entrevista"
+      description="Complete la entrevista con &quot;Guardar y completar&quot; para habilitar la generación del análisis."
+    ></app-empty-state>
 
-    <div *ngIf="generating" class="generating-msg">
-      Generando análisis con IA, esto puede tardar unos segundos...
-    </div>
+    <app-skeleton
+      *ngIf="generating"
+      variant="analysis"
+      label="Generando análisis con IA. Esto puede tardar unos segundos..."
+    ></app-skeleton>
 
-    <div *ngIf="analysis && !generating" class="analysis-content">
-      {{ analysis }}
-    </div>
+    <app-analysis-output
+      *ngIf="analysis && !generating"
+      [content]="analysis"
+    ></app-analysis-output>
   </div>
 </div>

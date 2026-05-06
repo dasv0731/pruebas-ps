@@ -5,11 +5,22 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { InterviewService, InterviewInput } from '../../services/interview.service';
 import { AIService, AIResponse } from '../../../../core/services/ai.service';
 import { CaseService } from '../../../../core/services/case.service';
+import { AnalysisOutputComponent } from '../../../../shared/components/analysis-output/analysis-output.component';
+import { SkeletonComponent } from '../../../../shared/components/skeleton/skeleton.component';
+import { ErrorStateComponent } from '../../../../shared/components/error-state/error-state.component';
+import { EmptyStateComponent } from '../../../../shared/components/empty-state/empty-state.component';
 
 @Component({
   selector: 'app-interview-form',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    AnalysisOutputComponent,
+    SkeletonComponent,
+    ErrorStateComponent,
+    EmptyStateComponent,
+  ],
   templateUrl: './interview-form.component.html',
   styleUrl: './interview-form.component.scss',
 })
@@ -31,8 +42,13 @@ export class InterviewFormComponent implements OnInit {
     subjectId: '',
     interviewDate: '',
     transcript: '',
+    extractionRequest: '',
     status: 'DRAFT',
   };
+
+  /** Indica si se ha modificado el extractionRequest desde la última carga (para habilitar el botón "Guardar focos"). */
+  extractionDirty = false;
+  savingExtraction = false;
 
   constructor(
     private interviewService: InterviewService,
@@ -67,8 +83,10 @@ export class InterviewFormComponent implements OnInit {
           subjectId: data.subjectId,
           interviewDate: data.interviewDate,
           transcript: data.transcript ?? '',
+          extractionRequest: (data as any).extractionRequest ?? '',
           status: data.status as 'DRAFT' | 'COMPLETED' | 'ANALYZED',
         };
+        this.extractionDirty = false;
 
         const saved = await this.interviewService.getAnalysis(this.interviewId);
         if (saved) {
@@ -148,7 +166,8 @@ export class InterviewFormComponent implements OnInit {
       this.error = '';
 
       const response: AIResponse = await this.aiService.generateInterviewAnalysis(
-        this.form.transcript!
+        this.form.transcript!,
+        this.form.extractionRequest?.trim() || undefined,
       );
 
       if (response.success && response.content) {
@@ -199,5 +218,30 @@ export class InterviewFormComponent implements OnInit {
       'subjects', this.subjectId,
       'interviews',
     ]);
+  }
+
+  /** Permite editar los focos a resaltar incluso después de COMPLETED, sin desbloquear la transcripción. */
+  canEditExtractionRequest(): boolean {
+    return this.isEdit && !this.caseLocked;
+  }
+
+  onExtractionChange() {
+    this.extractionDirty = true;
+  }
+
+  async saveExtractionRequest() {
+    if (!this.interviewId || !this.canEditExtractionRequest()) return;
+    try {
+      this.savingExtraction = true;
+      this.error = '';
+      await this.interviewService.update(this.interviewId, {
+        extractionRequest: this.form.extractionRequest ?? '',
+      });
+      this.extractionDirty = false;
+    } catch (err: any) {
+      this.error = err.message || 'Error al guardar los focos a resaltar';
+    } finally {
+      this.savingExtraction = false;
+    }
   }
 }
