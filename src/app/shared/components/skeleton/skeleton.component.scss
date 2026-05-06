@@ -1,0 +1,98 @@
+:host {
+  display: block;
+}
+
+.skeleton-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+
+  &.is-card {
+    padding: var(--space-5);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    gap: var(--space-3);
+  }
+}
+
+.line {
+  height: 12px;
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-muted) 0%,
+    var(--color-border) 50%,
+    var(--color-surface-muted) 100%
+  );
+  background-size: 200% 100%;
+  border-radius: var(--radius-sm);
+  animation: shimmer 1.4s ease-in-out infinite;
+
+  &.line-title {
+    height: 18px;
+    width: 50%;
+    margin-bottom: var(--space-2);
+  }
+
+  &.line-spacer {
+    background: transparent;
+    height: var(--space-2);
+    animation: none;
+  }
+}
+
+.row {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.cell {
+  height: 14px;
+  flex: 1;
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-muted) 0%,
+    var(--color-border) 50%,
+    var(--color-surface-muted) 100%
+  );
+  background-size: 200% 100%;
+  border-radius: var(--radius-sm);
+  animation: shimmer 1.4s ease-in-out infinite;
+
+  &.cell-narrow { max-width: 80px; flex: 0 0 80px; }
+}
+
+.analysis-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.skeleton-label {
+  margin-top: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  font-style: italic;
+  text-align: center;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Si el usuario prefiere reducir movimiento, sustituimos el shimmer por un
+   color estático sin animación (la regla global ya neutraliza el animation,
+   pero esto evita que se vea como una banda fija fea). */
+@media (prefers-reduced-motion: reduce) {
+  .line,
+  .cell {
+    background: var(--color-surface-muted);
+    background-size: auto;
+  }
+}

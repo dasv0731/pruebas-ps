@@ -1,39 +1,45 @@
 .breadcrumb-container {
-  background: white;
-  border-bottom: 1px solid #e2e8f0;
-  padding: 0 24px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  padding: 0 var(--space-6);
 }
 
 .breadcrumb-nav {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  padding: 10px 0;
-  font-size: 0.85rem;
+  padding: var(--space-2) 0;
+  font-size: var(--text-sm);
+  gap: 2px;
 }
 
 .crumb-link {
   background: none;
   border: none;
-  color: #2b6cb0;
+  color: var(--color-primary);
   cursor: pointer;
-  font-size: 0.85rem;
-  padding: 2px 0;
+  font-size: var(--text-sm);
+  font-family: inherit;
+  padding: 2px var(--space-1);
+  border-radius: var(--radius-sm);
+  transition: background-color var(--duration-fast) var(--easing-out);
 
   &:hover {
     text-decoration: underline;
+    background-color: var(--color-primary-soft);
   }
 }
 
 .crumb-current {
-  color: #4a5568;
+  color: var(--color-text);
   font-weight: 600;
+  padding: 2px var(--space-1);
 }
 
 .crumb-separator {
-  margin: 0 8px;
-  color: #a0aec0;
-  font-size: 0.9rem;
+  margin: 0 var(--space-2);
+  color: var(--color-text-subtle);
+  font-size: var(--text-base);
 }
 
 .crumb-dropdown-wrapper {
@@ -43,16 +49,20 @@
 
 .crumb-dropdown-trigger {
   background: none;
-  border: 1px solid #e2e8f0;
-  border-radius: 4px;
-  color: #2b6cb0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-primary);
   cursor: pointer;
-  font-size: 0.85rem;
-  padding: 3px 8px;
+  font-size: var(--text-sm);
+  font-family: inherit;
+  padding: 3px var(--space-2);
+  transition:
+    background-color var(--duration-fast) var(--easing-out),
+    border-color var(--duration-fast) var(--easing-out);
 
   &:hover {
-    background: #f7fafc;
-    border-color: #2b6cb0;
+    background: var(--color-surface-muted);
+    border-color: var(--color-primary);
   }
 }
 
@@ -60,12 +70,14 @@
   position: absolute;
   top: 100%;
   left: 0;
-  margin-top: 4px;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  min-width: 200px;
+  margin-top: var(--space-1);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  min-width: 220px;
+  max-height: 320px;
+  overflow-y: auto;
   z-index: 100;
 }
 
@@ -74,35 +86,37 @@
   width: 100%;
   background: none;
   border: none;
-  padding: 8px 14px;
+  padding: var(--space-2) var(--space-3);
   text-align: left;
-  font-size: 0.85rem;
-  color: #2d3748;
+  font-size: var(--text-sm);
+  font-family: inherit;
+  color: var(--color-text);
   cursor: pointer;
+  transition: background-color var(--duration-fast) var(--easing-out);
 
   &:hover {
-    background: #f7fafc;
+    background: var(--color-surface-muted);
   }
 
   &.active {
-    background: #ebf8ff;
-    color: #2b6cb0;
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
     font-weight: 600;
   }
 
   &:first-child {
-    border-radius: 6px 6px 0 0;
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
   }
 
   &:last-child {
-    border-radius: 0 0 6px 6px;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
   }
 }
 
 .tabs-nav {
   display: flex;
   gap: 0;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--color-border);
   padding-top: 0;
 }
 
@@ -110,21 +124,25 @@
   background: none;
   border: none;
   border-bottom: 3px solid transparent;
-  padding: 10px 20px;
-  font-size: 0.85rem;
-  color: #718096;
+  padding: var(--space-3) var(--space-5);
+  font-size: var(--text-sm);
+  font-family: inherit;
+  color: var(--color-text-muted);
   cursor: pointer;
   font-weight: 500;
-  transition: all 0.2s;
+  transition:
+    color var(--duration-fast) var(--easing-out),
+    background-color var(--duration-fast) var(--easing-out),
+    border-color var(--duration-fast) var(--easing-out);
 
   &:hover {
-    color: #2d3748;
-    background: #f7fafc;
+    color: var(--color-text);
+    background: var(--color-surface-muted);
   }
 
   &.tab-active {
-    color: #2b6cb0;
-    border-bottom-color: #2b6cb0;
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
     font-weight: 600;
   }
 }

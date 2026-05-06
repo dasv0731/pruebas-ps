@@ -1,0 +1,44 @@
+<div
+  class="skeleton-wrapper"
+  [class.is-card]="variant === 'card'"
+  role="status"
+  [attr.aria-label]="label || 'Cargando'"
+>
+  <ng-container [ngSwitch]="variant">
+    <!-- Líneas planas: N rectángulos uno debajo del otro -->
+    <ng-container *ngSwitchCase="'lines'">
+      <div *ngFor="let _ of range; let i = index" class="line" [style.width.%]="100 - (i * 8 % 25)"></div>
+    </ng-container>
+
+    <!-- Card: header + cuerpo -->
+    <ng-container *ngSwitchCase="'card'">
+      <div class="line line-title"></div>
+      <div *ngFor="let _ of range" class="line"></div>
+    </ng-container>
+
+    <!-- Table: filas con celdas -->
+    <ng-container *ngSwitchCase="'table'">
+      <div *ngFor="let _ of range" class="row">
+        <div class="cell cell-narrow"></div>
+        <div class="cell"></div>
+        <div class="cell cell-narrow"></div>
+      </div>
+    </ng-container>
+
+    <!-- Analysis: bloque de prosa simulando un párrafo de análisis IA -->
+    <ng-container *ngSwitchCase="'analysis'">
+      <div class="analysis-block">
+        <div class="line" style="width: 92%"></div>
+        <div class="line" style="width: 88%"></div>
+        <div class="line" style="width: 95%"></div>
+        <div class="line" style="width: 70%"></div>
+        <div class="line line-spacer"></div>
+        <div class="line" style="width: 90%"></div>
+        <div class="line" style="width: 85%"></div>
+        <div class="line" style="width: 60%"></div>
+      </div>
+    </ng-container>
+  </ng-container>
+
+  <p *ngIf="label" class="skeleton-label">{{ label }}</p>
+</div>

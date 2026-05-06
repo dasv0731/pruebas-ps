@@ -1,10 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { AmplifyAuthenticatorModule, AuthenticatorService } from '@aws-amplify/ui-angular';
 import { CommonModule } from '@angular/common';
 import { AuthService } from './core/services/auth.service';
 import { BreadcrumbComponent } from './core/components/breadcrumb/breadcrumb.component';
 import { filter } from 'rxjs/operators';
+import { Hub } from 'aws-amplify/utils';
 
 @Component({
   selector: 'app-root',
@@ -13,8 +14,9 @@ import { filter } from 'rxjs/operators';
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, OnDestroy {
   isPublicRoute = false;
+  private hubUnsubscribe: (() => void) | null = null;
 
   constructor(
     public authenticator: AuthenticatorService,
@@ -33,7 +35,18 @@ export class AppComponent implements OnInit {
 
     if (!this.isPublicRoute) {
       this.authService.checkAuth();
+
+      // Después del sign-in el router-outlet acaba de montarse: forzar navegación
+      this.hubUnsubscribe = Hub.listen('auth', ({ payload }) => {
+        if (payload.event === 'signedIn') {
+          setTimeout(() => this.router.navigate(['/cases']), 0);
+        }
+      });
     }
+  }
+
+  ngOnDestroy() {
+    this.hubUnsubscribe?.();
   }
 
   async onSignOut() {

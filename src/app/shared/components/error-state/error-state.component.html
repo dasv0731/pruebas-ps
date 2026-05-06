@@ -1,0 +1,34 @@
+<div
+  class="error-state"
+  [class.is-block]="variant === 'block'"
+  role="alert"
+  aria-live="polite"
+>
+  <div *ngIf="variant === 'block'" class="icon-wrap" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <circle cx="12" cy="12" r="9"/>
+      <path d="M12 8v5M12 16.5v.01" stroke-linecap="round"/>
+    </svg>
+  </div>
+
+  <p class="message">{{ message }}</p>
+
+  <div class="actions" *ngIf="retryLabel || secondaryLabel">
+    <button
+      *ngIf="retryLabel"
+      type="button"
+      class="btn btn-primary btn-sm"
+      (click)="onRetry()"
+    >
+      {{ retryLabel }}
+    </button>
+    <button
+      *ngIf="secondaryLabel"
+      type="button"
+      class="btn btn-secondary btn-sm"
+      (click)="onSecondary()"
+    >
+      {{ secondaryLabel }}
+    </button>
+  </div>
+</div>

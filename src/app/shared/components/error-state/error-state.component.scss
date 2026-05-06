@@ -1,0 +1,54 @@
+:host {
+  display: block;
+}
+
+.error-state {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background-color: var(--color-danger-bg);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 30%, transparent);
+  border-radius: var(--radius-md);
+  color: var(--color-danger-fg);
+
+  &.is-block {
+    align-items: center;
+    text-align: center;
+    padding: var(--space-8) var(--space-5);
+  }
+}
+
+.icon-wrap {
+  width: 48px;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background-color: rgba(255, 255, 255, 0.5);
+  color: var(--color-danger);
+
+  svg {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+.message {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--line-base);
+  font-weight: 500;
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.is-block .actions {
+  justify-content: center;
+  margin-top: var(--space-2);
+}

@@ -55,6 +55,58 @@ export class AssessmentResultsComponent implements OnInit {
       }
 
       this.assessment = await this.assessmentService.getAssessment(this.session.assessmentId);
+
+      // CDI tiene su propio componente de resultados. Redirigir.
+      if (this.assessment?.shortName === 'CDI') {
+        this.router.navigate([
+          '/cases', this.caseId,
+          'subjects', this.subjectId,
+          'assessments', this.sessionId, 'results-cdi',
+        ]);
+        return;
+      }
+
+      // CUIDA se corrige en TEACorrige. Redirigir según si ya tiene scoring.
+      if (this.assessment?.shortName === 'CUIDA') {
+        const cuidaScoring = await this.assessmentService.getScoring(this.sessionId);
+        if (cuidaScoring?.source === 'TEA' && cuidaScoring?.isCurrent) {
+          this.router.navigate([
+            '/cases', this.caseId,
+            'subjects', this.subjectId,
+            'assessments', this.sessionId, 'results-cuida',
+          ]);
+        } else {
+          this.router.navigate([
+            '/cases', this.caseId,
+            'subjects', this.subjectId,
+            'assessments', this.sessionId, 'cuida-pending',
+          ]);
+        }
+        return;
+      }
+
+      // TAMAI se corrige en TEACorrige. Redirigir según si ya tiene scoring.
+      if (this.assessment?.shortName === 'TAMAI') {
+        const tamaiScoring = await this.assessmentService.getScoring(this.sessionId);
+        if (tamaiScoring?.source === 'TEA' && tamaiScoring?.isCurrent) {
+          this.router.navigate(['/cases', this.caseId, 'subjects', this.subjectId, 'assessments', this.sessionId, 'results-tamai']);
+        } else {
+          this.router.navigate(['/cases', this.caseId, 'subjects', this.subjectId, 'assessments', this.sessionId, 'tamai-pending']);
+        }
+        return;
+      }
+
+      // PAI se corrige en TEACorrige. Redirigir según si ya tiene scoring.
+      if (this.assessment?.shortName === 'PAI') {
+        const paiScoring = await this.assessmentService.getScoring(this.sessionId);
+        if (paiScoring?.source === 'TEA' && paiScoring?.isCurrent) {
+          this.router.navigate(['/cases', this.caseId, 'subjects', this.subjectId, 'assessments', this.sessionId, 'results-pai']);
+        } else {
+          this.router.navigate(['/cases', this.caseId, 'subjects', this.subjectId, 'assessments', this.sessionId, 'pai-pending']);
+        }
+        return;
+      }
+
       this.scoring = await this.assessmentService.getScoring(this.sessionId);
 
       if (this.session.answers) {

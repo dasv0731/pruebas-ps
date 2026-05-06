@@ -16,6 +16,35 @@ interface SubjectNav {
   name: string;
 }
 
+/**
+ * Mapa de segmentos de URL específicos de cada test a etiquetas amigables.
+ * El primer item se usa cuando el segmento aparece como sufijo de un sessionId
+ * (p. ej. /assessments/:sessionId/pai-entry).
+ */
+const TEST_SEGMENT_LABELS: Record<string, string> = {
+  // Genéricos (legacy)
+  'apply': 'Aplicar prueba',
+  'results': 'Resultados',
+
+  // CDI
+  'results-cdi': 'CDI · Resultados',
+
+  // CUIDA
+  'cuida-pending': 'CUIDA · Pendiente de transcripción',
+  'cuida-entry': 'CUIDA · Transcribir puntuaciones',
+  'results-cuida': 'CUIDA · Resultados',
+
+  // TAMAI
+  'tamai-pending': 'TAMAI · Pendiente de transcripción',
+  'tamai-entry': 'TAMAI · Transcribir puntuaciones',
+  'results-tamai': 'TAMAI · Resultados',
+
+  // PAI
+  'pai-pending': 'PAI · Pendiente de transcripción',
+  'pai-entry': 'PAI · Transcribir puntuaciones',
+  'results-pai': 'PAI · Resultados',
+};
+
 @Component({
   selector: 'app-breadcrumb',
   standalone: true,
@@ -130,11 +159,10 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
 
         if (segments[4] === 'assessments') {
           this.activeTab = 'assessments';
-          if (segments[5]) {
-            if (segments[6] === 'apply') {
-              this.breadcrumbs.push({ label: 'Aplicar prueba', url: '' });
-            } else if (segments[6] === 'results') {
-              this.breadcrumbs.push({ label: 'Resultados', url: '' });
+          if (segments[5] && segments[6]) {
+            const label = TEST_SEGMENT_LABELS[segments[6]];
+            if (label) {
+              this.breadcrumbs.push({ label, url: '' });
             }
           }
         } else if (segments[4] === 'interviews') {

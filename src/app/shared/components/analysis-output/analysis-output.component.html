@@ -1,0 +1,30 @@
+<div class="analysis-prose">
+  <ng-container *ngFor="let seg of segments">
+    <span
+      *ngIf="seg.kind === 'text'"
+      class="seg-text">{{ seg.text }}</span>
+
+    <span
+      *ngIf="seg.kind === 'inference'"
+      class="seg-marker seg-inference"
+      title="La IA marcó esta frase como una inferencia clínica que requiere revisión humana antes de firmar."
+    >Inferencia clínica</span>
+
+    <span
+      *ngIf="seg.kind === 'not-referred'"
+      class="seg-marker seg-not-referred"
+      title="No referido en la entrevista — la IA no encontró información sobre este punto en la transcripción."
+    >No referido</span>
+  </ng-container>
+</div>
+
+<aside class="legend" aria-label="Leyenda de marcadores del análisis">
+  <span class="legend-item">
+    <span class="seg-marker seg-inference">Inferencia clínica</span>
+    Frase que requiere revisión clínica antes de firmar.
+  </span>
+  <span class="legend-item">
+    <span class="seg-marker seg-not-referred">No referido</span>
+    Sección sin información en la entrevista.
+  </span>
+</aside>

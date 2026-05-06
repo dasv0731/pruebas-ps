@@ -209,6 +209,91 @@ export class AssessmentService {
     return data;
   }
 
+  // ── CUIDA MANUAL SCORING ──
+
+  async saveCuidaScoring(sessionId: string, cuidaScoring: object): Promise<void> {
+    const existing = await client.models.AssessmentScoring.list({
+      filter: { sessionId: { eq: sessionId } },
+    });
+
+    let maxVersion = 0;
+    if (existing.data) {
+      for (const item of existing.data) {
+        if ((item.version ?? 0) > maxVersion) maxVersion = item.version ?? 0;
+        if (item.isCurrent) {
+          await client.models.AssessmentScoring.update({ id: item.id, isCurrent: false });
+        }
+      }
+    }
+
+    const { errors } = await client.models.AssessmentScoring.create({
+      sessionId,
+      totalScore: 0,
+      scores: JSON.stringify(cuidaScoring),
+      source: 'TEA' as ScoringSource,
+      status: 'COMPLETED' as ScoringStatus,
+      version: maxVersion + 1,
+      isCurrent: true,
+      generatedAt: new Date().toISOString(),
+      reportMode: 'COMPLETE' as any,
+    });
+    if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
+
+    await this.updateSession(sessionId, { status: 'SCORED' as SessionStatus });
+  }
+
+  async saveTAMAIScoring(sessionId: string, tamaiScoring: object): Promise<void> {
+    const existing = await client.models.AssessmentScoring.list({
+      filter: { sessionId: { eq: sessionId } },
+    });
+    let maxVersion = 0;
+    if (existing.data) {
+      for (const item of existing.data) {
+        if ((item.version ?? 0) > maxVersion) maxVersion = item.version ?? 0;
+        if (item.isCurrent) {
+          await client.models.AssessmentScoring.update({ id: item.id, isCurrent: false });
+        }
+      }
+    }
+    const { errors } = await client.models.AssessmentScoring.create({
+      sessionId, totalScore: 0,
+      scores: JSON.stringify(tamaiScoring),
+      source: 'TEA' as ScoringSource,
+      status: 'COMPLETED' as ScoringStatus,
+      version: maxVersion + 1, isCurrent: true,
+      generatedAt: new Date().toISOString(),
+      reportMode: 'COMPLETE' as any,
+    });
+    if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
+    await this.updateSession(sessionId, { status: 'SCORED' as SessionStatus });
+  }
+
+  async savePAIScoring(sessionId: string, paiScoring: object): Promise<void> {
+    const existing = await client.models.AssessmentScoring.list({
+      filter: { sessionId: { eq: sessionId } },
+    });
+    let maxVersion = 0;
+    if (existing.data) {
+      for (const item of existing.data) {
+        if ((item.version ?? 0) > maxVersion) maxVersion = item.version ?? 0;
+        if (item.isCurrent) {
+          await client.models.AssessmentScoring.update({ id: item.id, isCurrent: false });
+        }
+      }
+    }
+    const { errors } = await client.models.AssessmentScoring.create({
+      sessionId, totalScore: 0,
+      scores: JSON.stringify(paiScoring),
+      source: 'TEA' as ScoringSource,
+      status: 'COMPLETED' as ScoringStatus,
+      version: maxVersion + 1, isCurrent: true,
+      generatedAt: new Date().toISOString(),
+      reportMode: 'COMPLETE' as any,
+    });
+    if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
+    await this.updateSession(sessionId, { status: 'SCORED' as SessionStatus });
+  }
+
   // ── COMPLETE SESSION ──
 
   /**

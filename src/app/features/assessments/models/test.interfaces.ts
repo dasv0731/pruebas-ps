@@ -10,6 +10,7 @@ export interface TestSection {
   instructions: string;
   legend: string[];
   questions: TestQuestion[];
+  conditional?: { gateQuestion: string };
 }
 
 export interface TestSubscale {
@@ -34,6 +35,12 @@ export interface TestConfig {
   scoringType: 'LOCAL' | 'TEA';
   optionLabels?: string[];
   sections: TestSection[];
+  /** Si está presente, se muestra una pantalla de instrucciones antes de comenzar */
+  globalInstructions?: string;
+  /** Si está presente, las preguntas se muestran paginadas (N por página) */
+  questionsPerPage?: number;
+  /** Si está presente, cada sección se muestra en su propia página */
+  paginateBySection?: boolean;
 }
 
 export interface ScoringResult {
