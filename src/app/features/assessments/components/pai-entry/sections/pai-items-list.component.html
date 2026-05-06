@@ -1,0 +1,38 @@
+<div class="items-list">
+  <div class="header">
+    <h3>{{ title }}</h3>
+    <button type="button" class="btn btn-secondary btn-sm" (click)="addItem()">
+      + Agregar ítem
+    </button>
+  </div>
+
+  <p *ngIf="groups.length === 0" class="empty">{{ emptyText }}</p>
+
+  <div *ngFor="let g of groups; let i = index" class="row" [formGroup]="g">
+    <div class="field">
+      <label>Ítem nº</label>
+      <input
+        type="number"
+        formControlName="itemNumber"
+        class="num-input"
+        [class.invalid]="isInvalid(g, 'itemNumber')"
+        [min]="1"
+        [max]="maxItem"
+      />
+    </div>
+    <div class="field">
+      <label>Respuesta</label>
+      <select
+        formControlName="response"
+        class="select-input"
+        [class.invalid]="isInvalid(g, 'response')"
+      >
+        <option [ngValue]="null" disabled>—</option>
+        <option *ngFor="let o of responseOptions" [ngValue]="o.value">{{ o.label }}</option>
+      </select>
+    </div>
+    <button type="button" class="btn btn-danger btn-sm remove-btn" (click)="removeItem(i)">
+      Eliminar
+    </button>
+  </div>
+</div>

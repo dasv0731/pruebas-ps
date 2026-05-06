@@ -1,0 +1,26 @@
+<div class="scale-row" [class.sub]="variant === 'sub'" [formGroup]="group">
+  <span class="scale-abbr">{{ abbr }}</span>
+  <span class="scale-label">{{ label }}</span>
+  <div class="inputs">
+    <div *ngIf="!onlyT" class="field">
+      <input
+        type="number"
+        formControlName="pd"
+        class="num-input"
+        [class.invalid]="isInvalid('pd')"
+        aria-label="PD"
+      />
+      <span class="input-tag">PD</span>
+    </div>
+    <div class="field">
+      <input
+        type="number"
+        formControlName="t"
+        class="num-input"
+        [class.invalid]="isInvalid('t')"
+        aria-label="T"
+      />
+      <span class="input-tag">T</span>
+    </div>
+  </div>
+</div>

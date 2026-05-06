@@ -164,6 +164,27 @@ export const routes: Routes = [
                     (m) => m.TamaiResultsComponent
                   ),
               },
+              {
+                path: ':sessionId/pai-pending',
+                loadComponent: () =>
+                  import('./features/assessments/components/pai-pending/pai-pending.component').then(
+                    (m) => m.PaiPendingComponent
+                  ),
+              },
+              {
+                path: ':sessionId/pai-entry',
+                loadComponent: () =>
+                  import('./features/assessments/components/pai-entry/pai-entry.component').then(
+                    (m) => m.PaiEntryComponent
+                  ),
+              },
+              {
+                path: ':sessionId/results-pai',
+                loadComponent: () =>
+                  import('./features/assessments/components/pai-results/pai-results.component').then(
+                    (m) => m.PaiResultsComponent
+                  ),
+              },
             ],
           },
           {

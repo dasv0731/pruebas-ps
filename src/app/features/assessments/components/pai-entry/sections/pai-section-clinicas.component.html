@@ -1,0 +1,17 @@
+<div [formGroup]="group">
+  <div *ngFor="let block of blocks" class="block">
+    <pai-scale-input
+      [group]="groupOf(block.main.key)"
+      [abbr]="block.main.key"
+      [label]="block.main.label"
+      variant="main"
+    ></pai-scale-input>
+    <pai-scale-input
+      *ngFor="let s of block.subs"
+      [group]="groupOf(s.key)"
+      [abbr]="s.key.replace('_', '-')"
+      [label]="s.label"
+      variant="sub"
+    ></pai-scale-input>
+  </div>
+</div>

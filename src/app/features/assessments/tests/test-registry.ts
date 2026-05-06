@@ -14,6 +14,8 @@ import { CUIDA_INTERPRETATION } from './cuida/cuida.interpretation';
 import { TAMAI_CONFIG } from './tamai/tamai.config';
 import { TAMAI_SCORING } from './tamai/tamai.scoring';
 import { TAMAI_INTERPRETATION } from './tamai/tamai.interpretation';
+import { PAI_CONFIG } from './pai/pai.config';
+import { PAI_SCORING } from './pai/pai.scoring';
 
 const TEST_REGISTRY: Record<string, TestDefinition> = {
   STAI: { config: STAI_CONFIG, scoring: STAI_SCORING, interpretation: STAI_INTERPRETATION },
@@ -21,6 +23,7 @@ const TEST_REGISTRY: Record<string, TestDefinition> = {
   CDI: { config: CDI_CONFIG, scoring: CDI_SCORING, interpretation: CDI_INTERPRETATION },
   CUIDA: { config: CUIDA_CONFIG, scoring: CUIDA_SCORING, interpretation: CUIDA_INTERPRETATION },
   TAMAI: { config: TAMAI_CONFIG, scoring: TAMAI_SCORING, interpretation: TAMAI_INTERPRETATION },
+  PAI:   { config: PAI_CONFIG,   scoring: PAI_SCORING },
 };
 
 export function getTestDefinition(shortName: string): TestDefinition | null {

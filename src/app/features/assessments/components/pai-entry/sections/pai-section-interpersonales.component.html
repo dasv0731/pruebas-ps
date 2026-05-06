@@ -1,0 +1,9 @@
+<div [formGroup]="group">
+  <pai-scale-input
+    *ngFor="let s of scales"
+    [group]="groupOf(s.key)"
+    [abbr]="s.key"
+    [label]="s.label"
+    variant="main"
+  ></pai-scale-input>
+</div>

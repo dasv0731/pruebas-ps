@@ -1,0 +1,180 @@
+<app-skeleton
+  *ngIf="loading"
+  variant="card"
+  [lines]="6"
+  label="Cargando resultados del PAI..."
+></app-skeleton>
+
+<app-error-state
+  *ngIf="error && !loading"
+  [message]="error"
+  retryLabel="Ir a transcripción"
+  secondaryLabel="Volver"
+  (retry)="goToEntry()"
+  (secondary)="goBack()"
+></app-error-state>
+
+<div *ngIf="!loading && !error && findings" class="pai-results">
+
+  <!-- Encabezado -->
+  <div class="card">
+    <div class="card-header">
+      <div class="title-row">
+        <button class="btn btn-secondary btn-sm" (click)="goBack()">← Volver</button>
+        <h2>Resultados PAI</h2>
+      </div>
+    </div>
+    <div class="subject-header">
+      <div class="subject-info">
+        <h3>{{ getSubjectFullName() }}</h3>
+        <div class="subject-meta">{{ getSexLabel() }} · {{ session?.subjectAgeYears ?? '—' }} años · Baremo: {{ findings.manualScoring.baremo }}</div>
+      </div>
+      <div class="report-mode-badge"
+        [class.mode-complete]="findings.reportMode === 'COMPLETE'"
+        [class.mode-invalid]="findings.reportMode === 'NOT_INTERPRETABLE'">
+        {{ findings.reportMode === 'COMPLETE' ? 'Perfil válido' : 'Perfil con alertas de validez' }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Alertas de validez -->
+  <div *ngIf="findings.profileValidity.flags.length > 0" class="alert-warning">
+    <div class="alert-icon">⚠</div>
+    <div class="alert-content">
+      <h4>Advertencias de validez del perfil</h4>
+      <ul><li *ngFor="let f of findings.profileValidity.flags">{{ f }}</li></ul>
+    </div>
+  </div>
+
+  <!-- Riesgos críticos -->
+  <div *ngIf="findings.suicideRisk === 'HIGH' || findings.aggressionRisk === 'HIGH'" class="alert-critical-full">
+    <div class="alert-icon-lg">⚠</div>
+    <h3>Indicadores de riesgo — atención prioritaria</h3>
+    <p *ngIf="findings.suicideRisk === 'HIGH'">
+      <strong>Riesgo suicida ALTO</strong> — SUI T={{ getScaleT(findings.tratamientoResults, 'SUI') }}. Requiere evaluación clínica inmediata.
+    </p>
+    <p *ngIf="findings.aggressionRisk === 'HIGH'">
+      <strong>Riesgo de agresión ALTO</strong> — AGR T={{ getScaleT(findings.tratamientoResults, 'AGR') }}. Explorar control de impulsos.
+    </p>
+  </div>
+
+  <!-- Escalas de Validez -->
+  <div class="card">
+    <h3>Escalas de Validez</h3>
+    <table class="scores-table">
+      <thead><tr><th>Escala</th><th>T</th><th>Nivel</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let r of findings.validezResults">
+          <td>{{ r.label }}</td>
+          <td><span class="t-badge" [class]="getLevelClass(r.level)">{{ r.t }}</span></td>
+          <td><span class="level-chip" [class]="getLevelClass(r.level)">{{ getLevelLabel(r.level) }}</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Escalas Clínicas -->
+  <div class="card">
+    <h3>Escalas Clínicas</h3>
+    <div *ngFor="let r of findings.clinicasResults" class="scale-block">
+      <div class="scale-main-row">
+        <span class="scale-abbr">{{ r.key }}</span>
+        <span class="scale-name">{{ r.label }}</span>
+        <span class="t-badge" [class]="getLevelClass(r.level)">{{ r.t }}</span>
+        <span class="level-chip" [class]="getLevelClass(r.level)">{{ getLevelLabel(r.level) }}</span>
+      </div>
+      <div class="subscales-row">
+        <ng-container *ngFor="let s of findings.subescalasResults">
+          <div *ngIf="s.key.startsWith(r.key + '_')" class="sub-chip">
+            <span class="sub-abbr">{{ s.key.replace('_', '-') }}</span>
+            <span class="t-badge-sm" [class]="getLevelClass(s.level)">{{ s.t }}</span>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+  </div>
+
+  <!-- Escalas de Tratamiento -->
+  <div class="card">
+    <h3>Escalas de Tratamiento</h3>
+    <div class="two-cols">
+      <div>
+        <h4 class="sub-header">Agresión</h4>
+        <ng-container *ngFor="let r of findings.tratamientoResults">
+          <div *ngIf="r.key === 'AGR' || r.key.startsWith('AGR_')" class="kv-row">
+            <span class="kv-label">{{ r.label }}</span>
+            <span class="t-badge" [class]="getLevelClass(r.level)">{{ r.t }}</span>
+            <span class="level-chip" [class]="getLevelClass(r.level)">{{ getLevelLabel(r.level) }}</span>
+          </div>
+        </ng-container>
+      </div>
+      <div>
+        <h4 class="sub-header">Otras escalas</h4>
+        <ng-container *ngFor="let r of findings.tratamientoResults">
+          <div *ngIf="r.key !== 'AGR' && !r.key.startsWith('AGR_')" class="kv-row">
+            <span class="kv-label">{{ r.label }}</span>
+            <span class="t-badge" [class]="getLevelClass(r.level)">{{ r.t }}</span>
+            <span class="level-chip" [class]="getLevelClass(r.level)">{{ getLevelLabel(r.level) }}</span>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+  </div>
+
+  <!-- Escalas Interpersonales -->
+  <div class="card">
+    <h3>Escalas de Relaciones Interpersonales</h3>
+    <div class="kv-row" *ngFor="let r of findings.interpersonalesResults">
+      <span class="kv-label">{{ r.label }}</span>
+      <span class="t-badge" [class]="getLevelClass(r.level)">{{ r.t }}</span>
+      <span class="level-chip" [class]="getLevelClass(r.level)">{{ getLevelLabel(r.level) }}</span>
+    </div>
+  </div>
+
+  <!-- Resumen de riesgos -->
+  <div class="card two-cols">
+    <div class="mini-section">
+      <h3>Riesgo Suicida</h3>
+      <span class="risk-badge" [class]="getRiskClass(findings.suicideRisk)">{{ getRiskLabel(findings.suicideRisk) }}</span>
+      <div class="kv-row" style="margin-top:.5rem">
+        <span class="kv-label">SUI (T)</span>
+        <ng-container *ngFor="let r of findings.tratamientoResults">
+          <span *ngIf="r.key === 'SUI'" class="t-badge" [class]="getLevelClass(r.level)">{{ r.t }}</span>
+        </ng-container>
+      </div>
+    </div>
+    <div class="mini-section">
+      <h3>Riesgo de Agresión</h3>
+      <span class="risk-badge" [class]="getRiskClass(findings.aggressionRisk)">{{ getRiskLabel(findings.aggressionRisk) }}</span>
+      <div class="kv-row" style="margin-top:.5rem">
+        <span class="kv-label">AGR (T)</span>
+        <ng-container *ngFor="let r of findings.tratamientoResults">
+          <span *ngIf="r.key === 'AGR'" class="t-badge" [class]="getLevelClass(r.level)">{{ r.t }}</span>
+        </ng-container>
+      </div>
+    </div>
+  </div>
+
+  <!-- Flags clínicos -->
+  <div *ngIf="findings.clinicalFlags.length > 0" class="alert-warning">
+    <div class="alert-icon">ℹ</div>
+    <div class="alert-content">
+      <h4>Indicadores clínicos detectados</h4>
+      <ul><li *ngFor="let f of findings.clinicalFlags">{{ f }}</li></ul>
+    </div>
+  </div>
+
+  <!-- Nota pericial -->
+  <div class="note-forensic">
+    <strong>Nota pericial:</strong> Los resultados del PAI deben interpretarse en el contexto de una evaluación psicológica
+    completa y una entrevista clínica estructurada. Un único instrumento no es suficiente para establecer diagnósticos o emitir conclusiones periciales definitivas.
+  </div>
+
+  <!-- Acciones -->
+  <div class="results-actions">
+    <button class="btn btn-secondary" (click)="goToEntry()">Editar valores</button>
+    <button class="btn btn-secondary" (click)="goBack()">Volver a pruebas</button>
+    <button class="btn btn-primary" (click)="goToCase()">Ir al caso</button>
+  </div>
+
+</div>

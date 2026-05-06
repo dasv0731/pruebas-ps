@@ -1,0 +1,22 @@
+<div [formGroup]="group">
+  <pai-scale-input
+    [group]="groupOf(agr.key)"
+    [abbr]="agr.key"
+    [label]="agr.label"
+    variant="main"
+  ></pai-scale-input>
+  <pai-scale-input
+    *ngFor="let s of agrSubs"
+    [group]="groupOf(s.key)"
+    [abbr]="s.key.replace('_', '-')"
+    [label]="s.label"
+    variant="sub"
+  ></pai-scale-input>
+  <pai-scale-input
+    *ngFor="let s of otras"
+    [group]="groupOf(s.key)"
+    [abbr]="s.key"
+    [label]="s.label"
+    variant="main"
+  ></pai-scale-input>
+</div>

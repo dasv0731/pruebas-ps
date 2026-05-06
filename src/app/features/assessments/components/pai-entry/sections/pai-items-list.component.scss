@@ -1,0 +1,74 @@
+:host { display: block; }
+
+.items-list {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: .25rem;
+
+  h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: #374151;
+    font-weight: 600;
+  }
+}
+
+.empty {
+  color: #6b7280;
+  font-size: .88rem;
+  font-style: italic;
+  margin: .25rem 0;
+}
+
+.row {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  padding: .5rem 0;
+  border-top: 1px solid #f3f4f6;
+
+  &:first-of-type { border-top: none; }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+
+  label {
+    font-size: .78rem;
+    color: #6b7280;
+    font-weight: 500;
+  }
+}
+
+.num-input,
+.select-input {
+  padding: .4rem .55rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: .92rem;
+  box-sizing: border-box;
+
+  &:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37,99,235,.15);
+  }
+
+  &.invalid {
+    border-color: #ef4444;
+  }
+}
+
+.num-input { width: 100px; text-align: center; }
+.select-input { width: 90px; }
+
+.remove-btn { margin-left: auto; }

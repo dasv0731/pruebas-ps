@@ -1,0 +1,101 @@
+<app-skeleton
+  *ngIf="loading"
+  variant="card"
+  [lines]="6"
+  label="Cargando puntuaciones del PAI..."
+></app-skeleton>
+
+<app-error-state
+  *ngIf="error && !loading && !showConfirm"
+  [message]="error"
+  secondaryLabel="Volver"
+  (secondary)="goBack()"
+></app-error-state>
+
+<div *ngIf="!loading" class="pai-entry" [formGroup]="form">
+
+  <div class="card">
+    <div class="card-header">
+      <div class="title-row">
+        <button class="btn btn-secondary btn-sm" (click)="goBack()">← Volver</button>
+        <h2>{{ isEditMode ? 'Editar puntuaciones PAI' : 'Transcribir puntuaciones PAI' }}</h2>
+      </div>
+    </div>
+    <div class="subject-summary">
+      <span><strong>Evaluado:</strong> {{ getSubjectFullName() }}</span>
+      <span><strong>Edad:</strong> {{ session?.subjectAgeYears ?? '—' }} años</span>
+      <span><strong>Sexo:</strong> {{ getSexLabel() }}</span>
+    </div>
+    <p class="entry-hint">Ingrese las puntuaciones PD y T tal como las reporta TEACorrige.</p>
+  </div>
+
+  <div class="card">
+    <h3>Baremo</h3>
+    <div class="form-group">
+      <label>Baremo utilizado</label>
+      <input type="text" formControlName="baremo" class="form-control" />
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Escalas de Validez</h3>
+    <pai-section-validez [group]="validezGroup"></pai-section-validez>
+  </div>
+
+  <div class="card">
+    <h3>Escalas Clínicas</h3>
+    <pai-section-clinicas [group]="clinicasGroup"></pai-section-clinicas>
+  </div>
+
+  <div class="card">
+    <h3>Escalas de Tratamiento</h3>
+    <pai-section-tratamiento [group]="tratamientoGroup"></pai-section-tratamiento>
+  </div>
+
+  <div class="card">
+    <h3>Escalas de Relaciones Interpersonales</h3>
+    <pai-section-interpersonales [group]="interpersonalesGroup"></pai-section-interpersonales>
+  </div>
+
+  <div class="card">
+    <h3>Índices Complementarios</h3>
+    <pai-section-indices [group]="indicesGroup"></pai-section-indices>
+  </div>
+
+  <div class="card">
+    <pai-items-list
+      [arr]="itemsCriticosArr"
+      title="Ítems Críticos"
+      emptyText="Sin ítems críticos registrados."
+    ></pai-items-list>
+  </div>
+
+  <div class="card">
+    <pai-items-list
+      [arr]="idiosincrasicosArr"
+      title="Respuestas Idiosincrásicas"
+      emptyText="Sin respuestas idiosincrásicas registradas."
+    ></pai-items-list>
+  </div>
+
+  <div *ngIf="showConfirm" class="confirm-box">
+    <h4>Confirmar guardado</h4>
+    <p>
+      Se guardarán las puntuaciones PAI para <strong>{{ getSubjectFullName() }}</strong>.
+      {{ isEditMode ? 'La versión anterior quedará invalidada.' : '' }}
+    </p>
+    <div *ngIf="error" class="error-msg">{{ error }}</div>
+    <div class="confirm-actions">
+      <button class="btn btn-secondary" (click)="cancelConfirm()" [disabled]="saving">Cancelar</button>
+      <button class="btn btn-primary" (click)="save()" [disabled]="saving">
+        {{ saving ? 'Guardando...' : 'Confirmar y guardar' }}
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="!showConfirm" class="results-actions">
+    <button class="btn btn-secondary" (click)="goBack()">Volver</button>
+    <button class="btn btn-primary" (click)="requestConfirm()">Revisar y guardar</button>
+  </div>
+
+</div>

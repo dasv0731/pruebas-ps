@@ -1,0 +1,9 @@
+.block {
+  border-top: 1px solid #f3f4f6;
+  padding: .35rem 0;
+
+  &:first-of-type {
+    border-top: none;
+    padding-top: 0;
+  }
+}
