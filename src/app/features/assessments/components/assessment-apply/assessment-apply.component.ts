@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AssessmentService } from '../../services/assessment.service';
+import { CdiScoringService } from '../../../../core/services/cdi-scoring.service';
 import { TestLoaderService } from '../../services/test-loader.service';
 import { TestSection } from '../../models/test.interfaces';
 
@@ -34,7 +35,8 @@ export class AssessmentApplyComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private assessmentService: AssessmentService,
-    private testLoader: TestLoaderService
+    private testLoader: TestLoaderService,
+    private cdiScoringService: CdiScoringService,
   ) {}
 
   async ngOnInit() {
@@ -162,7 +164,12 @@ export class AssessmentApplyComponent implements OnInit {
         JSON.stringify(answersArray)
       );
 
-      await this.assessmentService.scoreSession(this.sessionId, answersArray, this.shortName);
+      // Scoring: CDI va por Lambda (backend), el resto por el service viejo (frontend)
+      if (this.shortName === 'CDI') {
+        await this.cdiScoringService.scoreAuthenticated(this.sessionId);
+      } else {
+        await this.assessmentService.scoreSession(this.sessionId, answersArray, this.shortName);
+      }
 
       this.router.navigate([
         '/cases', this.caseId,

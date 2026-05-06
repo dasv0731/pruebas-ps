@@ -115,6 +115,13 @@ export const routes: Routes = [
                     (m) => m.AssessmentResultsComponent
                   ),
               },
+              {
+                path: ':sessionId/results-cdi',
+                loadComponent: () =>
+                  import('./features/assessments/components/cdi-results/cdi-results.component').then(
+                    (m) => m.CdiResultsComponent
+                  ),
+              },
             ],
           },
           {

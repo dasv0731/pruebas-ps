@@ -1,0 +1,228 @@
+<div *ngIf="loading" class="loading">Cargando resultados...</div>
+
+<div *ngIf="error" class="error-msg">{{ error }}</div>
+
+<div *ngIf="!loading && !error && cdiData" class="cdi-results">
+
+  <!-- ═══ Encabezado ═══ -->
+  <div class="card">
+    <div class="card-header">
+      <div class="title-row">
+        <button class="btn btn-secondary btn-sm" (click)="goBack()">← Volver</button>
+        <h2>Resultados: {{ assessment?.name }}</h2>
+      </div>
+    </div>
+
+    <div class="subject-header">
+      <div class="subject-info">
+        <h3>{{ getSubjectFullName() }}</h3>
+        <div class="subject-meta">
+          <span *ngIf="cdiData.normativeGroup">
+            {{ getSexLabel(cdiData.normativeGroup.sex) }} ·
+            {{ cdiData.normativeGroup.ageYears }} años
+          </span>
+          <span *ngIf="!cdiData.normativeGroup" class="text-muted">
+            Datos de baremación no disponibles
+          </span>
+        </div>
+      </div>
+
+      <div class="classification-wrapper">
+        <div
+          class="classification-badge"
+          [class]="getClassificationClass(cdiData.totalClassification)"
+        >
+          {{ getClassificationLabel(cdiData.totalClassification) }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Alerta del ítem 9 (ideación suicida) ═══ -->
+  <div *ngIf="cdiData.itemAnalysis.item9Alert" class="alert-critical">
+    <div class="alert-icon">⚠</div>
+    <div class="alert-content">
+      <h4>Atención prioritaria: Ítem 9 activado</h4>
+      <p>
+        El evaluado ha puntuado
+        <strong>{{ cdiData.itemAnalysis.item9Value }}</strong>
+        en el ítem 9 (ideación suicida). Según el manual TEA,
+        esta respuesta requiere atención clínica inmediata y no
+        puede omitirse, independientemente de la clasificación general.
+      </p>
+    </div>
+  </div>
+
+  <!-- ═══ Advertencia si el reporte no es completo ═══ -->
+  <div *ngIf="cdiData.reportMode !== 'COMPLETE'" class="alert-warning">
+    <div class="alert-icon">ℹ</div>
+    <div class="alert-content">
+      <h4>{{ getReportModeLabel(cdiData.reportMode) }}</h4>
+      <ul *ngIf="cdiData.warnings.length > 0">
+        <li *ngFor="let w of cdiData.warnings">{{ w }}</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ═══ Tabla de puntuaciones ═══ -->
+  <div class="card">
+    <h3>Puntuaciones</h3>
+
+    <table class="scores-table">
+      <thead>
+        <tr>
+          <th>Escala</th>
+          <th>PD</th>
+          <th>Pc</th>
+          <th>T</th>
+          <th>Interpretación</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td>Disforia</td>
+          <td>{{ cdiData.rawScores.disforia }}</td>
+          <td>
+            <span *ngIf="cdiData.normedScores">
+              {{ cdiData.normedScores.disforia.pc }}
+            </span>
+            <span *ngIf="!cdiData.normedScores" class="text-muted">—</span>
+          </td>
+          <td>
+            <span *ngIf="cdiData.normedScores">
+              {{ cdiData.normedScores.disforia.t }}
+            </span>
+            <span *ngIf="!cdiData.normedScores" class="text-muted">—</span>
+          </td>
+          <td>
+            <span *ngIf="cdiData.normedScores" class="interp-label">
+              {{ getTLevelLabel(cdiData.normedScores.disforia.t) }}
+            </span>
+            <span *ngIf="!cdiData.normedScores" class="text-muted">—</span>
+          </td>
+        </tr>
+        <tr>
+          <td>Autoestima negativa</td>
+          <td>{{ cdiData.rawScores.autoestima }}</td>
+          <td>
+            <span *ngIf="cdiData.normedScores">
+              {{ cdiData.normedScores.autoestima.pc }}
+            </span>
+            <span *ngIf="!cdiData.normedScores" class="text-muted">—</span>
+          </td>
+          <td>
+            <span *ngIf="cdiData.normedScores">
+              {{ cdiData.normedScores.autoestima.t }}
+            </span>
+            <span *ngIf="!cdiData.normedScores" class="text-muted">—</span>
+          </td>
+          <td>
+            <span *ngIf="cdiData.normedScores" class="interp-label">
+              {{ getTLevelLabel(cdiData.normedScores.autoestima.t) }}
+            </span>
+            <span *ngIf="!cdiData.normedScores" class="text-muted">—</span>
+          </td>
+        </tr>
+        <tr class="row-total">
+          <td><strong>Total</strong></td>
+          <td>{{ cdiData.rawScores.total }}</td>
+          <td>
+            <span *ngIf="cdiData.normedScores">
+              {{ cdiData.normedScores.total.pc }}
+            </span>
+            <span *ngIf="!cdiData.normedScores" class="text-muted">—</span>
+          </td>
+          <td>
+            <span *ngIf="cdiData.normedScores">
+              {{ cdiData.normedScores.total.t }}
+            </span>
+            <span *ngIf="!cdiData.normedScores" class="text-muted">—</span>
+          </td>
+          <td>
+            <span
+              *ngIf="cdiData.normedScores"
+              class="interp-label"
+            >
+              {{ getTLevelLabel(cdiData.normedScores.total.t) }}
+            </span>
+            <span *ngIf="!cdiData.normedScores" class="text-muted">—</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="scores-footnote" *ngIf="cdiData.itemAnalysis.cutoffExceeded">
+      Puntuación directa supera el punto de corte
+      auxiliar (≥19) utilizado como criterio de cribado.
+    </div>
+  </div>
+
+  <!-- ═══ Grupo normativo ═══ -->
+  <div class="card" *ngIf="cdiData.normativeGroup">
+    <h3>Grupo normativo</h3>
+    <div class="norm-grid">
+      <div class="norm-item">
+        <span class="norm-label">Sexo</span>
+        <span class="norm-value">{{ getSexLabel(cdiData.normativeGroup.sex) }}</span>
+      </div>
+      <div class="norm-item">
+        <span class="norm-label">Edad</span>
+        <span class="norm-value">{{ cdiData.normativeGroup.ageYears }} años</span>
+      </div>
+      <div class="norm-item">
+        <span class="norm-label">Tramo</span>
+        <span class="norm-value">{{ getAgeGroupLabel(cdiData.normativeGroup.ageGroup) }}</span>
+      </div>
+      <div class="norm-item">
+        <span class="norm-label">Tabla</span>
+        <span class="norm-value">{{ cdiData.normativeGroup.tableColumn }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Nota pericial (aviso moderado entre puntuaciones e IA) ═══ -->
+  <div class="note-forensic">
+    <strong>Nota pericial:</strong>
+    La interpretación de una sola aplicación no constituye diagnóstico.
+    El manual TEA recomienda repetir la prueba en el plazo de una a dos
+    semanas y contrastar los resultados con otras fuentes de información
+    clínica antes de concluir.
+  </div>
+
+  <!-- ═══ Interpretación clínica IA (placeholder) ═══ -->
+  <div class="card">
+    <div class="interpretation-header">
+      <h3>Interpretación clínica</h3>
+      <button
+        class="btn btn-primary"
+        (click)="generateInterpretation()"
+        [disabled]="!aiEnabled"
+        [title]="!aiEnabled ? 'La generación IA para CDI estará disponible próximamente' : ''"
+      >
+        Generar con IA
+      </button>
+    </div>
+
+    <div *ngIf="interpretation" class="interpretation-content">
+      {{ interpretation }}
+    </div>
+
+    <div *ngIf="!interpretation" class="interpretation-empty">
+      No se ha generado una interpretación clínica para esta aplicación.
+    </div>
+  </div>
+
+  <!-- ═══ Nota al pie (referencia oficial) ═══ -->
+  <div class="footnote">
+    Baremación basada en el manual TEA del CDI (Kovacs, adaptación
+    española: Del Barrio y Carrasco). Punto de corte referencial: 19.
+    Clasificación: Sin síntomas Pc 1-89 · Leve Pc 90-95 · Severa Pc 96-99.
+  </div>
+
+  <!-- ═══ Acciones ═══ -->
+  <div class="results-actions">
+    <button class="btn btn-secondary" (click)="goBack()">Volver a pruebas</button>
+    <button class="btn btn-primary" (click)="goToCase()">Ir al caso</button>
+  </div>
+</div>
