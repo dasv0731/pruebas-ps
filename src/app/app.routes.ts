@@ -143,6 +143,27 @@ export const routes: Routes = [
                     (m) => m.CuidaResultsComponent
                   ),
               },
+              {
+                path: ':sessionId/tamai-pending',
+                loadComponent: () =>
+                  import('./features/assessments/components/tamai-pending/tamai-pending.component').then(
+                    (m) => m.TamaiPendingComponent
+                  ),
+              },
+              {
+                path: ':sessionId/tamai-entry',
+                loadComponent: () =>
+                  import('./features/assessments/components/tamai-entry/tamai-entry.component').then(
+                    (m) => m.TamaiEntryComponent
+                  ),
+              },
+              {
+                path: ':sessionId/results-tamai',
+                loadComponent: () =>
+                  import('./features/assessments/components/tamai-results/tamai-results.component').then(
+                    (m) => m.TamaiResultsComponent
+                  ),
+              },
             ],
           },
           {

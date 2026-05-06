@@ -100,61 +100,63 @@ function buildAllSections() {
       {
         title: 'Adaptación Personal',
         instructions: 'Conteste SÍ o NO a cada pregunta. No hay respuestas correctas ni incorrectas. Sea lo más sincero posible.',
-        legend: ['SÍ', 'NO'],
+        legend: [],
         questions: personal.questions,
       },
       {
         title: 'Adaptación Escolar',
         instructions: '',
-        legend: ['SÍ', 'NO'],
+        legend: [],
         questions: escolar.questions,
       },
       {
         title: 'Adaptación Social',
         instructions: '',
-        legend: ['SÍ', 'NO'],
+        legend: [],
         questions: social.questions,
       },
       {
         title: 'Satisfacción Personal',
         instructions: '',
-        legend: ['SÍ', 'NO'],
+        legend: [],
         questions: satisfaccion.questions,
       },
       {
         title: 'Adaptación Escolar (positiva)',
         instructions: '',
-        legend: ['SÍ', 'NO'],
+        legend: [],
         questions: escolarPos.questions,
       },
       {
         title: 'Adaptación Social (positiva)',
         instructions: '',
-        legend: ['SÍ', 'NO'],
+        legend: [],
         questions: socialPos.questions,
       },
       {
         title: 'Adaptación Familiar',
-        instructions: 'Contestar solo si conoce a ambos padres.',
-        legend: ['SÍ', 'NO'],
+        instructions: '',
+        legend: [],
+        conditional: { gateQuestion: '¿Conoces a tu padre y a tu madre?' },
         questions: familiar.questions,
       },
       {
         title: 'Relación con Hermanos',
-        instructions: 'Contestar solo si tiene hermanos.',
-        legend: ['SÍ', 'NO'],
+        instructions: '',
+        legend: [],
+        conditional: { gateQuestion: '¿Tienes hermanos?' },
         questions: hermanos.questions,
       },
       {
         title: 'Con respecto a mi Padre',
         instructions: '',
-        legend: ['SÍ', 'NO'],
+        legend: [],
         questions: padre.questions,
       },
       {
         title: 'Con respecto a mi Madre',
         instructions: '',
-        legend: ['SÍ', 'NO'],
+        legend: [],
         questions: madre.questions,
       },
     ],
@@ -163,6 +165,18 @@ function buildAllSections() {
 
 const built = buildAllSections();
 
+const TAMAI_INSTRUCTIONS = `Este cuestionario contiene una serie de preguntas sobre cómo te sientes y cómo te portas en distintas situaciones.
+
+No hay respuestas buenas ni malas.
+Contesta con sinceridad lo que tú piensas o sientes de verdad.
+No dejes ninguna pregunta sin contestar.
+
+Para cada pregunta debes elegir:
+  SÍ  —  si lo que dice es verdad para ti
+  NO  —  si lo que dice no es verdad para ti
+
+El cuestionario está dividido en varias partes. Completa cada parte antes de pasar a la siguiente.`;
+
 export const TAMAI_CONFIG: TestConfig = {
   shortName: 'TAMAI',
   name: 'TAMAI - Test Autoevaluativo Multifactorial de Adaptación Infantil',
@@ -170,7 +184,9 @@ export const TAMAI_CONFIG: TestConfig = {
   totalQuestions: built.totalQuestions,
   optionsPerQuestion: 2,
   questionType: 'NUMERIC',
-  scoringType: 'LOCAL',
+  scoringType: 'TEA',
   optionLabels: ['SÍ', 'NO'],
+  globalInstructions: TAMAI_INSTRUCTIONS,
+  paginateBySection: true,
   sections: built.sections,
 };

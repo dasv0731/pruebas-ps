@@ -1,0 +1,66 @@
+<app-skeleton
+  *ngIf="loading"
+  variant="card"
+  [lines]="6"
+  label="Cargando resultados del TAMAI..."
+></app-skeleton>
+
+<app-error-state
+  *ngIf="error && !loading"
+  [message]="error"
+  retryLabel="Ir a transcripción"
+  secondaryLabel="Volver"
+  (retry)="goToEntry()"
+  (secondary)="goBack()"
+></app-error-state>
+
+<div *ngIf="!loading && !error && manual" class="tamai-results">
+
+  <div class="card">
+    <div class="card-header">
+      <div class="title-row">
+        <button class="btn btn-secondary btn-sm" (click)="goBack()">← Volver</button>
+        <h2>Resultados TAMAI</h2>
+      </div>
+    </div>
+    <div class="subject-summary">
+      <span><strong>Evaluado:</strong> {{ getSubjectFullName() }}</span>
+      <span><strong>Edad:</strong> {{ session?.subjectAgeYears ?? '—' }} años</span>
+      <span><strong>Sexo:</strong> {{ getSexLabel() }}</span>
+    </div>
+    <div class="meta-row">
+      <span><strong>Nivel:</strong> {{ manual.level }}</span>
+      <span><strong>Baremo:</strong> {{ baremoLabel }}</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Puntuaciones por escala</h3>
+    <table class="scales-table">
+      <thead>
+        <tr>
+          <th>Sigla</th>
+          <th>Escala</th>
+          <th class="num">PD</th>
+          <th class="num">Pc</th>
+          <th>Categoría</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let r of rows" [class.sub]="r.depth > 0">
+          <td class="abbr"><span [ngStyle]="indentStyle(r.depth)">{{ r.code }}</span></td>
+          <td class="label">{{ r.label }}</td>
+          <td class="num">{{ r.pd }}</td>
+          <td class="num">{{ r.pc }}</td>
+          <td><span class="badge" [class]="r.badgeClass">{{ r.category }}</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="results-actions">
+    <button class="btn btn-secondary" (click)="goToEntry()">Editar transcripción</button>
+    <button class="btn btn-primary" (click)="goBack()">Volver al listado</button>
+  </div>
+
+</div>

@@ -1,0 +1,57 @@
+:host { display: block; }
+
+.scale-row {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  padding: .35rem .25rem;
+  border-left: 2px solid transparent;
+
+  &.sub {
+    border-left-color: #e5e7eb;
+    .scale-abbr { color: #6b7280; font-weight: 500; font-size: .82rem; }
+    .scale-label { color: #6b7280; font-weight: 400; font-size: .82rem; }
+  }
+}
+
+.scale-abbr {
+  font-weight: 700;
+  color: #1e40af;
+  min-width: 56px;
+  font-size: .92rem;
+}
+
+.scale-label {
+  flex: 1;
+  font-weight: 600;
+  color: #111827;
+  font-size: .92rem;
+}
+
+.inputs { display: flex; gap: .75rem; }
+.field { display: flex; align-items: center; gap: .25rem; }
+
+.num-input {
+  width: 70px;
+  text-align: center;
+  padding: .35rem .4rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: .92rem;
+  box-sizing: border-box;
+
+  &:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37,99,235,.15);
+  }
+
+  &.invalid { border-color: #ef4444; }
+}
+
+.input-tag {
+  font-size: .72rem;
+  color: #9ca3af;
+  font-weight: 600;
+  letter-spacing: .03em;
+}

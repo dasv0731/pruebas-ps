@@ -1,0 +1,113 @@
+.loading { padding: 1.5rem; text-align: center; }
+.error-msg {
+  color: #b91c1c;
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  border-radius: 6px;
+  padding: .85rem 1rem;
+  margin: 1rem auto;
+  max-width: 960px;
+
+  .error-actions {
+    display: flex;
+    gap: .5rem;
+    margin-top: .75rem;
+  }
+}
+
+.tamai-results {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+
+  h3 { margin: 0 0 1rem; font-size: 1rem; color: #374151; font-weight: 600; }
+}
+
+.card-header .title-row {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+
+  h2 { margin: 0; font-size: 1.2rem; color: #111827; }
+}
+
+.subject-summary,
+.meta-row {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-top: .75rem;
+  font-size: .9rem;
+  color: #374151;
+}
+
+.btn-sm { padding: .3rem .6rem; font-size: .85rem; }
+
+.scales-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .9rem;
+
+  th, td {
+    text-align: left;
+    padding: .45rem .5rem;
+    border-bottom: 1px solid #f3f4f6;
+  }
+
+  th {
+    font-weight: 600;
+    color: #6b7280;
+    font-size: .82rem;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+  }
+
+  td.num,
+  th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  td.abbr {
+    font-weight: 700;
+    color: #1e40af;
+    width: 100px;
+  }
+
+  td.label { color: #111827; }
+
+  tr.sub td.abbr {
+    color: #6b7280;
+    font-weight: 500;
+  }
+  tr.sub td.label { color: #6b7280; }
+}
+
+.badge {
+  display: inline-block;
+  padding: .2rem .6rem;
+  border-radius: 999px;
+  font-size: .78rem;
+  font-weight: 600;
+
+  &.badge-critical { background: #fee2e2; color: #b91c1c; }
+  &.badge-high     { background: #fed7aa; color: #c2410c; }
+  &.badge-moderate { background: #fef3c7; color: #b45309; }
+  &.badge-normal   { background: #dbeafe; color: #1e40af; }
+  &.badge-good     { background: #dcfce7; color: #166534; }
+  &.badge-neutral  { background: #f3f4f6; color: #6b7280; }
+}
+
+.results-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: .75rem;
+}

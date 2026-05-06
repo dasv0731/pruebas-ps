@@ -1,0 +1,4 @@
+<select [formControl]="control" class="form-control">
+  <option [ngValue]="null" disabled>— Seleccione baremo —</option>
+  <option *ngFor="let o of options" [ngValue]="o.code">{{ o.label }}</option>
+</select>
