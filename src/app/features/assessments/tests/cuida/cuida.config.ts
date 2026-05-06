@@ -192,6 +192,20 @@ const CUIDA_QUESTIONS = [
   "Con la cantidad de niños que necesitan un hogar me planteo tener hijos en lugar de los propios.",
 ];
 
+const CUIDA_INSTRUCTIONS = `En este cuadernillo encontrará una serie de preguntas relacionadas con su forma de pensar y actuar en determinadas situaciones.
+
+No hay respuestas correctas ni incorrectas.
+Conteste con sinceridad.
+No deje ninguna respuesta en blanco.
+Las respuestas serán tratadas con confidencialidad.
+
+Marque solo una opción por pregunta según la siguiente escala:
+
+  1 — En desacuerdo
+  2 — Algo en desacuerdo
+  3 — Algo de acuerdo
+  4 — De acuerdo`;
+
 export const CUIDA_CONFIG: TestConfig = {
   shortName: 'CUIDA',
   name: 'CUIDA - Cuestionario para la Evaluación de Adoptantes',
@@ -200,11 +214,13 @@ export const CUIDA_CONFIG: TestConfig = {
   optionsPerQuestion: 4,
   questionType: 'NUMERIC',
   scoringType: 'TEA',
+  globalInstructions: CUIDA_INSTRUCTIONS,
+  questionsPerPage: 20,
   sections: [
     {
       title: 'CUIDA – Cuadernillo de preguntas',
-      instructions: 'En este cuadernillo encontrará una serie de preguntas relacionadas con su forma de pensar y actuar en determinadas situaciones. No hay respuestas correctas ni incorrectas. Conteste con sinceridad. No deje ninguna respuesta en blanco. Las respuestas serán tratadas con confidencialidad. Marque solo una opción por pregunta según la siguiente escala.',
-      legend: ['1 = En desacuerdo', '2 = Algo en desacuerdo', '3 = Algo de acuerdo', '4 = De acuerdo'],
+      instructions: '',
+      legend: [],
       questions: CUIDA_QUESTIONS.map((text, i) => ({
         index: i + 1,
         text: `${i + 1}. ${text}`,

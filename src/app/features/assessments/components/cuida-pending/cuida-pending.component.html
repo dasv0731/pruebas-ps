@@ -1,0 +1,96 @@
+<div class="cuida-pending">
+
+  <!-- Encabezado -->
+  <div class="card">
+    <div class="card-header">
+      <div class="title-row">
+        <button class="btn btn-secondary btn-sm" (click)="goBack()">← Volver</button>
+        <h2>CUIDA — Corrección externa (TEACorrige)</h2>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <h3>¿Cómo funciona la corrección del CUIDA?</h3>
+      <ol>
+        <li>El evaluado ya ha completado el cuestionario en la aplicación.</li>
+        <li>Descargue el archivo XML y súbalo a <strong>TEACorrige</strong> para obtener los resultados.</li>
+        <li>Una vez TEACorrige le devuelva los valores, transcríbalos aquí.</li>
+        <li>La aplicación generará la visualización del informe.</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- Error global -->
+  <div *ngIf="error" class="error-msg">{{ error }}</div>
+
+  <!-- Acciones principales -->
+  <div class="actions-card">
+    <div class="action-item">
+      <div class="action-info">
+        <h4>Paso 1: Exportar para TEACorrige</h4>
+        <p>Descargue el archivo XML con las respuestas del evaluado para cargarlo en la plataforma TEACorrige.</p>
+      </div>
+      <button
+        class="btn btn-secondary"
+        (click)="openDownloadModal()"
+        [disabled]="loadingName"
+      >
+        {{ loadingName ? 'Preparando...' : 'Descargar XML para TEA' }}
+      </button>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="action-item">
+      <div class="action-info">
+        <h4>Paso 2: Transcribir resultados</h4>
+        <p>Cuando TEACorrige le devuelva los eneatipos y demás valores, ingréselos manualmente en el formulario.</p>
+      </div>
+      <button class="btn btn-primary" (click)="goToEntry()">
+        Transcribir valores de TEA
+      </button>
+    </div>
+  </div>
+
+  <!-- Acciones inferiores -->
+  <div class="results-actions">
+    <button class="btn btn-secondary" (click)="goBack()">Volver a pruebas</button>
+    <button class="btn btn-primary" (click)="goToCase()">Ir al caso</button>
+  </div>
+
+</div>
+
+<!-- Modal de nombre XML -->
+<div *ngIf="showModal" class="modal-overlay" (click)="closeModal()">
+  <div class="modal-box" (click)="$event.stopPropagation()">
+    <h3>Nombre del sujeto en el XML</h3>
+    <p class="modal-hint">
+      Nombre sugerido basado en las iniciales y la edad del evaluado.
+      Puede editarlo si TEACorrige requiere otro formato.
+    </p>
+
+    <div class="form-group">
+      <label>Nombre para el archivo</label>
+      <input
+        type="text"
+        [(ngModel)]="editedName"
+        class="form-control"
+        placeholder="Ej: DSV31"
+        maxlength="40"
+      />
+    </div>
+
+    <div *ngIf="error" class="error-msg">{{ error }}</div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" (click)="closeModal()">Cancelar</button>
+      <button
+        class="btn btn-primary"
+        (click)="confirmDownload()"
+        [disabled]="!editedName.trim() || downloading"
+      >
+        {{ downloading ? 'Generando...' : 'Descargar XML' }}
+      </button>
+    </div>
+  </div>
+</div>

@@ -122,6 +122,27 @@ export const routes: Routes = [
                     (m) => m.CdiResultsComponent
                   ),
               },
+              {
+                path: ':sessionId/cuida-pending',
+                loadComponent: () =>
+                  import('./features/assessments/components/cuida-pending/cuida-pending.component').then(
+                    (m) => m.CuidaPendingComponent
+                  ),
+              },
+              {
+                path: ':sessionId/cuida-entry',
+                loadComponent: () =>
+                  import('./features/assessments/components/cuida-entry/cuida-entry.component').then(
+                    (m) => m.CuidaScoringEntryComponent
+                  ),
+              },
+              {
+                path: ':sessionId/results-cuida',
+                loadComponent: () =>
+                  import('./features/assessments/components/cuida-results/cuida-results.component').then(
+                    (m) => m.CuidaResultsComponent
+                  ),
+              },
             ],
           },
           {

@@ -1,0 +1,274 @@
+<div *ngIf="loading" class="loading">Cargando resultados...</div>
+<div *ngIf="error && !loading" class="error-msg">{{ error }}</div>
+
+<div *ngIf="!loading && !error" class="cuida-results">
+
+  <!-- ═══ Encabezado ═══ -->
+  <div class="card">
+    <div class="card-header">
+      <div class="title-row">
+        <button class="btn btn-secondary btn-sm" (click)="goBack()">← Volver</button>
+        <h2>Resultados CUIDA</h2>
+      </div>
+    </div>
+    <div class="subject-header" *ngIf="getManual() as m">
+      <div class="subject-info">
+        <h3>{{ getSubjectFullName() }}</h3>
+        <div class="subject-meta">
+          {{ getSexLabel() }} · {{ session?.subjectAgeYears ?? '—' }} años
+          · Baremo: {{ m.baremo }}
+        </div>
+      </div>
+      <div *ngIf="findings" class="report-mode-badge"
+        [class.mode-complete]="findings.reportMode === 'COMPLETE'"
+        [class.mode-invalid]="findings.reportMode === 'NOT_INTERPRETABLE'">
+        {{ findings.reportMode === 'COMPLETE' ? 'Perfil válido' : 'Perfil inválido' }}
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Solo transcripción — Lambda aún no ejecutada ═══ -->
+  <div *ngIf="manualOnly && !findings" class="alert-warning">
+    <div class="alert-icon">ℹ</div>
+    <div class="alert-content">
+      <h4>Interpretación pendiente</h4>
+      <p>Los valores han sido transcritos pero la interpretación automática no está disponible aún.
+        Pulse "Recalcular interpretación" para procesarlos.</p>
+    </div>
+  </div>
+
+  <!-- ═══ Perfil inválido ═══ -->
+  <div *ngIf="findings && !findings.profileValidity.isValid" class="alert-critical-full">
+    <div class="alert-icon-lg">✕</div>
+    <h3>Protocolo no interpretable</h3>
+    <p>{{ findings.profileValidity.reason }}</p>
+    <p class="hint">Revise los datos del informe TEA y corrija los valores transcritos si es necesario.</p>
+  </div>
+
+  <!-- ═══ CONTENIDO CUANDO EL PERFIL ES VÁLIDO ═══ -->
+  <ng-container *ngIf="findings && findings.profileValidity.isValid">
+
+    <!-- Alerta deseabilidad social -->
+    <div *ngIf="findings.deseabilidadInterpretation.contaminationRisk" class="alert-warning">
+      <div class="alert-icon">⚠</div>
+      <div class="alert-content">
+        <h4>Deseabilidad social elevada (En {{ findings.deseabilidadInterpretation.en }})</h4>
+        <p>
+          Las escalas con eneatipo alto deben interpretarse con cautela:
+          <strong>{{ formatScaleList(findings.deseabilidadInterpretation.scalesToInterpretWithCaution) }}</strong>.
+        </p>
+      </div>
+    </div>
+
+    <!-- ── Escalas de personalidad ── -->
+    <div class="card">
+      <h3>Escalas de personalidad</h3>
+      <table class="scores-table">
+        <thead>
+          <tr><th>Abrev.</th><th>Escala</th><th>En</th><th>Nivel</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let e of ESCALAS_PERSONALIDAD">
+            <td class="abbr-cell">{{ e.abbr }}</td>
+            <td>{{ e.label }}</td>
+            <td>
+              <span class="en-badge" [class]="getEnBadgeClass(getEscalaLevel(e.key)?.en ?? 5)">
+                {{ getEscalaLevel(e.key)?.en ?? '—' }}
+              </span>
+            </td>
+            <td>
+              <span class="level-chip" *ngIf="getEscalaLevel(e.key) as lv"
+                [class]="getLevelClass(lv.level)">
+                {{ getLevelLabel(lv.level) }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── Escalas de cuidado ── -->
+    <div class="card">
+      <h3>Escalas de cuidado</h3>
+      <table class="scores-table">
+        <thead>
+          <tr><th>Abrev.</th><th>Escala</th><th>En</th><th>Nivel</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let e of ESCALAS_CUIDADO">
+            <td class="abbr-cell">{{ e.abbr }}</td>
+            <td>{{ e.label }}</td>
+            <td>
+              <span class="en-badge" [class]="getEnBadgeClass(getEscalaLevel(e.key)?.en ?? 5)">
+                {{ getEscalaLevel(e.key)?.en ?? '—' }}
+              </span>
+            </td>
+            <td>
+              <span class="level-chip" *ngIf="getEscalaLevel(e.key) as lv"
+                [class]="getLevelClass(lv.level)">
+                {{ getLevelLabel(lv.level) }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── Deseabilidad + Índices ── -->
+    <div class="card two-cols">
+      <div class="mini-section">
+        <h3>Deseabilidad social</h3>
+        <div class="kv-row">
+          <span class="kv-label">DS (En)</span>
+          <span class="en-badge" [class]="getEnBadgeClass(findings.deseabilidadInterpretation.en)">
+            {{ findings.deseabilidadInterpretation.en }}
+          </span>
+          <span class="level-chip" [class]="getLevelClass(findings.deseabilidadInterpretation.level)">
+            {{ getLevelLabel(findings.deseabilidadInterpretation.level) }}
+          </span>
+        </div>
+      </div>
+
+      <div class="mini-section" *ngIf="getManual() as m">
+        <h3>Índices de control</h3>
+        <div class="kv-row">
+          <span class="kv-label">Invalidez PD</span>
+          <span>{{ m.indices.invalidez.pd }}</span>
+          <span class="cat-badge" [class]="getEnCatClass(m.indices.invalidez.en)">
+            {{ getEnLabel(m.indices.invalidez.en) }}
+          </span>
+        </div>
+        <div class="kv-row">
+          <span class="kv-label">Inconsistencia PD</span>
+          <span>{{ m.indices.inconsistencia.pd }}</span>
+          <span class="cat-badge" [class]="getEnCatClass(m.indices.inconsistencia.en)">
+            {{ getEnLabel(m.indices.inconsistencia.en) }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Patrones de lectura conjunta ── -->
+    <div class="card" *ngIf="findings.jointReadingFlags.length > 0">
+      <h3>Patrones detectados</h3>
+      <div *ngFor="let flag of findings.jointReadingFlags" class="pattern-row">
+        <div class="pattern-icon">◆</div>
+        <div class="pattern-content">
+          <p class="pattern-desc">{{ flag.description }}</p>
+          <span class="pattern-scales">Escalas: {{ formatScaleList(flag.scalesInvolved, ' · ') }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Ítems a esclarecer ── -->
+    <div class="card" *ngIf="findings.criticalItemsToClarify.length > 0">
+      <h3>Ítems a esclarecer en entrevista</h3>
+      <table class="scores-table">
+        <thead>
+          <tr><th>#</th><th>Escala</th><th>Contenido</th><th>Motivo</th><th>Resp.</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of findings.criticalItemsToClarify">
+            <td>{{ item.itemNumber }}</td>
+            <td class="abbr-cell">{{ item.escala }}</td>
+            <td class="content-cell">{{ item.content }}</td>
+            <td class="reason-cell">{{ item.reason }}</td>
+            <td>{{ item.rawResponse ?? '—' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── Ítems críticos del informe TEA ── -->
+    <div class="card" *ngIf="getManual() as m">
+      <ng-container *ngIf="m.itemsCriticosTea && m.itemsCriticosTea.length > 0">
+        <h3>Ítems críticos del informe TEA</h3>
+        <ul class="items-list">
+          <li *ngFor="let ic of m.itemsCriticosTea">
+            Ítem {{ ic.itemNumber }}: respuesta {{ ic.response }}
+          </li>
+        </ul>
+      </ng-container>
+    </div>
+
+    <!-- ── Estilo de crianza ── -->
+    <div class="card">
+      <h3>Estilo de crianza inferido</h3>
+      <div class="parenting-header">
+        <div class="parenting-style-badge" [class]="'style-' + findings.parentingStyleInference.predominantStyle.toLowerCase()">
+          {{ getParentingStyleLabel(findings.parentingStyleInference.predominantStyle) }}
+        </div>
+        <span class="cat-badge" [class]="getConfidenceClass(findings.parentingStyleInference.confidence)">
+          Confianza {{ findings.parentingStyleInference.confidence }}
+        </span>
+      </div>
+      <p class="parenting-rec">{{ findings.parentingStyleInference.recommendation }}</p>
+      <div *ngIf="findings.parentingStyleInference.supportingScales.length > 0" class="parenting-scales">
+        <span class="kv-label">Escalas concordantes: </span>
+        {{ formatScaleList(findings.parentingStyleInference.supportingScales) }}
+      </div>
+    </div>
+
+    <!-- ── Advertencias ── -->
+    <div *ngIf="findings.warnings.length > 0" class="alert-warning">
+      <div class="alert-icon">ℹ</div>
+      <div class="alert-content">
+        <h4>Advertencias</h4>
+        <ul><li *ngFor="let w of findings.warnings">{{ w }}</li></ul>
+      </div>
+    </div>
+
+  </ng-container>
+
+  <!-- ═══ Vista manual (sin findings) — escalas básicas ═══ -->
+  <ng-container *ngIf="manualOnly && !findings">
+    <div class="card" *ngIf="manualOnly as m">
+      <h3>Escalas transcritas (interpretación pendiente)</h3>
+      <table class="scores-table">
+        <thead><tr><th>Abrev.</th><th>Escala</th><th>En</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let e of ESCALAS_PERSONALIDAD">
+            <td class="abbr-cell">{{ e.abbr }}</td>
+            <td>{{ e.label }}</td>
+            <td><span class="en-badge" [class]="getEnBadgeClass(getManualEscalaEn(e.key))">{{ getManualEscalaEn(e.key) }}</span></td>
+          </tr>
+          <tr *ngFor="let e of ESCALAS_CUIDADO">
+            <td class="abbr-cell">{{ e.abbr }}</td>
+            <td>{{ e.label }}</td>
+            <td><span class="en-badge" [class]="getEnBadgeClass(getManualCuidadoEn(e.key))">{{ getManualCuidadoEn(e.key) }}</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+
+  <!-- ═══ Nota pericial ═══ -->
+  <div class="note-forensic" *ngIf="findings?.reportMode === 'COMPLETE' || manualOnly">
+    <strong>Nota pericial:</strong>
+    Los resultados del CUIDA deben interpretarse en el contexto de una evaluación psicológica
+    completa. Un único instrumento no es suficiente para emitir conclusiones sobre capacidades
+    de cuidado o idoneidad parental.
+  </div>
+
+  <!-- ═══ Interpretación IA ═══ -->
+  <div class="card" *ngIf="findings?.reportMode === 'COMPLETE'">
+    <div class="interpretation-header">
+      <h3>Interpretación clínica</h3>
+      <button class="btn btn-primary" [disabled]="!aiEnabled" title="Disponible próximamente">
+        Generar con IA
+      </button>
+    </div>
+    <div class="interpretation-empty">No se ha generado una interpretación clínica.</div>
+  </div>
+
+  <!-- ═══ Acciones ═══ -->
+  <div class="results-actions">
+    <button class="btn btn-secondary" (click)="recalculate()" [disabled]="recalculating">
+      {{ recalculating ? 'Recalculando...' : 'Recalcular interpretación' }}
+    </button>
+    <button class="btn btn-secondary" (click)="goToEntry()">Editar valores</button>
+    <button class="btn btn-secondary" (click)="goBack()">Volver a pruebas</button>
+    <button class="btn btn-primary" (click)="goToCase()">Ir al caso</button>
+  </div>
+
+</div>

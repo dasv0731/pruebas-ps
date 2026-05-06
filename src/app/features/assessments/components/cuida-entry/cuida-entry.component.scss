@@ -1,0 +1,269 @@
+.loading,
+.error-msg {
+  padding: 1rem;
+  text-align: center;
+}
+
+.error-msg {
+  color: #b91c1c;
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  border-radius: 6px;
+  padding: 0.85rem 1rem;
+  margin: 0;
+  text-align: left;
+}
+
+.cuida-entry {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+// ── Cards ──
+.card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+
+  h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1rem;
+    color: #374151;
+    font-weight: 600;
+  }
+}
+
+.card-header .title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  h2 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #111827;
+  }
+}
+
+.subject-summary {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.85rem;
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+.entry-hint {
+  margin: 0.6rem 0 0 0;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+// ── Section header con botón ──
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+
+  h3 {
+    margin: 0;
+  }
+}
+
+// ── Grid de escalas ──
+.escalas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.escala-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  label {
+    font-size: 0.82rem;
+    color: #374151;
+    font-weight: 500;
+  }
+}
+
+// ── Form controls ──
+.form-control {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  color: #111827;
+  box-sizing: border-box;
+  background: #fff;
+
+  &:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+  }
+
+  &.invalid {
+    border-color: #dc2626;
+    background: #fff5f5;
+  }
+}
+
+.form-control-sm {
+  padding: 0.35rem 0.55rem;
+  font-size: 0.9rem;
+}
+
+.form-group {
+  margin-bottom: 0.85rem;
+
+  label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.3rem;
+  }
+}
+
+.form-group-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0;
+
+  label {
+    white-space: nowrap;
+    margin-bottom: 0;
+    min-width: 60px;
+  }
+
+  .form-control {
+    width: auto;
+  }
+
+  .field-error {
+    color: #dc2626;
+    font-size: 0.78rem;
+  }
+}
+
+.field-error {
+  color: #dc2626;
+  font-size: 0.78rem;
+}
+
+// ── Índices ──
+.indice-row {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #f3f4f6;
+
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+}
+
+.indice-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #374151;
+  min-width: 110px;
+}
+
+.indice-fields {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+// ── Ítems críticos ──
+.item-critico-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f3f4f6;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.text-muted-sm {
+  color: #9ca3af;
+  font-size: 0.88rem;
+  font-style: italic;
+  margin: 0;
+}
+
+// ── Confirmación ──
+.confirm-box {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-left: 4px solid #d97706;
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+
+  h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1rem;
+    color: #92400e;
+  }
+
+  p {
+    margin: 0 0 1rem 0;
+    font-size: 0.92rem;
+    color: #78350f;
+    line-height: 1.45;
+  }
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+// ── Acciones inferiores ──
+.results-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 0.25rem;
+}
+
+.btn-sm {
+  padding: 0.3rem 0.65rem;
+  font-size: 0.85rem;
+}
+
+.btn-danger {
+  background: #dc2626;
+  color: #fff;
+  border: 1px solid #dc2626;
+  border-radius: 6px;
+  padding: 0.35rem 0.65rem;
+  cursor: pointer;
+  font-size: 0.82rem;
+
+  &:hover {
+    background: #b91c1c;
+  }
+}

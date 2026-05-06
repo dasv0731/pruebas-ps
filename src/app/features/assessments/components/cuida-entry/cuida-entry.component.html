@@ -1,0 +1,214 @@
+<div *ngIf="loading" class="loading">Cargando...</div>
+<div *ngIf="error && !loading" class="error-msg">{{ error }}</div>
+
+<div *ngIf="!loading" class="cuida-entry" [formGroup]="form">
+
+  <!-- Encabezado -->
+  <div class="card">
+    <div class="card-header">
+      <div class="title-row">
+        <button class="btn btn-secondary btn-sm" (click)="goBack()">← Volver</button>
+        <h2>{{ isEditMode ? 'Editar valores CUIDA' : 'Transcribir valores CUIDA' }}</h2>
+      </div>
+    </div>
+    <div class="subject-summary">
+      <span><strong>Evaluado:</strong> {{ getSubjectFullName() }}</span>
+      <span><strong>Edad:</strong> {{ session?.subjectAgeYears ?? '—' }} años</span>
+      <span><strong>Sexo:</strong> {{ getSexLabel() }}</span>
+    </div>
+    <p class="entry-hint">
+      Ingrese los eneatipos (1-9) tal como los reporta TEACorrige para cada escala.
+    </p>
+  </div>
+
+  <!-- Error global -->
+  <div *ngIf="error && loading === false && !showConfirm" class="error-msg">{{ error }}</div>
+
+  <!-- ════ Baremo ════ -->
+  <div class="card">
+    <h3>Baremo</h3>
+    <div class="form-group">
+      <label>Baremo utilizado</label>
+      <input type="text" formControlName="baremo" class="form-control" />
+      <span *ngIf="isFieldInvalid('baremo')" class="field-error">Requerido</span>
+    </div>
+  </div>
+
+  <!-- ════ Escalas de personalidad ════ -->
+  <div class="card" formGroupName="escalas">
+    <h3>Escalas de personalidad</h3>
+    <div class="escalas-grid">
+      <div *ngFor="let e of ESCALAS_PERSONALIDAD" class="escala-field">
+        <label>{{ e.abbr }} — {{ e.label }}</label>
+        <input
+          type="number" min="1" max="9" step="1"
+          [formControlName]="e.key"
+          class="form-control form-control-sm"
+          [class.invalid]="isFieldInvalid('escalas.' + e.key)"
+        />
+        <span *ngIf="isFieldInvalid('escalas.' + e.key)" class="field-error">1-9</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ Escalas de cuidado ════ -->
+  <div class="card" formGroupName="cuidado">
+    <h3>Escalas de cuidado</h3>
+    <div class="escalas-grid">
+      <div *ngFor="let e of ESCALAS_CUIDADO" class="escala-field">
+        <label>{{ e.abbr }} — {{ e.label }}</label>
+        <input
+          type="number" min="1" max="9" step="1"
+          [formControlName]="e.key"
+          class="form-control form-control-sm"
+          [class.invalid]="isFieldInvalid('cuidado.' + e.key)"
+        />
+        <span *ngIf="isFieldInvalid('cuidado.' + e.key)" class="field-error">1-9</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ Deseabilidad social ════ -->
+  <div class="card">
+    <h3>Deseabilidad social</h3>
+    <div class="form-group form-group-inline">
+      <label>DS — Deseabilidad social</label>
+      <input
+        type="number" min="1" max="9" step="1"
+        formControlName="deseabilidadSocial"
+        class="form-control form-control-sm"
+        [class.invalid]="isFieldInvalid('deseabilidadSocial')"
+      />
+      <span *ngIf="isFieldInvalid('deseabilidadSocial')" class="field-error">1-9</span>
+    </div>
+  </div>
+
+  <!-- ════ Índices de control ════ -->
+  <div class="card" formGroupName="indices">
+    <h3>Índices de control</h3>
+
+    <div class="indice-row" formGroupName="invalidez">
+      <span class="indice-label">Invalidez</span>
+      <div class="indice-fields">
+        <div class="form-group form-group-inline">
+          <label>PD</label>
+          <input
+            type="number" min="0" step="1"
+            formControlName="pd"
+            class="form-control form-control-sm"
+            [class.invalid]="isFieldInvalid('indices.invalidez.pd')"
+          />
+          <span *ngIf="isFieldInvalid('indices.invalidez.pd')" class="field-error">≥0</span>
+        </div>
+        <div class="form-group form-group-inline">
+          <label>Categoría</label>
+          <select formControlName="en" class="form-control form-control-sm"
+            [class.invalid]="isFieldInvalid('indices.invalidez.en')">
+            <option value="">— seleccionar —</option>
+            <option value="BAJO">Bajo</option>
+            <option value="NORMAL">Normal</option>
+            <option value="ALTO">Alto</option>
+          </select>
+          <span *ngIf="isFieldInvalid('indices.invalidez.en')" class="field-error">Requerido</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="indice-row" formGroupName="inconsistencia">
+      <span class="indice-label">Inconsistencia</span>
+      <div class="indice-fields">
+        <div class="form-group form-group-inline">
+          <label>PD</label>
+          <input
+            type="number" min="0" step="1"
+            formControlName="pd"
+            class="form-control form-control-sm"
+            [class.invalid]="isFieldInvalid('indices.inconsistencia.pd')"
+          />
+          <span *ngIf="isFieldInvalid('indices.inconsistencia.pd')" class="field-error">≥0</span>
+        </div>
+        <div class="form-group form-group-inline">
+          <label>Categoría</label>
+          <select formControlName="en" class="form-control form-control-sm"
+            [class.invalid]="isFieldInvalid('indices.inconsistencia.en')">
+            <option value="">— seleccionar —</option>
+            <option value="BAJO">Bajo</option>
+            <option value="NORMAL">Normal</option>
+            <option value="ALTO">Alto</option>
+          </select>
+          <span *ngIf="isFieldInvalid('indices.inconsistencia.en')" class="field-error">Requerido</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ Ítems críticos ════ -->
+  <div class="card">
+    <div class="section-header">
+      <h3>Ítems críticos</h3>
+      <button type="button" class="btn btn-secondary btn-sm" (click)="addItemCritico()">
+        + Agregar ítem
+      </button>
+    </div>
+
+    <p *ngIf="itemsCriticosTea.length === 0" class="text-muted-sm">
+      Sin ítems críticos registrados.
+    </p>
+
+    <div formArrayName="itemsCriticosTea">
+      <div
+        *ngFor="let ic of itemsCriticosTea.controls; let i = index"
+        [formGroupName]="i"
+        class="item-critico-row"
+      >
+        <div class="form-group form-group-inline">
+          <label>Ítem #</label>
+          <input type="number" min="1" max="189" step="1"
+            formControlName="itemNumber"
+            class="form-control form-control-sm"
+            [class.invalid]="ic.get('itemNumber')?.invalid && ic.get('itemNumber')?.touched"
+          />
+        </div>
+        <div class="form-group form-group-inline">
+          <label>Respuesta</label>
+          <input type="number" min="0" step="1"
+            formControlName="response"
+            class="form-control form-control-sm"
+            [class.invalid]="ic.get('response')?.invalid && ic.get('response')?.touched"
+          />
+        </div>
+        <button type="button" class="btn btn-danger btn-sm" (click)="removeItemCritico(i)">
+          Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ Confirmación ════ -->
+  <div *ngIf="showConfirm" class="confirm-box">
+    <h4>Confirmar guardado</h4>
+    <p>
+      Se guardarán los valores de CUIDA para
+      <strong>{{ getSubjectFullName() }}</strong>.
+      {{ isEditMode ? 'La versión anterior quedará invalidada.' : '' }}
+    </p>
+    <div *ngIf="error" class="error-msg">{{ error }}</div>
+    <div class="confirm-actions">
+      <button class="btn btn-secondary" (click)="cancelConfirm()" [disabled]="saving">
+        Cancelar
+      </button>
+      <button class="btn btn-primary" (click)="save()" [disabled]="saving">
+        {{ saving ? savingPhase : 'Confirmar y guardar' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Acciones inferiores -->
+  <div *ngIf="!showConfirm" class="results-actions">
+    <button class="btn btn-secondary" (click)="goBack()">Volver</button>
+    <button class="btn btn-primary" (click)="requestConfirm()">
+      Revisar y guardar
+    </button>
+  </div>
+
+</div>

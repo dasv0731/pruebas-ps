@@ -1,0 +1,186 @@
+.cuida-pending {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.error-msg {
+  padding: 0.85rem 1rem;
+  color: #b91c1c;
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  border-radius: 6px;
+}
+
+// ── Card genérica ──
+.card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.card-header .title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  h2 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #111827;
+  }
+}
+
+// ── Caja informativa ──
+.info-box {
+  margin-top: 1rem;
+  padding: 1rem 1.25rem;
+  background: #eff6ff;
+  border-left: 3px solid #2563eb;
+  border-radius: 4px;
+  color: #1e3a8a;
+
+  h3 {
+    margin: 0 0 0.6rem 0;
+    font-size: 0.98rem;
+    font-weight: 600;
+  }
+
+  ol {
+    margin: 0;
+    padding-left: 1.4rem;
+
+    li {
+      font-size: 0.92rem;
+      line-height: 1.55;
+      margin-bottom: 0.35rem;
+    }
+  }
+}
+
+// ── Card de acciones ──
+.actions-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.action-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.25rem 1.5rem;
+
+  .action-info {
+    flex: 1;
+
+    h4 {
+      margin: 0 0 0.3rem 0;
+      font-size: 0.98rem;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    p {
+      margin: 0;
+      font-size: 0.88rem;
+      color: #6b7280;
+      line-height: 1.45;
+    }
+  }
+}
+
+.divider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 0 1.5rem;
+}
+
+// ── Acciones inferiores ──
+.results-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 0.25rem;
+}
+
+// ── Modal overlay ──
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-box {
+  background: #fff;
+  border-radius: 10px;
+  padding: 1.75rem 2rem;
+  width: min(480px, 90vw);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+
+  h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+    color: #111827;
+  }
+
+  .modal-hint {
+    margin: 0 0 1rem 0;
+    font-size: 0.88rem;
+    color: #6b7280;
+    line-height: 1.45;
+  }
+}
+
+.form-group {
+  margin-bottom: 1rem;
+
+  label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.35rem;
+  }
+
+  .form-control {
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    color: #111827;
+    box-sizing: border-box;
+
+    &:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+    }
+  }
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+// ── Botón small ──
+.btn-sm {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.85rem;
+}
