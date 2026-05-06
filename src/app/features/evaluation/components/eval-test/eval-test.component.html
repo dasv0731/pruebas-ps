@@ -5,12 +5,151 @@
 
   <div *ngIf="loading" class="loading">Cargando prueba...</div>
 
-  <!-- Error crítico (no se pudo cargar la prueba) -->
   <div *ngIf="error && sections.length === 0 && !loading" class="error-section">
     <div class="error-msg">{{ error }}</div>
   </div>
 
-  <div *ngIf="!loading && sections.length > 0" class="test-content">
+  <!-- ── Pantalla de instrucciones ── -->
+  <div *ngIf="!loading && phase === 'instructions'" class="test-content instructions-screen">
+    <h2>{{ session?.assessmentName }}</h2>
+    <div class="global-instructions">
+      <pre>{{ globalInstructions }}</pre>
+    </div>
+    <button class="start-btn" (click)="startTest()">
+      He comprendido las instrucciones, comenzar
+    </button>
+  </div>
+
+  <!-- ── Preguntas paginadas ── -->
+  <div *ngIf="!loading && phase === 'questions' && isPaginated" class="test-content">
+    <h2>{{ session?.assessmentName }}</h2>
+
+    <div class="page-indicator">Página {{ currentPage + 1 }} de {{ totalPages }}</div>
+
+    <div class="questions-container">
+      <div *ngFor="let q of currentPageQuestions" class="question-row"
+        [ngClass]="{ 'unanswered': highlightUnanswered && answers[q.index] === undefined }">
+        <div class="question-text">
+          <span class="q-num">{{ q.index }}.</span> {{ q.text }}
+        </div>
+        <div class="options-group">
+          <label
+            *ngFor="let opt of [].constructor(q.options); let i = index"
+            class="option-label"
+            (click)="selectOption(q.index, i + 1)">
+            <span>{{ optionLabels.length > 0 ? optionLabels[i] : (i + 1) }}</span>
+            <input
+              type="radio"
+              [name]="'q' + q.index"
+              [value]="i + 1"
+              [checked]="isSelected(q.index, i + 1)"
+              (change)="selectOption(q.index, i + 1)">
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="progress-footer">
+      <span>{{ getAnsweredCount() }} de {{ getEffectiveTotal() }} respondidas</span>
+    </div>
+
+    <div *ngIf="error" class="error-msg validation-error">{{ error }}</div>
+
+    <div class="page-nav">
+      <button class="nav-btn prev-btn" *ngIf="currentPage > 0" (click)="prevPage()">
+        ← Anterior
+      </button>
+      <button class="nav-btn next-btn" *ngIf="!isLastPage" (click)="nextPage()">
+        Siguiente →
+      </button>
+      <button
+        *ngIf="isLastPage"
+        class="submit-btn"
+        (click)="onSubmit()"
+        [disabled]="submitting">
+        {{ submitting ? 'Enviando respuestas...' : 'Finalizar y Enviar Respuestas' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Preguntas por sección (TAMAI) ── -->
+  <div *ngIf="!loading && phase === 'questions' && paginateBySection && currentSection" class="test-content">
+    <h2>{{ session?.assessmentName }}</h2>
+
+    <div class="page-indicator">
+      Sección {{ currentSectionIndex + 1 }} de {{ sections.length }} — {{ currentSection.title }}
+    </div>
+
+    <!-- Gate condicional -->
+    <div *ngIf="currentSection.conditional" class="conditional-gate"
+      [class.gate-pending-highlight]="highlightUnanswered && isConditionalPending(currentSection)">
+      <span class="gate-label">{{ currentSection.conditional.gateQuestion }}</span>
+      <div class="gate-options">
+        <label class="gate-option" [class.selected-yes]="isConditionalEnabled(currentSection)">
+          <input type="radio" [name]="'gate-' + currentSection.title" value="si"
+            [checked]="isConditionalEnabled(currentSection)"
+            (change)="setConditionalSection(currentSection.title, true)">
+          Sí
+        </label>
+        <label class="gate-option" [class.selected-no]="isConditionalDisabled(currentSection)">
+          <input type="radio" [name]="'gate-' + currentSection.title" value="no"
+            [checked]="isConditionalDisabled(currentSection)"
+            (change)="setConditionalSection(currentSection.title, false)">
+          No
+        </label>
+      </div>
+    </div>
+
+    <!-- Preguntas de la sección actual -->
+    <div class="questions-container"
+      [class.section-blocked]="currentSection.conditional && !isConditionalEnabled(currentSection)">
+      <div *ngFor="let q of currentSection.questions" class="question-row"
+        [ngClass]="{ 'unanswered': highlightUnanswered && answers[q.index] === undefined && isConditionalEnabled(currentSection) }">
+        <div class="question-text">{{ q.text }}</div>
+        <div class="options-group">
+          <label
+            *ngFor="let opt of [].constructor(q.options); let i = index"
+            class="option-label"
+            (click)="currentSection.conditional && !isConditionalEnabled(currentSection) ? null : selectOption(q.index, i + 1)">
+            <span>{{ optionLabels.length > 0 ? optionLabels[i] : (i + 1) }}</span>
+            <input
+              type="radio"
+              [name]="'q' + q.index"
+              [value]="i + 1"
+              [checked]="isSelected(q.index, i + 1)"
+              [disabled]="!!(currentSection.conditional && !isConditionalEnabled(currentSection))"
+              (change)="selectOption(q.index, i + 1)">
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="progress-footer">
+      <span>{{ getAnsweredInCurrentSection() }} de {{ currentSection.questions.length }} respondidas en esta sección</span>
+      <span class="progress-total"> · Total: {{ getAnsweredCount() }} de {{ getEffectiveTotal() }}</span>
+    </div>
+
+    <div *ngIf="error" class="error-msg validation-error">{{ error }}</div>
+
+    <div class="page-nav">
+      <button class="nav-btn prev-btn" *ngIf="currentSectionIndex > 0" (click)="prevSection()">
+        ← Anterior
+      </button>
+      <button class="nav-btn next-btn" *ngIf="!isLastSection" (click)="nextSection()">
+        Siguiente →
+      </button>
+      <button
+        *ngIf="isLastSection"
+        class="submit-btn"
+        (click)="onSubmit()"
+        [disabled]="submitting">
+        {{ submitting ? 'Enviando respuestas...' : 'Finalizar y Enviar Respuestas' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Preguntas no paginadas (CDI, STAI) ── -->
+  <div *ngIf="!loading && phase === 'questions' && !isPaginated && !paginateBySection && sections.length > 0" class="test-content">
 
     <h2>{{ assessment?.name || session?.assessmentName }}</h2>
 
@@ -21,26 +160,44 @@
         <p>{{ section.instructions }}</p>
       </div>
 
-      <div *ngIf="section.legend.length > 0" class="legend">
-        <span *ngFor="let l of section.legend">{{ l }}</span>
+      <!-- ── Gate condicional ── -->
+      <div *ngIf="section.conditional" class="conditional-gate"
+        [class.gate-pending-highlight]="highlightUnanswered && isConditionalPending(section)">
+        <span class="gate-label">{{ section.conditional.gateQuestion }}</span>
+        <div class="gate-options">
+          <label class="gate-option" [class.selected-yes]="isConditionalEnabled(section)">
+            <input type="radio" [name]="'gate-' + section.title" value="si"
+              [checked]="isConditionalEnabled(section)"
+              (change)="setConditionalSection(section.title, true)">
+            Sí
+          </label>
+          <label class="gate-option" [class.selected-no]="isConditionalDisabled(section)">
+            <input type="radio" [name]="'gate-' + section.title" value="no"
+              [checked]="isConditionalDisabled(section)"
+              (change)="setConditionalSection(section.title, false)">
+            No
+          </label>
+        </div>
       </div>
 
       <!-- Opciones numéricas (STAI, TAMAI) -->
-      <div *ngIf="questionType === 'NUMERIC'" class="questions-container">
+      <div *ngIf="questionType === 'NUMERIC'" class="questions-container"
+        [class.section-blocked]="section.conditional && !isConditionalEnabled(section)">
         <div *ngFor="let q of section.questions" class="question-row"
-          [ngClass]="{ 'unanswered': highlightUnanswered && answers[q.index] === undefined }">
+          [ngClass]="{ 'unanswered': highlightUnanswered && answers[q.index] === undefined && isConditionalEnabled(section) }">
           <div class="question-text">{{ q.text }}</div>
           <div class="options-group">
             <label
               *ngFor="let opt of [].constructor(q.options); let i = index"
               class="option-label"
-              (click)="selectOption(q.index, i + 1)">
+              (click)="section.conditional && !isConditionalEnabled(section) ? null : selectOption(q.index, i + 1)">
               <span>{{ optionLabels.length > 0 ? optionLabels[i] : (i + 1) }}</span>
               <input
                 type="radio"
                 [name]="'q' + q.index"
                 [value]="i + 1"
                 [checked]="isSelected(q.index, i + 1)"
+                [disabled]="!!(section.conditional && !isConditionalEnabled(section))"
                 (change)="selectOption(q.index, i + 1)">
             </label>
           </div>
@@ -71,7 +228,7 @@
     </div>
 
     <div class="progress-footer">
-      <span>{{ getAnsweredCount() }} de {{ totalQuestions }} respondidas</span>
+      <span>{{ getAnsweredCount() }} de {{ getEffectiveTotal() }} respondidas</span>
     </div>
 
     <div *ngIf="error" class="error-msg validation-error">{{ error }}</div>

@@ -1,3 +1,90 @@
+// ── Pantalla de instrucciones ─────────────────────────
+.instructions-screen {
+  .global-instructions {
+    background: #f0f7ff;
+    border: 1px solid #90cdf4;
+    border-radius: 8px;
+    padding: 1.5rem 2rem;
+    margin: 1.5rem 0;
+
+    pre {
+      white-space: pre-wrap;
+      font-family: inherit;
+      font-size: 1rem;
+      line-height: 1.7;
+      color: #2d3748;
+      margin: 0;
+    }
+  }
+}
+
+.start-btn {
+  display: block;
+  width: 100%;
+  padding: 15px;
+  background: #276749;
+  color: white;
+  border: none;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 24px;
+  border-radius: 6px;
+  transition: background 0.2s;
+
+  &:hover { background: #1c4f35; }
+}
+
+// ── Paginación ────────────────────────────────────────
+.page-indicator {
+  text-align: center;
+  font-size: 0.9rem;
+  color: #718096;
+  margin: 0.5rem 0 1.5rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.q-num {
+  font-weight: bold;
+  color: #3498db;
+  margin-right: 0.4rem;
+}
+
+.page-nav {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.nav-btn {
+  flex: 1;
+  padding: 13px 20px;
+  font-size: 1rem;
+  font-weight: 600;
+  border: 2px solid #2c3e50;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  background: #fff;
+  color: #2c3e50;
+
+  &:hover { background: #2c3e50; color: #fff; }
+
+  &.next-btn {
+    background: #2c3e50;
+    color: #fff;
+    &:hover { background: #1a252f; }
+  }
+}
+
+.progress-total {
+  color: #a0aec0;
+  font-size: 0.85rem;
+}
+
 .eval-test-container {
   min-height: 100vh;
   background-color: #f4f7f6;
@@ -51,18 +138,79 @@ h3 {
   line-height: 1.5;
 }
 
-.legend {
+// ── Gate condicional ──────────────────────────────────
+.conditional-gate {
   display: flex;
-  justify-content: center;
+  align-items: center;
+  gap: 1rem;
   flex-wrap: wrap;
-  gap: 15px;
-  background: #fdfbfb;
-  padding: 10px;
-  border: 1px dashed #ccc;
-  border-radius: 5px;
-  margin-bottom: 20px;
-  font-weight: bold;
-  font-size: 0.9em;
+  background: #eef6ff;
+  border: 1px solid #90cdf4;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+
+  &.gate-pending-highlight {
+    border-color: #fc8181;
+    background: #fff5f5;
+    animation: pulse-red 1s ease-in-out;
+  }
+
+  .gate-label {
+    flex: 1;
+    font-weight: 600;
+    color: #1a365d;
+    font-size: 0.95rem;
+  }
+
+  .gate-options {
+    display: flex;
+    gap: 0.5rem;
+  }
+}
+
+.gate-option {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  padding: 0.35rem 1rem;
+  border: 2px solid #cbd5e0;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  background: #fff;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  user-select: none;
+
+  input[type="radio"] {
+    display: none;
+  }
+
+  &:hover {
+    border-color: #3498db;
+    background: #ebf8ff;
+  }
+
+  &.selected-yes {
+    background: #276749;
+    border-color: #276749;
+    color: #fff;
+  }
+
+  &.selected-no {
+    background: #9b2c2c;
+    border-color: #9b2c2c;
+    color: #fff;
+  }
+}
+
+// ── Sección bloqueada (gate = No o pendiente) ─────────
+.section-blocked {
+  opacity: 0.4;
+  pointer-events: none;
+  user-select: none;
+  filter: grayscale(0.4);
 }
 
 .question-row {

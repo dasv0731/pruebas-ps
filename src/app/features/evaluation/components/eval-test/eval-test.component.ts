@@ -2,8 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { EvaluationService } from '../../services/evaluation.service';
+import { CdiScoringService } from '../../../../core/services/cdi-scoring.service';
 import { TestLoaderService } from '../../../assessments/services/test-loader.service';
-import { TestSection } from '../../../assessments/models/test.interfaces';
+import { TestSection, TestQuestion } from '../../../assessments/models/test.interfaces';
 
 @Component({
   selector: 'app-eval-test',
@@ -21,6 +22,7 @@ export class EvalTestComponent implements OnInit {
   sections: TestSection[] = [];
   answers: Record<number, number> = {};
   totalQuestions = 0;
+  conditionalSections: Record<string, boolean | undefined> = {};
   highlightUnanswered = false;
   questionType = 'NUMERIC';
   optionLabels: string[] = [];
@@ -29,11 +31,33 @@ export class EvalTestComponent implements OnInit {
   submitting = false;
   error = '';
 
+  // Pagination / instructions
+  phase: 'instructions' | 'questions' = 'questions';
+  globalInstructions = '';
+  questionsPerPage = 0;
+  currentPage = 0;
+  allQuestions: TestQuestion[] = [];
+  paginateBySection = false;
+  currentSectionIndex = 0;
+
+  get isPaginated(): boolean { return this.questionsPerPage > 0; }
+  get totalPages(): number { return Math.ceil(this.allQuestions.length / this.questionsPerPage); }
+  get isLastPage(): boolean { return this.currentPage === this.totalPages - 1; }
+  get currentPageQuestions(): TestQuestion[] {
+    const start = this.currentPage * this.questionsPerPage;
+    return this.allQuestions.slice(start, start + this.questionsPerPage);
+  }
+  get currentSection(): TestSection | null {
+    return this.paginateBySection ? (this.sections[this.currentSectionIndex] ?? null) : null;
+  }
+  get isLastSection(): boolean { return this.currentSectionIndex === this.sections.length - 1; }
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private evaluationService: EvaluationService,
-    private testLoader: TestLoaderService
+    private testLoader: TestLoaderService,
+    private cdiScoringService: CdiScoringService,
   ) {}
 
   async ngOnInit() {
@@ -81,6 +105,18 @@ export class EvalTestComponent implements OnInit {
         this.questionType = config.questionType;
         this.totalQuestions = this.testLoader.getTotalQuestions(this.shortName);
         this.optionLabels = config.optionLabels || [];
+
+        if (config.questionsPerPage) {
+          this.questionsPerPage = config.questionsPerPage;
+          this.allQuestions = config.sections.flatMap((s) => s.questions);
+        }
+        if (config.paginateBySection) {
+          this.paginateBySection = true;
+        }
+        if (config.globalInstructions) {
+          this.globalInstructions = config.globalInstructions;
+          this.phase = 'instructions';
+        }
       } else {
         // Fallback: cargar desde DB
         this.assessment = await this.evaluationService.getAssessmentPublic(this.session.assessmentId);
@@ -125,12 +161,111 @@ export class EvalTestComponent implements OnInit {
     }
   }
 
+  startTest() {
+    this.phase = 'questions';
+    window.scrollTo(0, 0);
+  }
+
+  nextSection() {
+    const section = this.sections[this.currentSectionIndex];
+    if (section.conditional && this.conditionalSections[section.title] === undefined) {
+      this.error = 'Debe indicar Sí o No antes de continuar.';
+      this.highlightUnanswered = true;
+      setTimeout(() => {
+        const el = document.querySelector('.gate-pending-highlight');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+      return;
+    }
+    if (!section.conditional || this.conditionalSections[section.title] === true) {
+      const unanswered = section.questions.filter((q) => this.answers[q.index] === undefined);
+      if (unanswered.length > 0) {
+        this.error = `Faltan ${unanswered.length} preguntas por responder en esta sección.`;
+        this.highlightUnanswered = true;
+        setTimeout(() => {
+          const el = document.querySelector('.unanswered');
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+        return;
+      }
+    }
+    this.error = '';
+    this.highlightUnanswered = false;
+    this.currentSectionIndex++;
+    window.scrollTo(0, 0);
+  }
+
+  prevSection() {
+    if (this.currentSectionIndex > 0) {
+      this.currentSectionIndex--;
+      this.error = '';
+      this.highlightUnanswered = false;
+      window.scrollTo(0, 0);
+    }
+  }
+
+  prevPage() {
+    if (this.currentPage > 0) {
+      this.currentPage--;
+      this.error = '';
+      this.highlightUnanswered = false;
+      window.scrollTo(0, 0);
+    }
+  }
+
+  nextPage() {
+    const unansweredOnPage = this.currentPageQuestions.filter(
+      (q) => this.answers[q.index] === undefined
+    );
+    if (unansweredOnPage.length > 0) {
+      this.error = `Faltan ${unansweredOnPage.length} preguntas por responder en esta página.`;
+      this.highlightUnanswered = true;
+      setTimeout(() => {
+        const el = document.querySelector('.unanswered');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+      return;
+    }
+    this.error = '';
+    this.highlightUnanswered = false;
+    this.currentPage++;
+    window.scrollTo(0, 0);
+  }
+
   selectOption(questionIndex: number, value: number) {
     this.answers[questionIndex] = value;
     if (this.highlightUnanswered && this.isComplete()) {
       this.highlightUnanswered = false;
       this.error = '';
     }
+  }
+
+  setConditionalSection(title: string, applies: boolean) {
+    this.conditionalSections[title] = applies;
+    if (!applies) {
+      const section = this.sections.find((s) => s.title === title);
+      if (section) {
+        for (const q of section.questions) {
+          delete this.answers[q.index];
+        }
+      }
+    }
+    if (this.highlightUnanswered && this.isComplete()) {
+      this.highlightUnanswered = false;
+      this.error = '';
+    }
+  }
+
+  isConditionalEnabled(section: TestSection): boolean {
+    return this.conditionalSections[section.title] === true;
+  }
+
+  isConditionalDisabled(section: TestSection): boolean {
+    return this.conditionalSections[section.title] === false;
+  }
+
+  isConditionalPending(section: TestSection): boolean {
+    return !!section.conditional && this.conditionalSections[section.title] === undefined;
   }
 
   isSelected(questionIndex: number, value: number): boolean {
@@ -141,13 +276,35 @@ export class EvalTestComponent implements OnInit {
     return Object.keys(this.answers).length;
   }
 
+  getEffectiveTotal(): number {
+    if (this.isPaginated) return this.allQuestions.length;
+    return this.sections
+      .filter((s) => !s.conditional || this.conditionalSections[s.title] === true)
+      .reduce((sum, s) => sum + s.questions.length, 0);
+  }
+
+  getAnsweredInCurrentSection(): number {
+    if (!this.currentSection) return 0;
+    return this.currentSection.questions.filter((q) => this.answers[q.index] !== undefined).length;
+  }
+
   isComplete(): boolean {
-    return this.getAnsweredCount() === this.totalQuestions;
+    const pendingGate = this.sections.some(
+      (s) => s.conditional && this.conditionalSections[s.title] === undefined,
+    );
+    if (pendingGate) return false;
+    return this.getUnanswered().length === 0;
   }
 
   getUnanswered(): number[] {
+    if (this.isPaginated) {
+      return this.allQuestions
+        .filter((q) => this.answers[q.index] === undefined)
+        .map((q) => q.index);
+    }
     const unanswered: number[] = [];
     for (const section of this.sections) {
+      if (section.conditional && this.conditionalSections[section.title] !== true) continue;
       for (const q of section.questions) {
         if (this.answers[q.index] === undefined) {
           unanswered.push(q.index);
@@ -158,11 +315,23 @@ export class EvalTestComponent implements OnInit {
   }
 
   async onSubmit() {
+    const pendingGates = this.sections.filter(
+      (s) => s.conditional && this.conditionalSections[s.title] === undefined,
+    );
+    if (pendingGates.length > 0) {
+      this.error = 'Debe indicar Sí o No en cada sección condicional antes de continuar.';
+      this.highlightUnanswered = true;
+      setTimeout(() => {
+        const el = document.querySelector('.gate-pending');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+      return;
+    }
+
     if (!this.isComplete()) {
       const unanswered = this.getUnanswered();
       this.error = `Faltan ${unanswered.length} preguntas por responder.`;
       this.highlightUnanswered = true;
-      // Scroll al primer sin responder
       setTimeout(() => {
         const el = document.querySelector('.unanswered');
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -187,7 +356,12 @@ export class EvalTestComponent implements OnInit {
         this.evalId
       );
 
-      await this.evaluationService.scorePublic(this.sessionId, answersArray);
+       // Scoring: CDI va por Lambda (backend), el resto por el service viejo (frontend)
+      if (this.shortName === 'CDI') {
+        await this.cdiScoringService.scorePublic(this.sessionId);
+      } else {
+        await this.evaluationService.scorePublic(this.sessionId, answersArray);
+      }
 
       this.router.navigate(['/evaluate'], {
         queryParams: { code: this.code },
