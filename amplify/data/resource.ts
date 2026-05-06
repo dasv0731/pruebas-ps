@@ -1,6 +1,8 @@
 import { type ClientSchema, a, defineData } from '@aws-amplify/backend';
 import { aiGenerate } from '../functions/ai-generate/resource';
-
+import { cdiScore } from '../functions/cdi-score/resource';
+import { staiScore } from '../functions/stai-score/resource';
+import { cuidaInterpret } from '../functions/cuida-interpret/resource';
 const schema = a.schema({
 
   // ──────────────────────────────────────────────
@@ -236,6 +238,7 @@ const schema = a.schema({
       subjectId: a.id().required(),
       interviewDate: a.date().required(),
       transcript: a.string(),
+      extractionRequest: a.string(),
       status: a.ref('InterviewStatus').required(),
       subject: a.belongsTo('Subject', 'subjectId'),
       analysis: a.hasMany('InterviewAnalysis', 'interviewId'),
@@ -367,18 +370,58 @@ const schema = a.schema({
   // AI GENERATION (Custom query)
   // ──────────────────────────────────────────────
 
-  generateAIContent: a
+generateAIContent: a
     .query()
     .arguments({
       type: a.string().required(),
       data: a.string().required(),
+      extractionRequest: a.string(),
     })
     .returns(a.json())
     .handler(a.handler.function(aiGenerate))
     .authorization((allow) => [
       allow.authenticated(),
     ]),
-});
+
+  scoreCdiSession: a
+    .query()
+    .arguments({
+      sessionId: a.string().required(),
+    })
+    .returns(a.json())
+    .handler(a.handler.function(cdiScore))
+    .authorization((allow) => [
+      allow.authenticated(),
+      allow.publicApiKey(),
+    ]),
+
+  scoreStaiSession: a
+    .query()
+    .arguments({
+      sessionId: a.string().required(),
+    })
+    .returns(a.json())
+    .handler(a.handler.function(staiScore))
+    .authorization((allow) => [
+      allow.authenticated(),
+      allow.publicApiKey(),
+    ]),
+
+  interpretCuidaSession: a
+    .query()
+    .arguments({
+      sessionId: a.string().required(),
+    })
+    .returns(a.json())
+    .handler(a.handler.function(cuidaInterpret))
+    .authorization((allow) => [
+      allow.authenticated(),
+    ]),
+}).authorization((allow) => [
+  allow.resource(cdiScore),
+  allow.resource(staiScore),
+  allow.resource(cuidaInterpret),
+]);
 
 export type Schema = ClientSchema<typeof schema>;
 
