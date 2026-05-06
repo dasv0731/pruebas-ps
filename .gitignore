@@ -46,3 +46,6 @@ Thumbs.db
 amplify_outputs.json
 amplify_outputs.d.ts
 node_modules/
+
+# Claude Code local settings
+.claude/
