@@ -26,8 +26,8 @@ export class AIService {
     return this.callAI('ASSESSMENT_INTERPRETATION', data, systemPrompt, maxTokens);
   }
 
-  async generateInterviewAnalysis(transcript: string): Promise<AIResponse> {
-    return this.callAI('INTERVIEW_ANALYSIS', transcript);
+  async generateInterviewAnalysis(transcript: string, extractionRequest?: string): Promise<AIResponse> {
+    return this.callAI('INTERVIEW_ANALYSIS', transcript, undefined, undefined, extractionRequest);
   }
 
   async generateSubjectAssessmentReport(interpretations: string[]): Promise<AIResponse> {
@@ -54,12 +54,14 @@ export class AIService {
     type: string,
     data: string,
     systemPrompt?: string,
-    maxTokens?: number
+    maxTokens?: number,
+    extractionRequest?: string
   ): Promise<AIResponse> {
     try {
       const payload: any = { type, data };
       if (systemPrompt) payload.systemPrompt = systemPrompt;
       if (maxTokens) payload.maxTokens = maxTokens;
+      if (extractionRequest) payload.extractionRequest = extractionRequest;
 
       const response = await client.queries.generateAIContent(payload);
 
