@@ -4,20 +4,22 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { AssessmentService } from '../../services/assessment.service';
 import { SubjectService } from '../../../../core/services/subject.service';
 import { CuidaInterpretService } from '../../../../core/services/cuida-interpret.service';
+import { AIService, AIResponse } from '../../../../core/services/ai.service';
 import { SEX_LABELS } from '../../../../core/models/types';
 import type { CuidaManualScoring } from '../cuida-entry/cuida-entry.component';
+import { CUIDA_INTERPRETATION, buildCuidaAIInputFromFindings } from '../../tests/cuida/cuida.interpretation';
 
-type EnCategory = 'BAJO' | 'NORMAL' | 'ALTO';
-type QualLevel = 'MUY_BAJO' | 'BAJO' | 'MEDIO' | 'ALTO' | 'MUY_ALTO';
-type ParentingStyle = 'INDUCTIVO' | 'RIGIDO' | 'PERMISIVO' | 'SOBREPROTECTOR' | 'MIXTO';
+export type EnCategory = 'BAJO' | 'NORMAL' | 'ALTO';
+export type QualLevel = 'MUY_BAJO' | 'BAJO' | 'MEDIO' | 'ALTO' | 'MUY_ALTO';
+export type ParentingStyle = 'INDUCTIVO' | 'RIGIDO' | 'PERMISIVO' | 'SOBREPROTECTOR' | 'MIXTO';
 
-interface QualitativeLevel { en: number; level: QualLevel; }
-interface JointReadingFlag { pattern: string; description: string; scalesInvolved: string[]; }
-interface CriticalItemFlag { itemNumber: number; escala: string; content: string; reason: string; rawResponse: number | null; }
-interface DeseabilidadInterpretation { en: number; level: QualLevel; contaminationRisk: boolean; scalesToInterpretWithCaution: string[]; }
-interface ParentingStyleResult { predominantStyle: ParentingStyle; confidence: 'ALTA' | 'MEDIA' | 'BAJA'; supportingScales: string[]; recommendation: string; }
+export interface QualitativeLevel { en: number; level: QualLevel; }
+export interface JointReadingFlag { pattern: string; description: string; scalesInvolved: string[]; }
+export interface CriticalItemFlag { itemNumber: number; escala: string; content: string; reason: string; rawResponse: number | null; }
+export interface DeseabilidadInterpretation { en: number; level: QualLevel; contaminationRisk: boolean; scalesToInterpretWithCaution: string[]; }
+export interface ParentingStyleResult { predominantStyle: ParentingStyle; confidence: 'ALTA' | 'MEDIA' | 'BAJA'; supportingScales: string[]; recommendation: string; }
 
-interface CuidaFindings {
+export interface CuidaFindings {
   manualScoring: CuidaManualScoring;
   interpretationVersion: 1;
   profileValidity: { isValid: boolean; reason: string | null };
@@ -54,7 +56,13 @@ export class CuidaResultsComponent implements OnInit {
   loading = true;
   recalculating = false;
   error = '';
-  readonly aiEnabled = false;
+  readonly aiEnabled = true;
+
+  interpretation = '';
+  interpretationVersion = 0;
+  interpretationDate = '';
+  generating = false;
+  hadPreviousInterpretation = false;
 
   readonly ESCALAS_PERSONALIDAD = [
     { key: 'altruismo', label: 'Altruismo', abbr: 'Al' },
@@ -86,6 +94,7 @@ export class CuidaResultsComponent implements OnInit {
     private assessmentService: AssessmentService,
     private subjectService: SubjectService,
     private cuidaInterpretService: CuidaInterpretService,
+    private aiService: AIService,
   ) {}
 
   async ngOnInit() {
@@ -124,10 +133,54 @@ export class CuidaResultsComponent implements OnInit {
       } else {
         this.error = 'Formato de scoring no reconocido';
       }
+
+      // Cargar interpretación vigente
+      this.interpretation = '';
+      if (this.scoring) {
+        const saved = await this.assessmentService.getInterpretation(this.scoring.id);
+        if (saved) {
+          this.interpretation = saved.content;
+          this.interpretationVersion = saved.version;
+          this.interpretationDate = saved.generatedAt || '';
+        }
+        // recalculate() crea un scoring nuevo (isCurrent) al recorregir: si el
+        // vigente aún no tiene interpretación pero un scoring anterior de la sesión
+        // sí la tenía, la narrativa anterior quedó huérfana. (Basarse en version>1
+        // daría falso positivo en CUIDA, cuyo primer scoring nace en versión 2.)
+        this.hadPreviousInterpretation = !saved &&
+          await this.assessmentService.sessionHasPriorInterpretation(this.sessionId, this.scoring.id);
+      }
     } catch (err: any) {
       this.error = err.message || 'Error al cargar resultados';
     } finally {
       this.loading = false;
+    }
+  }
+
+  async generateInterpretation() {
+    if (!this.findings || !this.scoring) return;
+    this.generating = true;
+    this.error = '';
+    try {
+      const input = buildCuidaAIInputFromFindings(this.findings, {
+        edad: this.session?.subjectAgeYears,
+        sexo: this.session?.subjectSex,
+      });
+      const r: AIResponse = await this.aiService.generateAssessmentInterpretation(
+        JSON.stringify(input), CUIDA_INTERPRETATION.systemPrompt, CUIDA_INTERPRETATION.maxTokens);
+      if (r.success && r.content) {
+        await this.assessmentService.saveInterpretation(this.scoring.id, r.content, r.model || 'deepseek-chat');
+        this.interpretation = r.content;
+        this.interpretationVersion++;
+        this.interpretationDate = new Date().toISOString();
+        this.hadPreviousInterpretation = false;
+      } else {
+        this.error = r.error || 'Error al generar interpretación';
+      }
+    } catch (err: any) {
+      this.error = err.message || 'Error al generar interpretación';
+    } finally {
+      this.generating = false;
     }
   }
 

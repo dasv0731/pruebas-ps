@@ -1,40 +1,46 @@
 import { InterpretationConfig, ScoringResult, ClinicalRule, AIInput } from '../../models/test.interfaces';
 
+/**
+ * Bandas ORIENTATIVAS sobre la puntuación directa de cada subescala (rango 20-60).
+ * NO son decatipos ni percentiles: son cortes en tercios del rango real para dar
+ * una lectura preliminar mientras no se incorporen los baremos oficiales TEA del
+ * STAIC (por sexo/edad). Deben sustituirse por la tabla normativa real.
+ */
 const CLINICAL_RULES: ClinicalRule[] = [
   {
-    condition: (r) => (r.subscales?.['Ansiedad Estado'] || 0) <= 15,
-    finding: 'Ansiedad estado BAJA (puntuación ≤15/60)',
+    condition: (r) => (r.subscales?.['Ansiedad Estado'] || 0) <= 33,
+    finding: 'Ansiedad estado BAJA (puntuación directa 20-33/60)',
     severity: 'LOW',
   },
   {
     condition: (r) => {
       const s = r.subscales?.['Ansiedad Estado'] || 0;
-      return s > 15 && s <= 30;
+      return s > 33 && s <= 46;
     },
-    finding: 'Ansiedad estado MODERADA (puntuación 16-30/60)',
+    finding: 'Ansiedad estado MODERADA (puntuación directa 34-46/60)',
     severity: 'MODERATE',
   },
   {
-    condition: (r) => (r.subscales?.['Ansiedad Estado'] || 0) > 30,
-    finding: 'Ansiedad estado ALTA (puntuación >30/60)',
+    condition: (r) => (r.subscales?.['Ansiedad Estado'] || 0) > 46,
+    finding: 'Ansiedad estado ALTA (puntuación directa >46/60)',
     severity: 'HIGH',
   },
   {
-    condition: (r) => (r.subscales?.['Ansiedad Rasgo'] || 0) <= 15,
-    finding: 'Ansiedad rasgo BAJA (puntuación ≤15/60)',
+    condition: (r) => (r.subscales?.['Ansiedad Rasgo'] || 0) <= 33,
+    finding: 'Ansiedad rasgo BAJA (puntuación directa 20-33/60)',
     severity: 'LOW',
   },
   {
     condition: (r) => {
       const s = r.subscales?.['Ansiedad Rasgo'] || 0;
-      return s > 15 && s <= 30;
+      return s > 33 && s <= 46;
     },
-    finding: 'Ansiedad rasgo MODERADA (puntuación 16-30/60)',
+    finding: 'Ansiedad rasgo MODERADA (puntuación directa 34-46/60)',
     severity: 'MODERATE',
   },
   {
-    condition: (r) => (r.subscales?.['Ansiedad Rasgo'] || 0) > 30,
-    finding: 'Ansiedad rasgo ALTA (puntuación >30/60)',
+    condition: (r) => (r.subscales?.['Ansiedad Rasgo'] || 0) > 46,
+    finding: 'Ansiedad rasgo ALTA (puntuación directa >46/60)',
     severity: 'HIGH',
   },
 ];

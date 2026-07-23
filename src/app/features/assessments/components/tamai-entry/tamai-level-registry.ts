@@ -1,9 +1,10 @@
 import type { TamaiLevel, TamaiLevelConfig } from './tamai-level-config';
 import { TAMAI_LEVEL1_CONFIG } from './tamai-level1.config';
+import { TAMAI_LEVEL2_CONFIG } from './tamai-level2.config';
 
 export const TAMAI_LEVEL_REGISTRY: Record<TamaiLevel, TamaiLevelConfig | null> = {
   'I': TAMAI_LEVEL1_CONFIG,
-  'II': null,
+  'II': TAMAI_LEVEL2_CONFIG,
   'III': null,
 };
 

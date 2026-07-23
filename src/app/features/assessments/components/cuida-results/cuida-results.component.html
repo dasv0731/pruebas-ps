@@ -250,15 +250,33 @@
     de cuidado o idoneidad parental.
   </div>
 
-  <!-- ═══ Interpretación IA ═══ -->
-  <div class="card" *ngIf="findings?.reportMode === 'COMPLETE'">
+  <!-- ═══ Interpretación clínica IA ═══ -->
+  <div class="card" *ngIf="findings">
     <div class="interpretation-header">
-      <h3>Interpretación clínica</h3>
-      <button class="btn btn-primary" [disabled]="!aiEnabled" title="Disponible próximamente">
-        Generar con IA
+      <h3>Interpretación clínica (IA)</h3>
+      <button
+        class="btn btn-primary"
+        (click)="generateInterpretation()"
+        [disabled]="!aiEnabled || generating">
+        {{ generating ? 'Generando...' : (interpretation ? 'Regenerar con IA' : 'Generar con IA') }}
       </button>
     </div>
-    <div class="interpretation-empty">No se ha generado una interpretación clínica.</div>
+
+    <div *ngIf="hadPreviousInterpretation" class="pending-msg">
+      La corrección cambió: vuelva a generar la interpretación.
+    </div>
+
+    <div *ngIf="generating" class="generating-msg">
+      Generando interpretación clínica con IA, esto puede tardar unos segundos...
+    </div>
+
+    <div *ngIf="interpretation && !generating" class="interpretation-content">
+      {{ interpretation }}
+    </div>
+
+    <div *ngIf="!interpretation && !generating" class="interpretation-empty">
+      No se ha generado una interpretación clínica. Haga clic en "Generar con IA" para crear una.
+    </div>
   </div>
 
   <!-- ═══ Acciones ═══ -->

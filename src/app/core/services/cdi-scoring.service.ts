@@ -34,28 +34,4 @@ export class CdiScoringService {
 
     return parsed;
   }
-
-  /**
-   * Invoca scoreCdiSession desde el flujo público (evaluado).
-   * Usa el mismo cliente pero con apiKey.
-   */
-  async scorePublic(sessionId: string): Promise<any> {
-    const publicClient = generateClient<Schema>({ authMode: 'apiKey' });
-    const result = await (publicClient.queries as any).scoreCdiSession({
-      sessionId,
-    });
-
-    if (result.errors?.length) {
-      throw new Error(result.errors.map((e: any) => e.message).join(', '));
-    }
-
-    const parsed =
-      typeof result.data === 'string' ? JSON.parse(result.data) : result.data;
-
-    if (!parsed?.success) {
-      throw new Error(parsed?.error || 'Error al calcular scoring del CDI');
-    }
-
-    return parsed;
-  }
 }

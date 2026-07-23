@@ -137,6 +137,10 @@
       label="Generando análisis con IA. Esto puede tardar unos segundos..."
     ></app-skeleton>
 
+    <div *ngIf="analysisWarning && !generating" class="analysis-warning" role="alert">
+      ⚠️ {{ analysisWarning }}
+    </div>
+
     <app-analysis-output
       *ngIf="analysis && !generating"
       [content]="analysis"

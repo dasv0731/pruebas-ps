@@ -1,56 +1,62 @@
 import { InterpretationConfig, ScoringResult, ClinicalRule, AIInput } from '../../models/test.interfaces';
 
+/**
+ * Bandas ORIENTATIVAS sobre la puntuación directa de cada subescala (rango 0-60).
+ * NO son decatipos ni percentiles: son cortes proporcionales (25/50/75 % del rango)
+ * para dar una lectura preliminar mientras no se incorporen los baremos oficiales
+ * TEA (decatipos por sexo/edad). Deben sustituirse por la tabla normativa real.
+ */
 const CLINICAL_RULES: ClinicalRule[] = [
   {
-    condition: (r) => (r.subscales?.['Ansiedad Estado'] || 0) <= 20,
-    finding: 'Ansiedad estado BAJA (puntuación ≤20/80)',
+    condition: (r) => (r.subscales?.['Ansiedad Estado'] || 0) <= 15,
+    finding: 'Ansiedad estado BAJA (puntuación directa ≤15/60)',
     severity: 'LOW',
   },
   {
     condition: (r) => {
       const s = r.subscales?.['Ansiedad Estado'] || 0;
-      return s > 20 && s <= 40;
+      return s > 15 && s <= 30;
     },
-    finding: 'Ansiedad estado MODERADA-BAJA (puntuación 21-40/80)',
+    finding: 'Ansiedad estado MODERADA-BAJA (puntuación directa 16-30/60)',
     severity: 'LOW',
   },
   {
     condition: (r) => {
       const s = r.subscales?.['Ansiedad Estado'] || 0;
-      return s > 40 && s <= 60;
+      return s > 30 && s <= 45;
     },
-    finding: 'Ansiedad estado MODERADA-ALTA (puntuación 41-60/80)',
+    finding: 'Ansiedad estado MODERADA-ALTA (puntuación directa 31-45/60)',
     severity: 'MODERATE',
   },
   {
-    condition: (r) => (r.subscales?.['Ansiedad Estado'] || 0) > 60,
-    finding: 'Ansiedad estado ALTA (puntuación >60/80)',
+    condition: (r) => (r.subscales?.['Ansiedad Estado'] || 0) > 45,
+    finding: 'Ansiedad estado ALTA (puntuación directa >45/60)',
     severity: 'HIGH',
   },
   {
-    condition: (r) => (r.subscales?.['Ansiedad Rasgo'] || 0) <= 20,
-    finding: 'Ansiedad rasgo BAJA (puntuación ≤20/80)',
+    condition: (r) => (r.subscales?.['Ansiedad Rasgo'] || 0) <= 15,
+    finding: 'Ansiedad rasgo BAJA (puntuación directa ≤15/60)',
     severity: 'LOW',
   },
   {
     condition: (r) => {
       const s = r.subscales?.['Ansiedad Rasgo'] || 0;
-      return s > 20 && s <= 40;
+      return s > 15 && s <= 30;
     },
-    finding: 'Ansiedad rasgo MODERADA-BAJA (puntuación 21-40/80)',
+    finding: 'Ansiedad rasgo MODERADA-BAJA (puntuación directa 16-30/60)',
     severity: 'LOW',
   },
   {
     condition: (r) => {
       const s = r.subscales?.['Ansiedad Rasgo'] || 0;
-      return s > 40 && s <= 60;
+      return s > 30 && s <= 45;
     },
-    finding: 'Ansiedad rasgo MODERADA-ALTA (puntuación 41-60/80)',
+    finding: 'Ansiedad rasgo MODERADA-ALTA (puntuación directa 31-45/60)',
     severity: 'MODERATE',
   },
   {
-    condition: (r) => (r.subscales?.['Ansiedad Rasgo'] || 0) > 60,
-    finding: 'Ansiedad rasgo ALTA (puntuación >60/80)',
+    condition: (r) => (r.subscales?.['Ansiedad Rasgo'] || 0) > 45,
+    finding: 'Ansiedad rasgo ALTA (puntuación directa >45/60)',
     severity: 'HIGH',
   },
   {
@@ -100,8 +106,8 @@ REGLAS:
       scores: {
         'Ansiedad Estado': result.subscales?.['Ansiedad Estado'] || 0,
         'Ansiedad Rasgo': result.subscales?.['Ansiedad Rasgo'] || 0,
-        'Estado máximo': 80,
-        'Rasgo máximo': 80,
+        'Estado máximo': 60,
+        'Rasgo máximo': 60,
       },
       clinicalFindings: findings,
       context: 'Evaluación pericial judicial',

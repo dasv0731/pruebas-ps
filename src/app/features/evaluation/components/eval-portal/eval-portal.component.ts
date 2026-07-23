@@ -48,44 +48,29 @@ export class EvalPortalComponent implements OnInit {
       this.loading = true;
       this.error = '';
 
-      this.session = await this.evaluationService.validateCode(this.code);
+      const result = await this.evaluationService.validateCode(this.code);
 
-      if (!this.session) {
+      if (!result) {
         this.error = 'Código inválido, expirado o sesión no activa';
         return;
       }
 
+      // La Lambda ya devuelve las pruebas validadas (no se accede a los modelos).
+      this.session = { id: result.evalSessionId, subjectName: result.subjectName };
+      this.assessmentSessions = (result.tests || []).map((t: any) => ({
+        ...t,
+        assessmentData: {
+          name: t.name,
+          description: t.description,
+          totalQuestions: t.totalQuestions,
+        },
+      }));
       this.codeValidated = true;
-      await this.loadAssessmentSessions();
+      this.checkAllCompleted();
     } catch (err: any) {
       this.error = err.message || 'Error al validar código';
     } finally {
       this.loading = false;
-    }
-  }
-
-  async loadAssessmentSessions() {
-    try {
-      this.loadingTests = true;
-      const ids = JSON.parse(this.session.assessmentSessionIds);
-      this.assessmentSessions = [];
-
-      for (const id of ids) {
-        const session = await this.evaluationService.getAssessmentSessionPublic(id);
-        if (session) {
-          const assessment = await this.evaluationService.getAssessmentPublic(session.assessmentId);
-          this.assessmentSessions.push({
-            ...session,
-            assessmentData: assessment,
-          });
-        }
-      }
-
-      this.checkAllCompleted();
-    } catch (err: any) {
-      this.error = err.message || 'Error al cargar pruebas';
-    } finally {
-      this.loadingTests = false;
     }
   }
 
@@ -129,7 +114,7 @@ export class EvalPortalComponent implements OnInit {
 
     try {
       this.loading = true;
-      await this.evaluationService.completeEvaluationSession(this.session.id);
+      await this.evaluationService.completeEval(this.code);
       this.router.navigate(['/evaluate/thanks']);
     } catch (err: any) {
       this.error = err.message || 'Error al finalizar sesión';

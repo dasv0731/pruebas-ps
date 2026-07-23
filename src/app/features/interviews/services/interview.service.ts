@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../../../../amplify/data/resource';
+import { listAll } from '../../../core/utils/paginate';
 
 const client = generateClient<Schema>();
 
@@ -20,11 +21,10 @@ export interface InterviewInput {
 export class InterviewService {
 
   async listBySubject(subjectId: string) {
-    const { data, errors } = await client.models.Interview.list({
+    return listAll((args) => client.models.Interview.list({
       filter: { subjectId: { eq: subjectId } },
-    });
-    if (errors) throw new Error(errors.map((e) => e.message).join(', '));
-    return data;
+      ...args,
+    }));
   }
 
   async getById(id: string) {
@@ -57,14 +57,14 @@ export class InterviewService {
   // ── ANALYSIS ──
 
   async getAnalysis(interviewId: string) {
-    const { data, errors } = await client.models.InterviewAnalysis.list({
-      filter: {
-        interviewId: { eq: interviewId },
-        isCurrent: { eq: true },
-      },
-    });
-    if (errors) throw new Error(errors.map((e) => e.message).join(', '));
-    return data.length > 0 ? data[0] : null;
+    const data = await listAll((args) => client.models.InterviewAnalysis.list({
+      filter: { interviewId: { eq: interviewId }, isCurrent: { eq: true } },
+      ...args,
+    }));
+    if (data.length === 0) return null;
+    // Red de seguridad: si por un fallo a mitad de guardado quedaran varios
+    // isCurrent, devolver el de mayor versión (el más reciente).
+    return [...data].sort((a, b) => (b.version ?? 0) - (a.version ?? 0))[0];
   }
 
   async saveAnalysis(interviewId: string, content: string, aiModel: string) {

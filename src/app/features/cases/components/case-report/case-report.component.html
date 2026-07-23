@@ -26,6 +26,7 @@
           <th>Implicado</th>
           <th>Tipo</th>
           <th>Estado del informe</th>
+          <th>Acciones</th>
         </tr>
       </thead>
       <tbody>
@@ -37,13 +38,25 @@
               {{ getSubjectStatusLabel(sr.status) }}
             </span>
           </td>
+          <td>
+            <button class="btn btn-secondary btn-sm"
+                    *ngIf="!isCaseReportLocked()"
+                    (click)="toggleExclusion(sr)">
+              {{ sr.excluded ? 'Incluir en el informe' : 'Excluir del informe' }}
+            </button>
+          </td>
         </tr>
       </tbody>
     </table>
 
     <div class="readiness-bar" [ngClass]="readiness.ready ? 'ready' : 'not-ready'">
-      <span *ngIf="readiness.ready">Todos los informes están aprobados. Puede generar el informe final del caso.</span>
-      <span *ngIf="!readiness.ready">{{ readiness.approved }} de {{ subjects.length }} informes aprobados. Faltan {{ readiness.missing }}.</span>
+      <span *ngIf="readiness.ready">
+        Todos los informes están aprobados. Puede generar el informe final del caso.
+        <ng-container *ngIf="readiness.excluded > 0">
+          ({{ readiness.excluded }} implicado(s) excluido(s) — no aparecerán en el informe)
+        </ng-container>
+      </span>
+      <span *ngIf="!readiness.ready">{{ readiness.approved }} aprobados, {{ readiness.excluded }} excluidos, faltan {{ readiness.missing }} de {{ subjects.length }} implicados.</span>
     </div>
   </div>
 
@@ -89,6 +102,9 @@
 
     <div *ngIf="caseReportContent && !editing && !generating" class="report-content">
       {{ caseReportContent }}
+    </div>
+    <div *ngIf="caseReportContent && !editing && !generating" class="report-print-actions">
+      <button class="btn btn-secondary btn-sm" (click)="printCaseReport()">Imprimir / PDF</button>
     </div>
 
     <!-- Flujo de aprobación -->

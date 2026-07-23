@@ -37,6 +37,7 @@ export class InterviewFormComponent implements OnInit {
   analysis = '';
   analysisVersion = 0;
   analysisDate = '';
+  analysisWarning = '';
 
   form: InterviewInput = {
     subjectId: '',
@@ -59,18 +60,24 @@ export class InterviewFormComponent implements OnInit {
   ) {}
 
   async ngOnInit() {
+    // Leer los params ANTES del primer await: así "Volver" funciona aunque falle la carga.
     this.caseId = this.route.snapshot.params['caseId'];
-    const caseData = await this.caseService.getById(this.caseId);
-    this.caseLocked = caseData?.status === 'COMPLETED'
     this.subjectId = this.route.snapshot.params['subjectId'];
     this.interviewId = this.route.snapshot.params['interviewId'] || '';
     this.form.subjectId = this.subjectId;
 
-    if (this.interviewId) {
-      this.isEdit = true;
-      await this.loadInterview();
-    } else {
-      this.form.interviewDate = new Date().toISOString().split('T')[0];
+    try {
+      const caseData = await this.caseService.getById(this.caseId);
+      this.caseLocked = caseData?.status === 'COMPLETED';
+
+      if (this.interviewId) {
+        this.isEdit = true;
+        await this.loadInterview();
+      } else {
+        this.form.interviewDate = new Date().toISOString().split('T')[0];
+      }
+    } catch (err: any) {
+      this.error = err.message || 'Error al inicializar la entrevista';
     }
   }
 
@@ -114,10 +121,10 @@ export class InterviewFormComponent implements OnInit {
     return this.isCompleted() && !this.caseLocked && !!this.form.transcript && this.form.transcript.trim().length > 0;
   }
 
-  async onSubmit() {
+  async onSubmit(): Promise<boolean> {
     if (!this.form.interviewDate) {
       this.error = 'La fecha es obligatoria';
-      return;
+      return false;
     }
 
     try {
@@ -128,13 +135,17 @@ export class InterviewFormComponent implements OnInit {
         await this.interviewService.update(this.interviewId, this.form);
       } else {
         const created = await this.interviewService.create(this.form);
-        if (created) {
-          this.interviewId = created.id;
-          this.isEdit = true;
+        if (!created) {
+          this.error = 'No se pudo crear la entrevista';
+          return false;
         }
+        this.interviewId = created.id;
+        this.isEdit = true;
       }
+      return true;
     } catch (err: any) {
       this.error = err.message || 'Error al guardar la entrevista';
+      return false;
     } finally {
       this.saving = false;
     }
@@ -146,8 +157,14 @@ export class InterviewFormComponent implements OnInit {
       return;
     }
 
+    // Cambiar el estado en local ANTES de guardar; si el guardado falla, revertir
+    // para no dejar la UI bloqueada (COMPLETED) mientras la BD sigue en DRAFT.
+    const previousStatus = this.form.status;
     this.form.status = 'COMPLETED';
-    await this.onSubmit();
+    const ok = await this.onSubmit();
+    if (!ok) {
+      this.form.status = previousStatus;
+    }
   }
 
   async generateAnalysis() {
@@ -164,6 +181,7 @@ export class InterviewFormComponent implements OnInit {
     try {
       this.generating = true;
       this.error = '';
+      this.analysisWarning = '';
 
       const response: AIResponse = await this.aiService.generateInterviewAnalysis(
         this.form.transcript!,
@@ -174,16 +192,28 @@ export class InterviewFormComponent implements OnInit {
         await this.interviewService.saveAnalysis(
           this.interviewId,
           response.content,
-          response.model || 'claude-sonnet-4-20250514'
+          response.model || 'deepseek-chat'
         );
 
-        // Actualizar estado a ANALYZED
-        this.form.status = 'ANALYZED';
-        await this.interviewService.update(this.interviewId, { status: 'ANALYZED' });
-
+        // El análisis ya está persistido en BD: reflejarlo en la UI de inmediato,
+        // antes del cambio de estado (que es secundario y no debe perder el análisis).
         this.analysis = response.content;
         this.analysisVersion++;
         this.analysisDate = new Date().toISOString();
+        this.analysisWarning = response.truncated
+          ? 'La transcripción superó el límite de longitud y se analizó de forma parcial. Revise el análisis y considere dividir la entrevista en partes.'
+          : '';
+
+        // Marcar la entrevista como ANALYZED. Si falla, revertir el estado local
+        // pero conservar el análisis ya mostrado y guardado.
+        const previousStatus = this.form.status;
+        this.form.status = 'ANALYZED';
+        try {
+          await this.interviewService.update(this.interviewId, { status: 'ANALYZED' });
+        } catch {
+          this.form.status = previousStatus;
+          this.error = 'El análisis se guardó, pero no se pudo marcar la entrevista como analizada. Recargue la página.';
+        }
       } else {
         this.error = response.error || 'Error al generar análisis';
       }

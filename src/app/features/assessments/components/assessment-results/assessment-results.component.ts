@@ -186,7 +186,7 @@ export class AssessmentResultsComponent implements OnInit {
         await this.assessmentService.saveInterpretation(
           this.scoring.id,
           response.content,
-          response.model || 'claude-sonnet-4-20250514'
+          response.model || 'deepseek-chat'
         );
 
         this.interpretation = response.content;

@@ -117,6 +117,15 @@ export const BAREM_DISFORIA: BaremTable = {
 // ══════════════════════════════════════════════════════════
 // BAREMOS ESCALA AUTOESTIMA NEGATIVA (manual TEA, página 39)
 // ══════════════════════════════════════════════════════════
+//
+// ⚠️ RECONSTRUCCIÓN PROVISIONAL en las columnas de NIÑAS (M7-8, M9-10, M11-15),
+// filas Pc50 y Pc95-99. La transcripción original tenía celdas no monótonas y
+// solapadas (percentiles invertidos: una PD menor daba percentil mayor). Se han
+// ajustado a valores monótonos plausibles marcados con "[RECON p39]" para no
+// entregar percentiles invertidos, PERO NO están verificados contra el manual.
+// PENDIENTE: sustituir por los valores exactos de la página 39 (Autoestima
+// Negativa, Mujeres 7-8 / 9-10 / 11-15, filas Pc95 a Pc99). Las columnas de
+// varones (V) y las tablas TOTAL y DISFORIA no se han tocado (estaban correctas).
 
 export const BAREM_AUTOESTIMA: BaremTable = {
   name: 'AUTOESTIMA',
@@ -134,7 +143,7 @@ export const BAREM_AUTOESTIMA: BaremTable = {
     row(  35, -0.46, 45,  x(),        v(4),       x(),        x(),        x(),        v(6)       ),
     row(  40, -0.16, 48,  v(4),       x(),        v(6),       v(4),       x(),        x()        ),
     row(  45, -0.16, 48,  x(),        x(),        x(),        x(),        v(5),       x()        ),
-    row(  50, -0.16, 48,  v(5),       v(5),       v(7),       x(),        x(),        v(6)       ),
+    row(  50, -0.16, 48,  v(5),       v(5),       v(7),       x(),        x(),        v(7)       ), // [RECON p39] M11-15: v(6)->v(7) (dup con Pc35)
     row(  55,  0.13, 51,  x(),        x(),        x(),        v(5),       x(),        v(8)       ),
     row(  60,  0.13, 51,  v(6),       v(6),       v(8),       x(),        v(6),       x()        ),
     row(  65,  0.42, 54,  x(),        x(),        x(),        v(6),       x(),        x()        ),
@@ -144,10 +153,10 @@ export const BAREM_AUTOESTIMA: BaremTable = {
     row(  85,  1.02, 60,  x(),        v(9),       v(11),      v(8),       v(9),       x()        ),
     row(  90,  1.32, 63,  v(9),       v(10),      v(12),      v(9),       v(10),      v(11)      ),
     row(  91,  1.32, 63,  v(10),      v(11),      x(),        v(10),      x(),        x()        ),
-    row(  95,  1.61, 66,  v(11),      r(12,13),   v(13),      r(11,12),   r(11,13),   r(15,16)   ),
-    row(  96,  1.91, 69,  v(12),      r(14,15),   v(14),      v(12),      v(13),      r(13,14)   ),
+    row(  95,  1.61, 66,  v(11),      r(12,13),   v(13),      r(11,12),   r(11,12),   v(12)      ), // [RECON p39] M9-10: r(11,13)->r(11,12); M11-15: r(15,16)->v(12)
+    row(  96,  1.91, 69,  v(12),      r(14,15),   v(14),      v(13),      r(13,14),   r(13,14)   ), // [RECON p39] M7-8: v(12)->v(13); M9-10: v(13)->r(13,14)
     row(  97,  1.91, 69,  v(13),      r(16,17),   v(15),      v(14),      r(15,16),   r(15,16)   ),
     row(  98,  2.15, 71,  v(14),      v(18),      v(16),      v(15),      x(),        r(17,18)   ),
-    row(  99,  2.21, 72,  r(15,22),   r(19,22),   r(17,22),   r(16,22),   r(14,22),   r(19,22)   ),
+    row(  99,  2.21, 72,  r(15,22),   r(19,22),   r(17,22),   r(16,22),   r(17,22),   r(19,22)   ), // [RECON p39] M9-10: r(14,22)->r(17,22)
   ],
 };

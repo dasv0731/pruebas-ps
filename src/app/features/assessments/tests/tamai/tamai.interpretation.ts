@@ -1,4 +1,5 @@
 import { InterpretationConfig, ScoringResult, ClinicalRule, AIInput } from '../../models/test.interfaces';
+import type { ScaleRow } from '../../components/tamai-results/tamai-results.component';
 
 const CLINICAL_RULES: ClinicalRule[] = [
   {
@@ -53,6 +54,7 @@ REGLAS:
 - Interpreta cada área de adaptación (personal, escolar, social, familiar).
 - Incluye la percepción hacia padre y madre si hay datos relevantes.
 - Relaciona los hallazgos entre sí (ej: inadaptación escolar con social).
+- Las puntuaciones son percentiles (PC) baremados por TEA; >=75 alto, >=85 muy alto en inadaptación.
 - Concluye con la relevancia para el contexto pericial.
 - Escribe en párrafos narrativos, sin encabezados ni viñetas.`,
 
@@ -72,3 +74,29 @@ REGLAS:
     };
   },
 };
+
+/**
+ * Serializa las filas PD/PC del TAMAI transcrito (jerárquico, con baremo TEA)
+ * para la interpretación IA. El buildAIInput(ScoringResult) de arriba no
+ * aplica al TAMAI transcrito: no pasa por testLoader.score ni tiene baremo.
+ */
+export function buildTamaiAIInputFromRows(
+  rows: ScaleRow[],
+  meta: { level: string | number; baremo: string; edad?: number; sexo?: string }
+): Record<string, any> {
+  return {
+    testName: 'TAMAI - Test Autoevaluativo Multifactorial de Adaptación Infantil',
+    meta,
+    escalas: rows.map((r) => ({
+      code: r.code,
+      label: r.label,
+      pd: r.pd,
+      pc: r.pc,
+      categoria: r.category,
+    })),
+    escalasDestacadas: rows
+      .filter((r) => r.category === 'Alta' || r.category === 'Muy alta')
+      .map((r) => ({ code: r.code, label: r.label, pc: r.pc, categoria: r.category })),
+    context: 'Evaluación pericial judicial - población infantil',
+  };
+}

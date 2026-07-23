@@ -10,6 +10,8 @@ export interface AIResponse {
   content?: string;
   model?: string;
   generatedAt?: string;
+  /** True si la transcripción se truncó por longitud y el análisis es parcial. */
+  truncated?: boolean;
   error?: string;
 }
 
@@ -40,8 +42,21 @@ export class AIService {
     return this.callAI('SUBJECT_INTERVIEW_REPORT', data);
   }
 
-  async generateSubjectReport(assessmentReport: string, interviewReport: string): Promise<AIResponse> {
-    const data = JSON.stringify({ assessmentReport, interviewReport });
+  private static readonly SECCION_NO_DISPONIBLE =
+    '[SECCIÓN NO DISPONIBLE: esta fuente no fue evaluada o no se consolidó. No inventar contenido.]';
+
+  async generateSubjectReport(
+    assessmentReport: string | null,
+    interviewReport: string | null
+  ): Promise<AIResponse> {
+    const data = JSON.stringify({
+      assessmentReport: assessmentReport ?? AIService.SECCION_NO_DISPONIBLE,
+      interviewReport: interviewReport ?? AIService.SECCION_NO_DISPONIBLE,
+      missingSections: [
+        ...(!assessmentReport ? ['pruebas'] : []),
+        ...(!interviewReport ? ['entrevistas'] : []),
+      ],
+    });
     return this.callAI('SUBJECT_REPORT', data);
   }
 

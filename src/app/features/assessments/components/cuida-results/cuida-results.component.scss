@@ -261,6 +261,9 @@
   font-size: .9rem;
 }
 
+.generating-msg { padding: 20px; text-align: center; color: #2b6cb0; font-style: italic; background-color: #ebf8ff; border-radius: 4px; margin-bottom: .85rem; }
+.pending-msg { padding: .75rem 1rem; background: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 4px; color: #92400e; font-size: .88rem; margin-bottom: .85rem; }
+
 // ── Acciones ──
 .results-actions {
   display: flex;

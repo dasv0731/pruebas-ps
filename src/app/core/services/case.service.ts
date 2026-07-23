@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../../../amplify/data/resource';
+import { listAll } from '../utils/paginate';
 
 const client = generateClient<Schema>();
 
@@ -24,11 +25,7 @@ export interface CaseInput {
 export class CaseService {
 
   async list() {
-    const { data, errors } = await client.models.Case.list();
-    if (errors) {
-      throw new Error(errors.map((e) => e.message).join(', '));
-    }
-    return data;
+    return listAll((args) => client.models.Case.list({ ...args }));
   }
 
   async getById(id: string) {

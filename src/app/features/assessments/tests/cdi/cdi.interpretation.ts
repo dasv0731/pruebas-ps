@@ -1,4 +1,5 @@
 import { InterpretationConfig, ScoringResult, ClinicalRule, AIInput } from '../../models/test.interfaces';
+import type { CdiScoringData } from '../../components/cdi-results/cdi-results.component';
 
 const CLINICAL_RULES: ClinicalRule[] = [
   {
@@ -39,7 +40,10 @@ REGLAS:
 - Interpreta las subescalas de Disforia y Autoestima Negativa.
 - Considera que es población infantil (7-17 años).
 - Concluye con la relevancia para el contexto pericial.
-- Escribe en párrafos narrativos, sin encabezados ni viñetas.`,
+- Escribe en párrafos narrativos, sin encabezados ni viñetas.
+- Si se aporta puntuación baremada (PC/T), priorízala sobre la directa.
+- Comenta el ítem 9 (ideación suicida) SIEMPRE que item9Alert sea true.
+- Si reportMode es parcial o no interpretable, declara la limitación metodológica.`,
 
   buildAIInput: (result: ScoringResult): AIInput => {
     const findings: string[] = [];
@@ -64,3 +68,24 @@ REGLAS:
     };
   },
 };
+
+/**
+ * Serializa el scoring real del CDI (Lambda cdi-score, scoringVersion 2) para
+ * la interpretación IA. El buildAIInput(ScoringResult) de arriba no aplica
+ * porque el CDI transcrito no pasa por testLoader.score.
+ */
+export function buildCdiAIInputFromScoring(cdi: CdiScoringData): Record<string, any> {
+  return {
+    testName: 'CDI - Inventario de Depresión Infantil',
+    reportMode: cdi.reportMode,
+    rawScores: cdi.rawScores,
+    normativeGroup: cdi.normativeGroup,
+    normedScores: cdi.normedScores,
+    totalClassification: cdi.totalClassification,
+    item9Alert: cdi.itemAnalysis?.item9Alert,
+    item9Value: cdi.itemAnalysis?.item9Value,
+    cutoffExceeded: cdi.itemAnalysis?.cutoffExceeded,
+    warnings: cdi.warnings || [],
+    context: 'Evaluación pericial judicial - población infantil',
+  };
+}

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { EvaluationService } from '../../services/evaluation.service';
@@ -13,7 +13,7 @@ import { TestSection, TestQuestion } from '../../../assessments/models/test.inte
   templateUrl: './eval-test.component.html',
   styleUrl: './eval-test.component.scss',
 })
-export class EvalTestComponent implements OnInit {
+export class EvalTestComponent implements OnInit, OnDestroy {
   sessionId = '';
   evalId = '';
   code = '';
@@ -30,6 +30,8 @@ export class EvalTestComponent implements OnInit {
   loading = true;
   submitting = false;
   error = '';
+  resumed = false;
+  private saveTimer: any = null;
 
   // Pagination / instructions
   phase: 'instructions' | 'questions' = 'questions';
@@ -79,53 +81,46 @@ export class EvalTestComponent implements OnInit {
       this.loading = true;
       this.error = '';
 
-      const evalSession = await this.evaluationService.validateCode(this.code);
-      if (!evalSession) {
-        this.error = 'La sesión ha expirado o no es válida';
+      // Datos de la prueba vía la Lambda mediadora (valida el código server-side).
+      const test = await this.evaluationService.getTest(this.code, this.sessionId);
+      if (!test) {
+        this.error = 'La sesión ha expirado, el código no es válido o la prueba no pertenece a esta sesión';
         return;
       }
+      this.session = test;
 
-      this.session = await this.evaluationService.getAssessmentSessionPublic(this.sessionId);
-      if (!this.session) {
-        this.error = 'Prueba no encontrada';
-        return;
-      }
-
-      if (this.session.status === 'SCORED' || this.session.status === 'COMPLETED') {
+      if (test.status === 'SCORED' || test.status === 'COMPLETED') {
         this.error = 'Esta prueba ya fue completada';
         return;
       }
 
-      // Intentar cargar desde el registro local por shortName
-      this.shortName = this.extractShortName(this.session.assessmentName);
+      // Las preguntas se cargan del registro local por shortName.
+      this.shortName = test.shortName || this.extractShortName(test.assessmentName);
       const config = this.testLoader.getConfig(this.shortName);
-
-      if (config) {
-        this.sections = config.sections;
-        this.questionType = config.questionType;
-        this.totalQuestions = this.testLoader.getTotalQuestions(this.shortName);
-        this.optionLabels = config.optionLabels || [];
-
-        if (config.questionsPerPage) {
-          this.questionsPerPage = config.questionsPerPage;
-          this.allQuestions = config.sections.flatMap((s) => s.questions);
-        }
-        if (config.paginateBySection) {
-          this.paginateBySection = true;
-        }
-        if (config.globalInstructions) {
-          this.globalInstructions = config.globalInstructions;
-          this.phase = 'instructions';
-        }
-      } else {
-        // Fallback: cargar desde DB
-        this.assessment = await this.evaluationService.getAssessmentPublic(this.session.assessmentId);
-        if (!this.assessment) {
-          this.error = 'Datos de la prueba no encontrados';
-          return;
-        }
-        this.parseQuestionsFromDB();
+      if (!config) {
+        this.error = 'La configuración de la prueba no está disponible';
+        return;
       }
+
+      this.sections = config.sections;
+      this.questionType = config.questionType;
+      this.totalQuestions = this.testLoader.getTotalQuestions(this.shortName);
+      this.optionLabels = config.optionLabels || [];
+
+      if (config.questionsPerPage) {
+        this.questionsPerPage = config.questionsPerPage;
+        this.allQuestions = config.sections.flatMap((s) => s.questions);
+      }
+      if (config.paginateBySection) {
+        this.paginateBySection = true;
+      }
+      if (config.globalInstructions) {
+        this.globalInstructions = config.globalInstructions;
+        this.phase = 'instructions';
+      }
+
+      // Reanudar: si hay progreso parcial guardado (IN_PROGRESS), rehidratarlo.
+      this.rehydrateProgress();
 
     } catch (err: any) {
       this.error = err.message || 'Error al cargar la prueba';
@@ -163,6 +158,7 @@ export class EvalTestComponent implements OnInit {
 
   startTest() {
     this.phase = 'questions';
+    void this.saveProgress();
     window.scrollTo(0, 0);
   }
 
@@ -192,6 +188,7 @@ export class EvalTestComponent implements OnInit {
     this.error = '';
     this.highlightUnanswered = false;
     this.currentSectionIndex++;
+    void this.saveProgress();
     window.scrollTo(0, 0);
   }
 
@@ -200,6 +197,7 @@ export class EvalTestComponent implements OnInit {
       this.currentSectionIndex--;
       this.error = '';
       this.highlightUnanswered = false;
+      void this.saveProgress();
       window.scrollTo(0, 0);
     }
   }
@@ -209,6 +207,7 @@ export class EvalTestComponent implements OnInit {
       this.currentPage--;
       this.error = '';
       this.highlightUnanswered = false;
+      void this.saveProgress();
       window.scrollTo(0, 0);
     }
   }
@@ -229,6 +228,7 @@ export class EvalTestComponent implements OnInit {
     this.error = '';
     this.highlightUnanswered = false;
     this.currentPage++;
+    void this.saveProgress();
     window.scrollTo(0, 0);
   }
 
@@ -238,6 +238,7 @@ export class EvalTestComponent implements OnInit {
       this.highlightUnanswered = false;
       this.error = '';
     }
+    this.scheduleAutosave();
   }
 
   setConditionalSection(title: string, applies: boolean) {
@@ -254,6 +255,7 @@ export class EvalTestComponent implements OnInit {
       this.highlightUnanswered = false;
       this.error = '';
     }
+    this.scheduleAutosave();
   }
 
   isConditionalEnabled(section: TestSection): boolean {
@@ -343,25 +345,21 @@ export class EvalTestComponent implements OnInit {
       this.submitting = true;
       this.error = '';
       this.highlightUnanswered = false;
+      this.clearAutosave();
 
       const answersArray: number[] = [];
       for (let i = 1; i <= this.totalQuestions; i++) {
         answersArray.push(this.answers[i] || 0);
       }
 
-      await this.evaluationService.saveAnswersPublic(
+      // Envío final: la Lambda guarda COMPLETED y PUNTÚA server-side (recalcula;
+      // nunca confía en un total calculado por el cliente).
+      await this.evaluationService.saveProgress(
+        this.code,
         this.sessionId,
         JSON.stringify(answersArray),
-        'COMPLETED',
-        this.evalId
+        true,
       );
-
-       // Scoring: CDI va por Lambda (backend), el resto por el service viejo (frontend)
-      if (this.shortName === 'CDI') {
-        await this.cdiScoringService.scorePublic(this.sessionId);
-      } else {
-        await this.evaluationService.scorePublic(this.sessionId, answersArray);
-      }
 
       this.router.navigate(['/evaluate'], {
         queryParams: { code: this.code },
@@ -371,6 +369,82 @@ export class EvalTestComponent implements OnInit {
     } finally {
       this.submitting = false;
     }
-  
+
+  }
+
+  // ── Autosave / reanudación ──
+
+  /** Programa un guardado del progreso ~1.5s tras la última respuesta (debounce). */
+  private scheduleAutosave() {
+    if (this.saveTimer) clearTimeout(this.saveTimer);
+    this.saveTimer = setTimeout(() => { void this.saveProgress(); }, 1500);
+  }
+
+  private clearAutosave() {
+    if (this.saveTimer) {
+      clearTimeout(this.saveTimer);
+      this.saveTimer = null;
+    }
+  }
+
+  /**
+   * Persiste el progreso parcial (respuestas + secciones condicionales + posición)
+   * con estado IN_PROGRESS. Best-effort: un fallo puntual de red no interrumpe al
+   * evaluado; la siguiente respuesta o navegación reintenta.
+   */
+  private async saveProgress() {
+    this.clearAutosave();
+    if (this.submitting) return;
+    const payload = {
+      __progress: true,
+      answers: this.answers,
+      conditionalSections: this.conditionalSections,
+      currentPage: this.currentPage,
+      currentSectionIndex: this.currentSectionIndex,
+      phase: this.phase,
+    };
+    try {
+      await this.evaluationService.saveProgress(
+        this.code,
+        this.sessionId,
+        JSON.stringify(payload),
+        false,
+      );
+    } catch {
+      // silencioso a propósito (autosave)
+    }
+  }
+
+  /**
+   * Rehidrata respuestas y posición desde un progreso IN_PROGRESS guardado.
+   * No hace nada si `answers` es el array final (prueba ya enviada) o no es un
+   * wrapper de progreso.
+   */
+  private rehydrateProgress() {
+    if (!this.session?.answers) return;
+    let parsed: any;
+    try {
+      parsed = typeof this.session.answers === 'string'
+        ? JSON.parse(this.session.answers)
+        : this.session.answers;
+    } catch {
+      return;
+    }
+    if (!parsed || parsed.__progress !== true) return;
+
+    this.answers = parsed.answers || {};
+    this.conditionalSections = parsed.conditionalSections || {};
+    this.currentPage = parsed.currentPage || 0;
+    this.currentSectionIndex = parsed.currentSectionIndex || 0;
+    if (parsed.phase === 'instructions' && this.getAnsweredCount() > 0) {
+      this.phase = 'questions'; // ya había empezado a responder
+    } else if (parsed.phase) {
+      this.phase = parsed.phase;
+    }
+    this.resumed = this.getAnsweredCount() > 0;
+  }
+
+  ngOnDestroy() {
+    this.clearAutosave();
   }
 }

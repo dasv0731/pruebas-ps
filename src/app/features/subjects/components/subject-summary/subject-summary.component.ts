@@ -8,6 +8,8 @@ import { InterviewService } from '../../../interviews/services/interview.service
 import { SubjectReportService } from '../../services/subject-report.service';
 import { AIService, AIResponse } from '../../../../core/services/ai.service';
 import { CaseService } from '../../../../core/services/case.service';
+import { ReportPrintService } from '../../../../core/services/report-print.service';
+import { SUBJECT_TYPE_LABELS, SubjectType } from '../../../../core/models/types';
 
 @Component({
   selector: 'app-subject-summary',
@@ -39,6 +41,7 @@ export class SubjectSummaryComponent implements OnInit {
   assessmentReportContent = '';
   interviewReportContent = '';
   subjectReportContent = '';
+  caseNumber = '';
   error = '';
 
   constructor(
@@ -49,7 +52,8 @@ export class SubjectSummaryComponent implements OnInit {
     private interviewService: InterviewService,
     private subjectReportService: SubjectReportService,
     private aiService: AIService,
-    private caseService: CaseService
+    private caseService: CaseService,
+    private reportPrint: ReportPrintService
   ) {}
 
   async ngOnInit() {
@@ -64,6 +68,7 @@ export class SubjectSummaryComponent implements OnInit {
       this.error = '';
       const caseData = await this.caseService.getById(this.caseId);
       this.caseLocked = caseData?.status === 'COMPLETED';
+      this.caseNumber = caseData?.caseNumber || '';
       this.subject = await this.subjectService.getById(this.subjectId);
 
       const sessions = await this.assessmentService.listSessionsBySubject(this.subjectId);
@@ -115,8 +120,6 @@ export class SubjectSummaryComponent implements OnInit {
         this.subjectReportContent = this.subjectReport.content;
       }
     
-      console.log('Pruebas scored:', this.totalScoredTests, 'Interpretadas:', this.interpretations.length);
-      console.log('Entrevistas completadas:', this.totalCompletedInterviews, 'Analizadas:', this.analyses.length);
     } catch (err: any) {
       this.error = err.message || 'Error al cargar datos';
     } finally {
@@ -137,7 +140,7 @@ export class SubjectSummaryComponent implements OnInit {
       const texts = this.interpretations.map((i) => `--- ${i.assessmentName} ---\n${i.content}`);
       const response: AIResponse = await this.aiService.generateSubjectAssessmentReport(texts);
       if (response.success && response.content) {
-        await this.subjectReportService.saveAssessmentReport(this.subjectId, response.content, response.model || 'claude-sonnet-4-20250514');
+        await this.subjectReportService.saveAssessmentReport(this.subjectId, response.content, response.model || 'deepseek-chat');
         this.assessmentReportContent = response.content;
         this.assessmentReport = { content: response.content };
       } else {
@@ -174,7 +177,7 @@ export class SubjectSummaryComponent implements OnInit {
       const texts = this.analyses.map((a) => `--- Entrevista ${a.date} ---\n${a.content}`);
       const response: AIResponse = await this.aiService.generateSubjectInterviewReport(texts);
       if (response.success && response.content) {
-        await this.subjectReportService.saveInterviewReport(this.subjectId, response.content, response.model || 'claude-sonnet-4-20250514');
+        await this.subjectReportService.saveInterviewReport(this.subjectId, response.content, response.model || 'deepseek-chat');
         this.interviewReportContent = response.content;
         this.interviewReport = { content: response.content };
       } else {
@@ -201,24 +204,38 @@ export class SubjectSummaryComponent implements OnInit {
   // ── Informe final del implicado ──
 
   canGenerateSubjectReport(): boolean {
-    return !!this.assessmentReportContent && !!this.interviewReportContent;
+    return !!this.assessmentReportContent || !!this.interviewReportContent;
+  }
+
+  getMissingConsolidado(): 'pruebas' | 'entrevistas' | null {
+    if (!this.assessmentReportContent) return 'pruebas';
+    if (!this.interviewReportContent) return 'entrevistas';
+    return null;
   }
 
   async generateSubjectReport() {
     if (!this.canGenerateSubjectReport()) {
-      this.error = 'Necesita ambos consolidados (pruebas y entrevistas) para generar el informe final.';
+      this.error = 'Necesita al menos un consolidado (pruebas o entrevistas) para generar el informe final.';
       return;
+    }
+    const missing = this.getMissingConsolidado();
+    if (missing) {
+      const ok = confirm(
+        `Se generará el informe del implicado SIN el consolidado de ${missing}. ` +
+        `El informe dejará constancia de que esa fuente no está disponible. ¿Continuar?`
+      );
+      if (!ok) return;
     }
     try {
       this.generatingSubjectReport = true;
       this.error = '';
       const response: AIResponse = await this.aiService.generateSubjectReport(
-        this.assessmentReportContent,
-        this.interviewReportContent
+        this.assessmentReportContent || null,
+        this.interviewReportContent || null
       );
       if (response.success && response.content) {
         await this.subjectReportService.saveSubjectReport(
-          this.subjectId, this.caseId, response.content, response.model || 'claude-sonnet-4-20250514'
+          this.subjectId, this.caseId, response.content, response.model || 'deepseek-chat'
         );
         this.subjectReportContent = response.content;
         this.subjectReport = await this.subjectReportService.getSubjectReport(this.subjectId);
@@ -287,6 +304,54 @@ export class SubjectSummaryComponent implements OnInit {
       APPROVED: 'badge-active',
     };
     return map[status] || '';
+  }
+
+  // ── Impresión / exportación a PDF ──
+
+  private subjectFullName(): string {
+    return `${this.subject?.firstName || ''} ${this.subject?.lastName || ''}`.trim();
+  }
+
+  private subjectRoleLabel(): string {
+    const t = this.subject?.subjectType;
+    return t ? (SUBJECT_TYPE_LABELS[t as SubjectType] || t) : '';
+  }
+
+  printAssessmentReport() {
+    this.reportPrint.print({
+      title: 'Informe consolidado de pruebas',
+      caseNumber: this.caseNumber,
+      subjectName: this.subjectFullName(),
+      subjectType: this.subjectRoleLabel(),
+      documentId: this.subject?.documentId,
+      generatedAt: this.assessmentReport?.generatedAt,
+      content: this.assessmentReportContent,
+    });
+  }
+
+  printInterviewReport() {
+    this.reportPrint.print({
+      title: 'Informe consolidado de entrevistas',
+      caseNumber: this.caseNumber,
+      subjectName: this.subjectFullName(),
+      subjectType: this.subjectRoleLabel(),
+      documentId: this.subject?.documentId,
+      generatedAt: this.interviewReport?.generatedAt,
+      content: this.interviewReportContent,
+    });
+  }
+
+  printSubjectReport() {
+    this.reportPrint.print({
+      title: 'Informe pericial del implicado',
+      caseNumber: this.caseNumber,
+      subjectName: this.subjectFullName(),
+      subjectType: this.subjectRoleLabel(),
+      documentId: this.subject?.documentId,
+      status: this.subjectReport?.status ? this.getStatusLabel(this.subjectReport.status) : undefined,
+      generatedAt: this.subjectReport?.generatedAt,
+      content: this.subjectReportContent,
+    });
   }
 
   goBack() {

@@ -50,7 +50,7 @@ export class CuidaXmlExportService {
     }
     const respuestas = answers.join('');
 
-    return `<?xml version="1.0" encoding="UTF-8"?>\n<sujetos>\n  <sujeto idSujeto='1' nombre='${nombre}' edad='${edad}' sexo='${sexo}' respuestas='${respuestas}' />\n</sujetos>`;
+    return `<sujetos>\n  <sujeto idSujeto='1' nombre='${nombre}' edad='${edad}' sexo='${sexo}' respuestas='${respuestas}' />\n</sujetos>`;
   }
 
   downloadXml(xml: string, nombre: string): void {

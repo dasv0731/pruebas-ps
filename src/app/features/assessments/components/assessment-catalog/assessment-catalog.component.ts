@@ -113,6 +113,9 @@ export class AssessmentCatalogComponent implements OnInit, OnDestroy {
   }
 
   async seedData() {
+    if (!confirm('¿Cargar/actualizar el catálogo de pruebas? Las pruebas existentes se actualizan en sitio (no se pierden las sesiones ya creadas).')) {
+      return;
+    }
     try {
       await this.assessmentService.seedCatalog();
       await this.loadData();

@@ -6,6 +6,7 @@ import { CaseService } from '../../../../core/services/case.service';
 import { SubjectService } from '../../../../core/services/subject.service';
 import { SubjectReportService } from '../../../subjects/services/subject-report.service';
 import { AIService, AIResponse } from '../../../../core/services/ai.service';
+import { ReportPrintService } from '../../../../core/services/report-print.service';
 
 @Component({
   selector: 'app-case-report',
@@ -25,7 +26,7 @@ export class CaseReportComponent implements OnInit {
   generating = false;
   editing = false;
   error = '';
-  readiness: { ready: boolean; approved: number; missing: number } = { ready: false, approved: 0, missing: 0 };
+  readiness: { ready: boolean; approved: number; excluded: number; missing: number } = { ready: false, approved: 0, excluded: 0, missing: 0 };
 
   constructor(
     private route: ActivatedRoute,
@@ -33,8 +34,19 @@ export class CaseReportComponent implements OnInit {
     private caseService: CaseService,
     private subjectService: SubjectService,
     private subjectReportService: SubjectReportService,
-    private aiService: AIService
+    private aiService: AIService,
+    private reportPrint: ReportPrintService
   ) {}
+
+  printCaseReport() {
+    this.reportPrint.print({
+      title: 'Informe pericial del caso',
+      caseNumber: this.caseData?.caseNumber,
+      status: this.caseReport?.status ? this.getCaseStatusLabel(this.caseReport.status) : undefined,
+      generatedAt: this.caseReport?.generatedAt,
+      content: this.caseReportContent,
+    });
+  }
 
   async ngOnInit() {
     this.caseId = this.route.snapshot.params['caseId'];
@@ -53,19 +65,23 @@ export class CaseReportComponent implements OnInit {
       this.subjectReports = [];
       for (const subject of this.subjects) {
         const report = await this.subjectReportService.getSubjectReport(subject.id);
+        const excluded = !!subject.excludedFromCaseReport;
         this.subjectReports.push({
           subjectId: subject.id,
+          subject,
           subjectName: `${subject.firstName} ${subject.lastName}`,
           subjectType: subject.subjectType,
           report,
-          status: report?.status || 'PENDIENTE',
+          excluded,
+          reportStatus: report?.status || 'PENDIENTE',
+          status: excluded ? 'EXCLUIDO' : (report?.status || 'PENDIENTE'),
         });
       }
 
       // Verificar si se puede generar
       this.readiness = await this.subjectReportService.canGenerateCaseReport(
         this.caseId,
-        this.subjects.length
+        this.subjects
       );
 
       // Cargar informe del caso
@@ -81,6 +97,26 @@ export class CaseReportComponent implements OnInit {
     }
   }
 
+  async toggleExclusion(sr: any) {
+    if (this.isCaseReportLocked() || this.caseData?.status === 'COMPLETED') return;
+    const action = sr.excluded ? 'incluir en el' : 'excluir del';
+    if (!confirm(`¿Desea ${action} informe del caso a ${sr.subjectName}?` +
+        (!sr.excluded && sr.reportStatus === 'APPROVED'
+          ? ' Su informe aprobado se omitirá del informe del caso.' : ''))) return;
+    try {
+      this.error = '';
+      await this.subjectService.update(sr.subjectId, {
+        excludedFromCaseReport: !sr.excluded } as any);
+      // Invalidar CaseReport vigente si cambia la base de la que se generó
+      if (this.caseReport && ['APPROVED', 'REVIEWED', 'DRAFT'].includes(this.caseReport.status)) {
+        await this.subjectReportService.updateCaseReportStatus(this.caseReport.id, 'STALE');
+      }
+      await this.loadData();
+    } catch (err: any) {
+      this.error = err.message || 'Error al cambiar la exclusión del implicado';
+    }
+  }
+
   async generateCaseReport() {
     if (!this.readiness.ready) {
       this.error = `Faltan ${this.readiness.missing} informes de implicados por aprobar.`;
@@ -92,7 +128,7 @@ export class CaseReportComponent implements OnInit {
       this.error = '';
 
       const reports = this.subjectReports
-        .filter((sr) => sr.report && sr.report.status === 'APPROVED')
+        .filter((sr) => !sr.excluded && sr.report && sr.report.status === 'APPROVED')
         .map((sr) => ({
           subjectName: sr.subjectName,
           report: sr.report.content,
@@ -104,7 +140,7 @@ export class CaseReportComponent implements OnInit {
         await this.subjectReportService.saveCaseReport(
           this.caseId,
           response.content,
-          response.model || 'claude-sonnet-4-20250514'
+          response.model || 'deepseek-chat'
         );
         this.caseReportContent = response.content;
         // Recargar para obtener el id
@@ -203,6 +239,7 @@ export class CaseReportComponent implements OnInit {
       REVIEWED: 'Revisado',
       APPROVED: 'Aprobado',
       PENDIENTE: 'Sin informe',
+      EXCLUIDO: 'Excluido del informe',
     };
     return map[status] || status;
   }
@@ -213,6 +250,7 @@ export class CaseReportComponent implements OnInit {
       REVIEWED: 'badge-in-progress',
       APPROVED: 'badge-active',
       PENDIENTE: 'badge-archived',
+      EXCLUIDO: 'badge-archived',
     };
     return map[status] || '';
   }

@@ -74,6 +74,9 @@
     <div *ngIf="assessmentReportContent && !editingAssessment && !generatingAssessment" class="report-content">
       {{ assessmentReportContent }}
     </div>
+    <div *ngIf="assessmentReportContent && !editingAssessment && !generatingAssessment" class="report-print-actions">
+      <button class="btn btn-secondary btn-sm" (click)="printAssessmentReport()">Imprimir / PDF</button>
+    </div>
   </div>
 
   <!-- Consolidado de entrevistas -->
@@ -118,6 +121,9 @@
     <div *ngIf="interviewReportContent && !editingInterview && !generatingInterview" class="report-content">
       {{ interviewReportContent }}
     </div>
+    <div *ngIf="interviewReportContent && !editingInterview && !generatingInterview" class="report-print-actions">
+      <button class="btn btn-secondary btn-sm" (click)="printInterviewReport()">Imprimir / PDF</button>
+    </div>
   </div>
 
   <!-- Informe final del implicado -->
@@ -145,7 +151,11 @@
     </div>
 
     <div *ngIf="!canGenerateSubjectReport() && !subjectReportContent" class="empty-state">
-      Necesita los consolidados de pruebas y entrevistas para generar el informe final.
+      Necesita al menos uno de los dos consolidados (pruebas o entrevistas) para generar el informe final.
+    </div>
+    <div *ngIf="canGenerateSubjectReport() && getMissingConsolidado()" class="pending-msg">
+      Falta el consolidado de {{ getMissingConsolidado() }}. El informe puede generarse,
+      pero dejará constancia de que esa fuente no está disponible.
     </div>
 
     <div *ngIf="generatingSubjectReport" class="generating-msg">
@@ -162,6 +172,9 @@
 
     <div *ngIf="subjectReportContent && !editingSubjectReport && !generatingSubjectReport" class="report-content">
       {{ subjectReportContent }}
+    </div>
+    <div *ngIf="subjectReportContent && !editingSubjectReport && !generatingSubjectReport" class="report-print-actions">
+      <button class="btn btn-secondary btn-sm" (click)="printSubjectReport()">Imprimir / PDF</button>
     </div>
 
     <!-- Flujo de aprobación -->

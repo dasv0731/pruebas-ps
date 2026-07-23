@@ -9,6 +9,10 @@
     <div class="error-msg">{{ error }}</div>
   </div>
 
+  <div *ngIf="resumed && !loading && sections.length > 0" class="resumed-banner">
+    Hemos recuperado tus respuestas anteriores. Puedes continuar donde lo dejaste.
+  </div>
+
   <!-- ── Pantalla de instrucciones ── -->
   <div *ngIf="!loading && phase === 'instructions'" class="test-content instructions-screen">
     <h2>{{ session?.assessmentName }}</h2>

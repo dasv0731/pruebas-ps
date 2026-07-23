@@ -224,4 +224,9 @@ export const routes: Routes = [
       },
     ],
   },
+  // Cualquier ruta desconocida vuelve al listado de casos (evita pantalla en blanco).
+  {
+    path: '**',
+    redirectTo: 'cases',
+  },
 ];

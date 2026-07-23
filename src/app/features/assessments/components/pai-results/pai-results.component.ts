@@ -4,10 +4,12 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { AssessmentService } from '../../services/assessment.service';
 import { SubjectService } from '../../../../core/services/subject.service';
 import { PaiInterpretService, PAIFindings, PAILevel } from '../../../../core/services/pai-interpret.service';
+import { AIService, AIResponse } from '../../../../core/services/ai.service';
 import { SEX_LABELS } from '../../../../core/models/types';
 import type { PAIManualScoring } from '../pai-entry/pai-entry.types';
 import { SkeletonComponent } from '../../../../shared/components/skeleton/skeleton.component';
 import { ErrorStateComponent } from '../../../../shared/components/error-state/error-state.component';
+import { PAI_INTERPRETATION, buildPaiAIInputFromFindings } from '../../tests/pai/pai.interpretation';
 
 @Component({
   selector: 'app-pai-results',
@@ -19,9 +21,16 @@ import { ErrorStateComponent } from '../../../../shared/components/error-state/e
 export class PaiResultsComponent implements OnInit {
   caseId = ''; subjectId = ''; sessionId = '';
   session: any = null; subject: any = null;
+  scoring: any = null;
   findings: PAIFindings | null = null;
   manualOnly: PAIManualScoring | null = null;
   loading = true; error = '';
+
+  interpretation = '';
+  interpretationVersion = 0;
+  interpretationDate = '';
+  generating = false;
+  hadPreviousInterpretation = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -29,6 +38,7 @@ export class PaiResultsComponent implements OnInit {
     private assessmentService: AssessmentService,
     private subjectService: SubjectService,
     private interpretService: PaiInterpretService,
+    private aiService: AIService,
   ) {}
 
   async ngOnInit() {
@@ -46,11 +56,11 @@ export class PaiResultsComponent implements OnInit {
       this.session = await this.assessmentService.getSession(this.sessionId);
       if (!this.session) { this.error = 'Sesión no encontrada'; return; }
       this.subject = await this.subjectService.getById(this.session.subjectId);
-      const scoring = await this.assessmentService.getScoring(this.sessionId);
+      this.scoring = await this.assessmentService.getScoring(this.sessionId);
 
-      if (!scoring?.scores) { this.error = 'No hay puntuaciones guardadas. Transcriba los valores primero.'; return; }
+      if (!this.scoring?.scores) { this.error = 'No hay puntuaciones guardadas. Transcriba los valores primero.'; return; }
 
-      const raw = typeof scoring.scores === 'string' ? JSON.parse(scoring.scores) : scoring.scores;
+      const raw = typeof this.scoring.scores === 'string' ? JSON.parse(this.scoring.scores) : this.scoring.scores;
 
       if (raw.source === 'TEA_MANUAL_PAI') {
         const manual = raw as PAIManualScoring;
@@ -59,10 +69,49 @@ export class PaiResultsComponent implements OnInit {
       } else {
         this.error = 'Formato de scoring no reconocido';
       }
+
+      // Cargar interpretación vigente
+      this.interpretation = '';
+      if (this.scoring) {
+        const saved = await this.assessmentService.getInterpretation(this.scoring.id);
+        if (saved) {
+          this.interpretation = saved.content;
+          this.interpretationVersion = saved.version;
+          this.interpretationDate = saved.generatedAt || '';
+        }
+        this.hadPreviousInterpretation = !saved && (this.scoring.version || 1) > 1;
+      }
     } catch (err: any) {
       this.error = err.message || 'Error al cargar resultados';
     } finally {
       this.loading = false;
+    }
+  }
+
+  async generateInterpretation() {
+    if (!this.findings || !this.scoring) return;
+    this.generating = true;
+    this.error = '';
+    try {
+      const input = buildPaiAIInputFromFindings(this.findings, {
+        edad: this.session?.subjectAgeYears,
+        sexo: this.session?.subjectSex,
+      });
+      const r: AIResponse = await this.aiService.generateAssessmentInterpretation(
+        JSON.stringify(input), PAI_INTERPRETATION.systemPrompt, PAI_INTERPRETATION.maxTokens);
+      if (r.success && r.content) {
+        await this.assessmentService.saveInterpretation(this.scoring.id, r.content, r.model || 'deepseek-chat');
+        this.interpretation = r.content;
+        this.interpretationVersion++;
+        this.interpretationDate = new Date().toISOString();
+        this.hadPreviousInterpretation = false;
+      } else {
+        this.error = r.error || 'Error al generar interpretación';
+      }
+    } catch (err: any) {
+      this.error = err.message || 'Error al generar interpretación';
+    } finally {
+      this.generating = false;
     }
   }
 

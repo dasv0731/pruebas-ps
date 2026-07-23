@@ -3,6 +3,7 @@ import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../../../../amplify/data/resource';
 import { TestLoaderService } from './test-loader.service';
 import { SubjectService } from '../../../core/services/subject.service';
+import { listAll } from '../../../core/utils/paginate';
 
 const client = generateClient<Schema>();
 
@@ -49,16 +50,14 @@ export class AssessmentService {
   }
 
   async seedCatalog() {
-    // Eliminar existentes
+    // Upsert por shortName: NO se borran los existentes (borrarlos y recrearlos con
+    // ids nuevos dejaría huérfanas las AssessmentSession que apuntan al id viejo).
     const existing = await this.listAssessments();
-    for (const a of existing) {
-      await client.models.Assessment.delete({ id: a.id });
-    }
+    const byShortName = new Map(existing.map((a: any) => [a.shortName, a]));
 
-    // Crear desde el registro
     const tests = this.testLoader.getAllTests();
     for (const test of tests) {
-      await client.models.Assessment.create({
+      const payload = {
         name: test.name,
         shortName: test.shortName,
         description: test.description,
@@ -70,18 +69,24 @@ export class AssessmentService {
           type: test.questionType,
           sections: test.sections,
         }),
-      });
+      };
+      const found = byShortName.get(test.shortName);
+      if (found) {
+        // Actualiza en sitio conservando el id → las sesiones existentes siguen válidas.
+        await client.models.Assessment.update({ id: found.id, ...payload });
+      } else {
+        await client.models.Assessment.create(payload);
+      }
     }
   }
 
   // ── SESIONES ──
 
   async listSessionsBySubject(subjectId: string) {
-    const { data, errors } = await client.models.AssessmentSession.list({
+    return listAll((args) => client.models.AssessmentSession.list({
       filter: { subjectId: { eq: subjectId } },
-    });
-    if (errors) throw new Error(errors.map((e) => e.message).join(', '));
-    return data;
+      ...args,
+    }));
   }
 
   async getSession(id: string) {
@@ -108,24 +113,11 @@ export class AssessmentService {
   // ── SCORING ──
 
   async getScoring(sessionId: string) {
-    const { data, errors } = await client.models.AssessmentScoring.list({
-      filter: {
-        sessionId: { eq: sessionId },
-        isCurrent: { eq: true },
-      },
-    });
-    if (errors) throw new Error(errors.map((e) => e.message).join(', '));
-    if (data.length > 0) return data[0];
-
-    const publicClient = generateClient<Schema>({ authMode: 'apiKey' });
-    const pubResult = await publicClient.models.AssessmentScoring.list({
-      filter: {
-        sessionId: { eq: sessionId },
-        isCurrent: { eq: true },
-      },
-    });
-    if (pubResult.errors) throw new Error(pubResult.errors.map((e) => e.message).join(', '));
-    return pubResult.data.length > 0 ? pubResult.data[0] : null;
+    const data = await listAll((args) => client.models.AssessmentScoring.list({
+      filter: { sessionId: { eq: sessionId }, isCurrent: { eq: true } },
+      ...args,
+    }));
+    return data.length > 0 ? data[0] : null;
   }
 
   async scoreSession(sessionId: string, answers: number[], shortName?: string): Promise<number> {
@@ -146,13 +138,26 @@ export class AssessmentService {
       scoresJson = { raw: totalScore, answers };
     }
 
+    // Invalidar scorings previos de la sesión y versionar (evita dos isCurrent).
+    const existing = await listAll((args) => client.models.AssessmentScoring.list({
+      filter: { sessionId: { eq: sessionId } },
+      ...args,
+    }));
+    let maxVersion = 0;
+    for (const item of existing) {
+      if ((item.version ?? 0) > maxVersion) maxVersion = item.version ?? 0;
+      if (item.isCurrent) {
+        await client.models.AssessmentScoring.update({ id: item.id, isCurrent: false });
+      }
+    }
+
     const { data, errors } = await client.models.AssessmentScoring.create({
       sessionId,
       totalScore,
       scores: JSON.stringify(scoresJson),
       source: 'LOCAL' as ScoringSource,
       status: 'COMPLETED' as ScoringStatus,
-      version: 1,
+      version: maxVersion + 1,
       isCurrent: true,
       generatedAt: new Date().toISOString(),
     });
@@ -170,17 +175,34 @@ export class AssessmentService {
   // ── INTERPRETATIONS ──
 
   async getInterpretation(scoringId: string) {
-    const { data, errors } = await client.models.AssessmentInterpretation.list({
-      filter: {
-        scoringId: { eq: scoringId },
-        isCurrent: { eq: true },
-      },
-    });
-    if (errors) throw new Error(errors.map((e) => e.message).join(', '));
+    const data = await listAll((args) => client.models.AssessmentInterpretation.list({
+      filter: { scoringId: { eq: scoringId }, isCurrent: { eq: true } },
+      ...args,
+    }));
     return data.length > 0 ? data[0] : null;
   }
 
-  async saveInterpretation(scoringId: string, content: string, aiModel: string) {
+  /**
+   * ¿Existe una interpretación ligada a un scoring ANTERIOR (no vigente) de esta
+   * sesión? Sirve para detectar que una re-corrección dejó huérfana la narrativa
+   * previa. Es robusto frente a pruebas cuyo scoring nace en versión >1 (p. ej.
+   * CUIDA, cuyo flujo de 2 pasos deja el primer scoring en versión 2), a diferencia
+   * de mirar solo `scoring.version`.
+   */
+  async sessionHasPriorInterpretation(sessionId: string, currentScoringId: string): Promise<boolean> {
+    const data = await listAll((args) => client.models.AssessmentScoring.list({
+      filter: { sessionId: { eq: sessionId } },
+      ...args,
+    }));
+    const priorScorings = data.filter((s) => s.id !== currentScoringId);
+    for (const s of priorScorings) {
+      const interp = await this.getInterpretation(s.id);
+      if (interp) return true;
+    }
+    return false;
+  }
+
+  async saveInterpretation(scoringId: string, content: string, aiModel: string, source: 'AI' | 'MANUAL' = 'AI') {
     const existing = await client.models.AssessmentInterpretation.list({
       filter: { scoringId: { eq: scoringId } },
     });
@@ -198,7 +220,7 @@ export class AssessmentService {
     const { data, errors } = await client.models.AssessmentInterpretation.create({
       scoringId,
       content,
-      source: 'AI' as const,
+      source: source as any,
       status: 'COMPLETED' as const,
       version,
       isCurrent: true,

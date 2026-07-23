@@ -3,14 +3,16 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AssessmentService } from '../../services/assessment.service';
 import { SubjectService } from '../../../../core/services/subject.service';
+import { AIService, AIResponse } from '../../../../core/services/ai.service';
 import { SEX_LABELS } from '../../../../core/models/types';
 import { TAMAIManualScoring } from '../tamai-entry/tamai-entry.types';
 import { TAMAI_LEVEL_REGISTRY } from '../tamai-entry/tamai-level-registry';
 import { ScaleNode, ScaleType, flattenScaleNodesFull } from '../tamai-entry/tamai-level-config';
 import { SkeletonComponent } from '../../../../shared/components/skeleton/skeleton.component';
 import { ErrorStateComponent } from '../../../../shared/components/error-state/error-state.component';
+import { TAMAI_INTERPRETATION, buildTamaiAIInputFromRows } from '../../tests/tamai/tamai.interpretation';
 
-interface ScaleRow {
+export interface ScaleRow {
   code: string;
   label: string;
   depth: number;
@@ -49,17 +51,25 @@ export class TamaiResultsComponent implements OnInit {
   caseId = ''; subjectId = ''; sessionId = '';
   session: any = null;
   subject: any = null;
+  scoring: any = null;
   manual: TAMAIManualScoring | null = null;
   rows: ScaleRow[] = [];
   baremoLabel = '';
   loading = true;
   error = '';
 
+  interpretation = '';
+  interpretationVersion = 0;
+  interpretationDate = '';
+  generating = false;
+  hadPreviousInterpretation = false;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private assessmentService: AssessmentService,
     private subjectService: SubjectService,
+    private aiService: AIService,
   ) {}
 
   async ngOnInit() {
@@ -77,10 +87,10 @@ export class TamaiResultsComponent implements OnInit {
       if (!this.session) { this.error = 'Sesión no encontrada'; return; }
       this.subject = await this.subjectService.getById(this.session.subjectId);
 
-      const scoring = await this.assessmentService.getScoring(this.sessionId);
-      if (!scoring?.scores) { this.error = 'No hay corrección registrada.'; return; }
+      this.scoring = await this.assessmentService.getScoring(this.sessionId);
+      if (!this.scoring?.scores) { this.error = 'No hay corrección registrada.'; return; }
 
-      const parsed = typeof scoring.scores === 'string' ? JSON.parse(scoring.scores) : scoring.scores;
+      const parsed = typeof this.scoring.scores === 'string' ? JSON.parse(this.scoring.scores) : this.scoring.scores;
       if (parsed.source !== 'TEA_MANUAL_TAMAI') {
         this.error = 'Formato de scoring no soportado. Vuelva a transcribir.';
         return;
@@ -111,10 +121,51 @@ export class TamaiResultsComponent implements OnInit {
           badgeClass,
         };
       });
+
+      // Cargar interpretación vigente
+      this.interpretation = '';
+      if (this.scoring) {
+        const saved = await this.assessmentService.getInterpretation(this.scoring.id);
+        if (saved) {
+          this.interpretation = saved.content;
+          this.interpretationVersion = saved.version;
+          this.interpretationDate = saved.generatedAt || '';
+        }
+        this.hadPreviousInterpretation = !saved && (this.scoring.version || 1) > 1;
+      }
     } catch (err: any) {
       this.error = err.message || 'Error al cargar resultados';
     } finally {
       this.loading = false;
+    }
+  }
+
+  async generateInterpretation() {
+    if (!this.rows.length || !this.scoring || !this.manual) return;
+    this.generating = true;
+    this.error = '';
+    try {
+      const input = buildTamaiAIInputFromRows(this.rows, {
+        level: this.manual.level,
+        baremo: this.baremoLabel,
+        edad: this.session?.subjectAgeYears,
+        sexo: this.session?.subjectSex,
+      });
+      const r: AIResponse = await this.aiService.generateAssessmentInterpretation(
+        JSON.stringify(input), TAMAI_INTERPRETATION.systemPrompt, TAMAI_INTERPRETATION.maxTokens);
+      if (r.success && r.content) {
+        await this.assessmentService.saveInterpretation(this.scoring.id, r.content, r.model || 'deepseek-chat');
+        this.interpretation = r.content;
+        this.interpretationVersion++;
+        this.interpretationDate = new Date().toISOString();
+        this.hadPreviousInterpretation = false;
+      } else {
+        this.error = r.error || 'Error al generar interpretación';
+      }
+    } catch (err: any) {
+      this.error = err.message || 'Error al generar interpretación';
+    } finally {
+      this.generating = false;
     }
   }
 

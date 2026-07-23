@@ -62,28 +62,30 @@ export class CuidaScoringEntryComponent implements OnInit {
   error = '';
   isEditMode = false;
 
+  // Abreviaturas alineadas con el perfil de resultados de TEACorrige (CUIDA v4)
+  // para facilitar la transcripción sin errores.
   readonly ESCALAS_PERSONALIDAD = [
     { key: 'altruismo', label: 'Altruismo', abbr: 'Al' },
     { key: 'apertura', label: 'Apertura', abbr: 'Ap' },
     { key: 'asertividad', label: 'Asertividad', abbr: 'As' },
-    { key: 'autoestima', label: 'Autoestima', abbr: 'Au' },
-    { key: 'resolverProblemas', label: 'Resolver problemas', abbr: 'RP' },
+    { key: 'autoestima', label: 'Autoestima', abbr: 'At' },
+    { key: 'resolverProblemas', label: 'Capacidad de resolver problemas', abbr: 'Rp' },
     { key: 'empatia', label: 'Empatía', abbr: 'Em' },
-    { key: 'equilibrioEmocional', label: 'Equilibrio emocional', abbr: 'EE' },
+    { key: 'equilibrioEmocional', label: 'Equilibrio emocional', abbr: 'Ee' },
     { key: 'independencia', label: 'Independencia', abbr: 'In' },
     { key: 'flexibilidad', label: 'Flexibilidad', abbr: 'Fl' },
-    { key: 'reflexividad', label: 'Reflexividad', abbr: 'Re' },
-    { key: 'sociabilidad', label: 'Sociabilidad', abbr: 'So' },
-    { key: 'toleranciaFrustracion', label: 'Tolerancia a la frustración', abbr: 'TF' },
-    { key: 'vinculosAfectivos', label: 'Vínculos afectivos', abbr: 'VA' },
-    { key: 'resolucionDuelo', label: 'Resolución del duelo', abbr: 'RD' },
+    { key: 'reflexividad', label: 'Reflexividad', abbr: 'Rf' },
+    { key: 'sociabilidad', label: 'Sociabilidad', abbr: 'Sc' },
+    { key: 'toleranciaFrustracion', label: 'Tolerancia a la frustración', abbr: 'Tf' },
+    { key: 'vinculosAfectivos', label: 'Cap. de establecer vínculos afectivos o de apego', abbr: 'Ag' },
+    { key: 'resolucionDuelo', label: 'Capacidad de resolución del duelo', abbr: 'Dl' },
   ] as const;
 
   readonly ESCALAS_CUIDADO = [
-    { key: 'cuidadoResponsable', label: 'Cuidado responsable', abbr: 'CR' },
-    { key: 'cuidadoAfectivo', label: 'Cuidado afectivo', abbr: 'CA' },
-    { key: 'sensibilidad', label: 'Sensibilidad', abbr: 'Se' },
-    { key: 'agresividad', label: 'Agresividad', abbr: 'Ag' },
+    { key: 'cuidadoResponsable', label: 'Cuidado responsable', abbr: 'Cre' },
+    { key: 'cuidadoAfectivo', label: 'Cuidado afectivo', abbr: 'Caf' },
+    { key: 'sensibilidad', label: 'Sensibilidad hacia los demás', abbr: 'Sen' },
+    { key: 'agresividad', label: 'Agresividad', abbr: 'Agr' },
   ] as const;
 
   constructor(

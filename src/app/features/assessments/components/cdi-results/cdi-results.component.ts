@@ -3,7 +3,9 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AssessmentService } from '../../services/assessment.service';
 import { SubjectService } from '../../../../core/services/subject.service';
+import { AIService, AIResponse } from '../../../../core/services/ai.service';
 import { SEX_LABELS } from '../../../../core/models/types';
+import { CDI_INTERPRETATION, buildCdiAIInputFromScoring } from '../../tests/cdi/cdi.interpretation';
 
 type TotalClassification = 'SIN_SINTOMATOLOGIA' | 'LEVE' | 'SEVERA' | null;
 type ReportMode =
@@ -12,7 +14,7 @@ type ReportMode =
   | 'PARTIAL_INSUFFICIENT'
   | 'NOT_INTERPRETABLE';
 
-interface CdiScoringData {
+export interface CdiScoringData {
   success: boolean;
   scoringVersion: number;
   reportMode: ReportMode;
@@ -68,16 +70,21 @@ export class CdiResultsComponent implements OnInit {
   interpretationDate = '';
 
   loading = true;
+  generating = false;
   error = '';
 
-  // Para el botón de IA (queda deshabilitado por ahora)
-  readonly aiEnabled = false;
+  readonly aiEnabled = true;
+
+  // Aviso: si la prueba fue re-corregida, el scoring vigente cambia y la
+  // interpretación anterior (ligada al scoring viejo) queda huérfana.
+  hadPreviousInterpretation = false;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private assessmentService: AssessmentService,
     private subjectService: SubjectService,
+    private aiService: AIService,
   ) {}
 
   async ngOnInit() {
@@ -131,6 +138,7 @@ export class CdiResultsComponent implements OnInit {
       }
 
       // Cargar interpretación guardada si existe
+      this.interpretation = '';
       if (this.scoring) {
         const saved = await this.assessmentService.getInterpretation(
           this.scoring.id,
@@ -140,6 +148,10 @@ export class CdiResultsComponent implements OnInit {
           this.interpretationVersion = saved.version;
           this.interpretationDate = saved.generatedAt || '';
         }
+        // Re-corrección: el scoring vigente es una versión nueva (>1) y aún
+        // no tiene interpretación propia; la narrativa anterior quedó ligada
+        // al scoring anterior y ya no describe la corrección actual.
+        this.hadPreviousInterpretation = !saved && (this.scoring.version || 1) > 1;
       }
     } catch (err: any) {
       this.error = err.message || 'Error al cargar resultados';
@@ -219,11 +231,28 @@ export class CdiResultsComponent implements OnInit {
 
   // ── Acciones ──
 
-  generateInterpretation() {
-    // Placeholder: la generación IA se implementará en siguiente iteración
-    // con una Lambda dedicada al CDI.
-    this.error =
-      'La generación con IA para CDI estará disponible próximamente.';
+  async generateInterpretation() {
+    if (!this.cdiData || !this.scoring) return;
+    this.generating = true;
+    this.error = '';
+    try {
+      const input = buildCdiAIInputFromScoring(this.cdiData);
+      const r: AIResponse = await this.aiService.generateAssessmentInterpretation(
+        JSON.stringify(input), CDI_INTERPRETATION.systemPrompt, CDI_INTERPRETATION.maxTokens);
+      if (r.success && r.content) {
+        await this.assessmentService.saveInterpretation(this.scoring.id, r.content, r.model || 'deepseek-chat');
+        this.interpretation = r.content;
+        this.interpretationVersion++;
+        this.interpretationDate = new Date().toISOString();
+        this.hadPreviousInterpretation = false;
+      } else {
+        this.error = r.error || 'Error al generar interpretación';
+      }
+    } catch (err: any) {
+      this.error = err.message || 'Error al generar interpretación';
+    } finally {
+      this.generating = false;
+    }
   }
 
   goBack() {

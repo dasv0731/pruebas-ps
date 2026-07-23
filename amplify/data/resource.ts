@@ -3,6 +3,7 @@ import { aiGenerate } from '../functions/ai-generate/resource';
 import { cdiScore } from '../functions/cdi-score/resource';
 import { staiScore } from '../functions/stai-score/resource';
 import { cuidaInterpret } from '../functions/cuida-interpret/resource';
+import { evalPortal } from '../functions/eval-portal/resource';
 const schema = a.schema({
 
   // ──────────────────────────────────────────────
@@ -126,6 +127,7 @@ const schema = a.schema({
       contactEmail: a.email(),
       address: a.string(),
       notes: a.string(),
+      excludedFromCaseReport: a.boolean(),
       case: a.belongsTo('Case', 'caseId'),
       assessmentSessions: a.hasMany('AssessmentSession', 'subjectId'),
       interviews: a.hasMany('Interview', 'subjectId'),
@@ -157,7 +159,6 @@ const schema = a.schema({
     })
     .authorization((allow) => [
       allow.authenticated(),
-      allow.publicApiKey().to(['read']),
     ]),
 
   // ──────────────────────────────────────────────
@@ -182,7 +183,6 @@ const schema = a.schema({
     })
     .authorization((allow) => [
       allow.owner(),
-      allow.publicApiKey().to(['read', 'update']),
     ]),
 
   // ──────────────────────────────────────────────
@@ -206,7 +206,6 @@ const schema = a.schema({
     })
     .authorization((allow) => [
       allow.owner(),
-      allow.publicApiKey().to(['create', 'read']),
     ]),
 
   // ──────────────────────────────────────────────
@@ -363,7 +362,6 @@ const schema = a.schema({
     })
     .authorization((allow) => [
       allow.owner(),
-      allow.publicApiKey().to(['read', 'update']),
     ]),
 
   // ──────────────────────────────────────────────
@@ -376,6 +374,8 @@ generateAIContent: a
       type: a.string().required(),
       data: a.string().required(),
       extractionRequest: a.string(),
+      systemPrompt: a.string(),
+      maxTokens: a.integer(),
     })
     .returns(a.json())
     .handler(a.handler.function(aiGenerate))
@@ -392,7 +392,6 @@ generateAIContent: a
     .handler(a.handler.function(cdiScore))
     .authorization((allow) => [
       allow.authenticated(),
-      allow.publicApiKey(),
     ]),
 
   scoreStaiSession: a
@@ -404,7 +403,6 @@ generateAIContent: a
     .handler(a.handler.function(staiScore))
     .authorization((allow) => [
       allow.authenticated(),
-      allow.publicApiKey(),
     ]),
 
   interpretCuidaSession: a
@@ -417,10 +415,50 @@ generateAIContent: a
     .authorization((allow) => [
       allow.authenticated(),
     ]),
+
+  // ──────────────────────────────────────────────
+  // PORTAL DEL EVALUADO (público, mediado por Lambda con validación de código)
+  // Ninguna de estas operaciones da acceso directo a los modelos: la Lambda
+  // valida el accessCode server-side antes de leer/escribir nada.
+  // ──────────────────────────────────────────────
+
+  evalValidateCode: a
+    .query()
+    .arguments({ code: a.string().required() })
+    .returns(a.json())
+    .handler(a.handler.function(evalPortal))
+    .authorization((allow) => [allow.publicApiKey()]),
+
+  evalGetTest: a
+    .query()
+    .arguments({ code: a.string().required(), sessionId: a.string().required() })
+    .returns(a.json())
+    .handler(a.handler.function(evalPortal))
+    .authorization((allow) => [allow.publicApiKey()]),
+
+  evalSaveProgress: a
+    .mutation()
+    .arguments({
+      code: a.string().required(),
+      sessionId: a.string().required(),
+      answersJson: a.string().required(),
+      final: a.boolean().required(),
+    })
+    .returns(a.json())
+    .handler(a.handler.function(evalPortal))
+    .authorization((allow) => [allow.publicApiKey()]),
+
+  evalComplete: a
+    .mutation()
+    .arguments({ code: a.string().required() })
+    .returns(a.json())
+    .handler(a.handler.function(evalPortal))
+    .authorization((allow) => [allow.publicApiKey()]),
 }).authorization((allow) => [
   allow.resource(cdiScore),
   allow.resource(staiScore),
   allow.resource(cuidaInterpret),
+  allow.resource(evalPortal),
 ]);
 
 export type Schema = ClientSchema<typeof schema>;

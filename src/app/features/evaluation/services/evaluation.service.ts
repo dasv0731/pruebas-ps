@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../../../../amplify/data/resource';
+import { TestLoaderService } from '../../assessments/services/test-loader.service';
+import { listAll } from '../../../core/utils/paginate';
 
 const client = generateClient<Schema>();
 const publicClient = generateClient<Schema>({ authMode: 'apiKey' });
@@ -9,6 +11,8 @@ const publicClient = generateClient<Schema>({ authMode: 'apiKey' });
   providedIn: 'root',
 })
 export class EvaluationService {
+
+  constructor(private testLoader: TestLoaderService) {}
 
   // ── PSICÓLOGA (autenticado) ──
 
@@ -40,10 +44,10 @@ export class EvaluationService {
   }
 
   async getEvaluationSessionBySubject(subjectId: string) {
-    const { data, errors } = await (client.models as any).EvaluationSession.list({
+    const data = await listAll<any>((args) => (client.models as any).EvaluationSession.list({
       filter: { subjectId: { eq: subjectId } },
-    });
-    if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
+      ...args,
+    }));
     const active = data.filter((s: any) =>
       s.status === 'ACTIVE' || s.status === 'PAUSED'
     );
@@ -73,124 +77,43 @@ export class EvaluationService {
     return data;
   }
 
-  // ── EVALUADO (público con API key) ──
+  // ── EVALUADO (público, mediado por la Lambda eval-portal) ──
+  // Ninguna operación accede a los modelos directamente: la Lambda valida el
+  // accessCode server-side en cada llamada. La API key pública ya no puede
+  // enumerar ni alterar datos de menores.
 
+  private parsePortal(res: any): any {
+    if (res?.errors?.length) throw new Error(res.errors.map((e: any) => e.message).join(', '));
+    const d = res?.data;
+    return typeof d === 'string' ? JSON.parse(d) : d;
+  }
+
+  /** Valida el código; devuelve { evalSessionId, subjectName, tests } o null. */
   async validateCode(code: string) {
-    const { data, errors } = await (publicClient.models as any).EvaluationSession.list({
-      filter: { accessCode: { eq: code } },
-    });
-    if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
-
-    if (!data || data.length === 0) return null;
-
-    const session = data[0];
-
-    if (session.status !== 'ACTIVE') return null;
-    if (new Date(session.expiresAt) < new Date()) {
-      await (publicClient.models as any).EvaluationSession.update({
-        id: session.id,
-        status: 'EXPIRED',
-      });
-      return null;
-    }
-
-    return session;
+    const parsed = this.parsePortal(await (publicClient.queries as any).evalValidateCode({ code }));
+    return parsed?.valid ? parsed : null;
   }
 
-  async getSessionPublic(sessionId: string) {
-    const { data, errors } = await (publicClient.models as any).EvaluationSession.get({
-      id: sessionId,
-    });
-    if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
-    return data;
+  /** Datos de una prueba (estado + respuestas guardadas para reanudar) o null. */
+  async getTest(code: string, sessionId: string) {
+    const parsed = this.parsePortal(await (publicClient.queries as any).evalGetTest({ code, sessionId }));
+    return parsed?.ok ? parsed : null;
   }
 
-  async getAssessmentSessionPublic(sessionId: string) {
-    const { data, errors } = await (publicClient.models as any).AssessmentSession.get({
-      id: sessionId,
-    });
-    if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
-    return data;
+  /** Guarda progreso; si final=true, la Lambda completa y puntúa server-side. */
+  async saveProgress(code: string, sessionId: string, answersJson: string, final: boolean) {
+    const parsed = this.parsePortal(await (publicClient.mutations as any).evalSaveProgress({
+      code, sessionId, answersJson, final,
+    }));
+    if (!parsed?.ok) throw new Error(parsed?.error || 'Error al guardar las respuestas');
+    return parsed;
   }
 
-  async getAssessmentPublic(assessmentId: string) {
-    try {
-      console.log('Fetching assessment with id:', assessmentId);
-      const { data, errors } = await (publicClient.models as any).Assessment.list({
-        filter: { id: { eq: assessmentId } },
-      });
-      console.log('Assessment list result:', data, 'Errors:', errors);
-      if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
-      return data && data.length > 0 ? data[0] : null;
-    } catch (err: any) {
-      console.error('Assessment fetch error:', err);
-      return null;
-    }
-  }
-
-  async saveAnswersPublic(
-    sessionId: string,
-    answers: string,
-    status: string,
-    evaluationSessionId?: string
-  ) {
-    const updatePayload: any = {
-      id: sessionId,
-      answers,
-      status,
-    };
-
-    if (status === 'COMPLETED') {
-      updatePayload.completedAt = new Date().toISOString();
-
-      // Al completar, congelar edad y sexo desde la EvaluationSession
-      if (evaluationSessionId) {
-        const evalResult = await (publicClient.models as any).EvaluationSession.get({
-          id: evaluationSessionId,
-        });
-
-        if (evalResult.data) {
-          if (evalResult.data.subjectAgeYears != null) {
-            updatePayload.subjectAgeYears = evalResult.data.subjectAgeYears;
-          }
-          if (evalResult.data.subjectSex != null) {
-            updatePayload.subjectSex = evalResult.data.subjectSex;
-          }
-        }
-      }
-    }
-    const { data, errors } = await (publicClient.models as any).AssessmentSession.update(updatePayload);
-    if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
-    return data;
-  }
-
-  async scorePublic(sessionId: string, answers: number[]) {
-    const totalScore = answers.reduce((sum, val) => sum + val, 0);
-
-    const { data, errors } = await (publicClient.models as any).AssessmentScoring.create({
-      sessionId,
-      totalScore,
-      scores: JSON.stringify({ raw: totalScore, answers }),
-      source: 'LOCAL',
-      status: 'COMPLETED',
-      version: 1,
-      isCurrent: true,
-      generatedAt: new Date().toISOString(),
-    });
-    if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
-
-    await this.saveAnswersPublic(sessionId, JSON.stringify(answers), 'SCORED');
-
-    return totalScore;
-  }
-
-  async completeEvaluationSession(sessionId: string) {
-    const { data, errors } = await (publicClient.models as any).EvaluationSession.update({
-      id: sessionId,
-      status: 'COMPLETED',
-    });
-    if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
-    return data;
+  /** Cierra la sesión de evaluación (valida el código server-side). */
+  async completeEval(code: string) {
+    const parsed = this.parsePortal(await (publicClient.mutations as any).evalComplete({ code }));
+    if (!parsed?.ok) throw new Error(parsed?.error || 'Error al finalizar la sesión');
+    return parsed;
   }
 
   private generateCode(): string {

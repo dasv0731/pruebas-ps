@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../../../../amplify/data/resource';
+import { listAll } from '../../../core/utils/paginate';
 
 const client = generateClient<Schema>();
 
@@ -12,13 +13,10 @@ export class SubjectReportService {
   // ── SUBJECT ASSESSMENT REPORT ──
 
   async getAssessmentReport(subjectId: string) {
-    const { data, errors } = await (client.models as any).SubjectAssessmentReport.list({
-      filter: {
-        subjectId: { eq: subjectId },
-        isCurrent: { eq: true },
-      },
-    });
-    if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
+    const data = await listAll<any>((args) => (client.models as any).SubjectAssessmentReport.list({
+      filter: { subjectId: { eq: subjectId }, isCurrent: { eq: true } },
+      ...args,
+    }));
     return data.length > 0 ? data[0] : null;
   }
 
@@ -54,13 +52,10 @@ export class SubjectReportService {
   // ── SUBJECT INTERVIEW REPORT ──
 
   async getInterviewReport(subjectId: string) {
-    const { data, errors } = await (client.models as any).SubjectInterviewReport.list({
-      filter: {
-        subjectId: { eq: subjectId },
-        isCurrent: { eq: true },
-      },
-    });
-    if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
+    const data = await listAll<any>((args) => (client.models as any).SubjectInterviewReport.list({
+      filter: { subjectId: { eq: subjectId }, isCurrent: { eq: true } },
+      ...args,
+    }));
     return data.length > 0 ? data[0] : null;
   }
 
@@ -96,13 +91,10 @@ export class SubjectReportService {
   // ── SUBJECT REPORT (Informe final por implicado) ──
 
   async getSubjectReport(subjectId: string) {
-    const { data, errors } = await (client.models as any).SubjectReport.list({
-      filter: {
-        subjectId: { eq: subjectId },
-        isCurrent: { eq: true },
-      },
-    });
-    if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
+    const data = await listAll<any>((args) => (client.models as any).SubjectReport.list({
+      filter: { subjectId: { eq: subjectId }, isCurrent: { eq: true } },
+      ...args,
+    }));
     return data.length > 0 ? data[0] : null;
   }
 
@@ -154,13 +146,10 @@ export class SubjectReportService {
   // ── CASE REPORT (Informe final del juicio) ──
 
   async getCaseReport(caseId: string) {
-    const { data, errors } = await (client.models as any).CaseReport.list({
-      filter: {
-        caseId: { eq: caseId },
-        isCurrent: { eq: true },
-      },
-    });
-    if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
+    const data = await listAll<any>((args) => (client.models as any).CaseReport.list({
+      filter: { caseId: { eq: caseId }, isCurrent: { eq: true } },
+      ...args,
+    }));
     return data.length > 0 ? data[0] : null;
   }
 
@@ -205,23 +194,28 @@ export class SubjectReportService {
   // ── VALIDACIONES ──
 
   async getAllSubjectReports(caseId: string) {
-    const { data, errors } = await (client.models as any).SubjectReport.list({
-      filter: {
-        caseId: { eq: caseId },
-        isCurrent: { eq: true },
-      },
-    });
-    if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
-    return data || [];
+    return listAll((args) => (client.models as any).SubjectReport.list({
+      filter: { caseId: { eq: caseId }, isCurrent: { eq: true } },
+      ...args,
+    }));
   }
 
-  async canGenerateCaseReport(caseId: string, totalSubjects: number): Promise<{ ready: boolean; approved: number; missing: number }> {
+  async canGenerateCaseReport(
+    caseId: string,
+    subjects: { id: string; excludedFromCaseReport?: boolean | null }[]
+  ): Promise<{ ready: boolean; approved: number; excluded: number; missing: number }> {
     const reports = await this.getAllSubjectReports(caseId);
-    const approved = reports.filter((r: any) => r.status === 'APPROVED').length;
+    const excludedIds = new Set(subjects.filter(s => !!s.excludedFromCaseReport).map(s => s.id));
+    const approved = reports.filter(
+      (r: any) => r.status === 'APPROVED' && !excludedIds.has(r.subjectId)
+    ).length;
+    const excluded = excludedIds.size;
+    const total = subjects.length;
     return {
-      ready: approved === totalSubjects && totalSubjects > 0,
+      ready: total > 0 && approved >= 1 && approved + excluded === total,
       approved,
-      missing: totalSubjects - approved,
+      excluded,
+      missing: total - approved - excluded,
     };
   }
 

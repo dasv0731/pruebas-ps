@@ -42,10 +42,10 @@ export class PaiXmlExportService {
       } catch { answers = []; }
     }
 
-    // PAI: opciones almacenadas como 1-4, TEA espera 0-3 (F=0, LV=1, BV=2, CV=3)
-    const respuestas = answers.map((a) => Math.max(0, (a || 1) - 1)).join('');
+    // PAI: opciones almacenadas 1-4; 0 = ítem en blanco. TEA usa 0 para blancos/dobles marcas.
+    const respuestas = answers.join('');
 
-    return `<?xml version="1.0" encoding="UTF-8"?>\n<sujetos>\n  <sujeto idSujeto='1' nombre='${nombre}' edad='${edad}' sexo='${sexo}' respuestas='${respuestas}' />\n</sujetos>`;
+    return `<sujetos>\n  <sujeto idSujeto='1' nombre='${nombre}' edad='${edad}' sexo='${sexo}' respuestas='${respuestas}' />\n</sujetos>`;
   }
 
   downloadXml(xml: string, nombre: string): void {
