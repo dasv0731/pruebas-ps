@@ -23,21 +23,68 @@ export interface ScaleRow {
   badgeClass: string;
 }
 
-function categorize(pc: number, type: ScaleType): { category: string; badgeClass: string } {
-  if (type === 'inadaptacion') {
-    if (pc >= 85) return { category: 'Muy alta', badgeClass: 'badge-critical' };
-    if (pc >= 75) return { category: 'Alta', badgeClass: 'badge-high' };
-    if (pc >= 50) return { category: 'Media-alta', badgeClass: 'badge-moderate' };
-    if (pc >= 25) return { category: 'Media', badgeClass: 'badge-normal' };
-    return { category: 'Baja', badgeClass: 'badge-good' };
+// Factores generales que se expresan en el sistema Hepta (7 categorías): G, P, E,
+// S, Pa, M. El resto de escalas (subfactores, F, H, Dis, PI, Contr.) usan el
+// sistema de Indicación Crítica (4 categorías). Fuente: TAMAI-guia-de-correccion.md
+// §6.1-6.2 y §7. Los umbrales previos (75/85, tercios) NO correspondían al manual.
+const HEPTA_FACTORS = new Set(['G', 'P', 'E', 'S', 'Pa', 'M']);
+
+/** Categoría Hepta por centil (factores generales). MB 1-5 · B 6-20 · CB 21-40 · M 41-60 · CA 61-80 · A 81-95 · MA 96-99. */
+function heptaCategory(pc: number): string {
+  if (pc <= 5) return 'Muy bajo (MB)';
+  if (pc <= 20) return 'Bajo (B)';
+  if (pc <= 40) return 'Casi bajo (CB)';
+  if (pc <= 60) return 'Medio (M)';
+  if (pc <= 80) return 'Casi alto (CA)';
+  if (pc <= 95) return 'Alto (A)';
+  return 'Muy alto (MA)';
+}
+
+/** Categoría de Indicación Crítica por centil. SC 1-65 · C 66-80 · CC 81-95 · CCC 96-99. */
+function criticalCategory(pc: number): string {
+  if (pc <= 65) return 'Sin constatar (SC)';
+  if (pc <= 80) return 'Constatada (C)';
+  if (pc <= 95) return 'Bien constatada (CC)';
+  return 'Muy constatada (CCC)';
+}
+
+function categorize(pc: number, code: string, type: ScaleType): { category: string; badgeClass: string } {
+  // Centil válido = 1-99. Sin percentil transcrito, no se categoriza.
+  if (pc == null || pc < 1) return { category: '—', badgeClass: 'badge-neutral' };
+
+  const isParental = type === 'parental';
+
+  if (HEPTA_FACTORS.has(code)) {
+    const category = heptaCategory(pc);
+    // Dirección (§7): en Pa/M mayor centil = educación MÁS adecuada (favorable);
+    // en G/P/E/S mayor centil = mayor inadaptación (desfavorable).
+    let badgeClass: string;
+    if (isParental) {
+      if (pc <= 5) badgeClass = 'badge-critical';
+      else if (pc <= 20) badgeClass = 'badge-high';
+      else if (pc <= 40) badgeClass = 'badge-moderate';
+      else if (pc <= 80) badgeClass = 'badge-normal';
+      else badgeClass = 'badge-good';
+    } else {
+      if (pc <= 40) badgeClass = 'badge-good';
+      else if (pc <= 60) badgeClass = 'badge-normal';
+      else if (pc <= 80) badgeClass = 'badge-moderate';
+      else if (pc <= 95) badgeClass = 'badge-high';
+      else badgeClass = 'badge-critical';
+    }
+    return { category, badgeClass };
   }
-  if (type === 'satisfaccion') {
-    if (pc >= 75) return { category: 'Alta', badgeClass: 'badge-good' };
-    if (pc >= 50) return { category: 'Media-alta', badgeClass: 'badge-normal' };
-    if (pc >= 25) return { category: 'Media', badgeClass: 'badge-moderate' };
-    return { category: 'Baja', badgeClass: 'badge-critical' };
-  }
-  return { category: '—', badgeClass: 'badge-neutral' };
+
+  // Indicación crítica: solo se "constata" a partir del centil 66; valor
+  // orientativo/clínico, no normativo (§6.2). Se colorea por grado de
+  // constatación, sin asumir valencia buena/mala del subfactor concreto.
+  const category = criticalCategory(pc);
+  let badgeClass: string;
+  if (pc <= 65) badgeClass = 'badge-normal';
+  else if (pc <= 80) badgeClass = 'badge-moderate';
+  else if (pc <= 95) badgeClass = 'badge-high';
+  else badgeClass = 'badge-critical';
+  return { category, badgeClass };
 }
 
 @Component({
@@ -109,7 +156,7 @@ export class TamaiResultsComponent implements OnInit {
       const allNodes = flattenScaleNodesFull(cfg.blocks);
       this.rows = allNodes.map((n: ScaleNode): ScaleRow => {
         const score = this.manual!.escalas[n.code] ?? { pd: 0, pc: 0 };
-        const { category, badgeClass } = categorize(score.pc, n.type);
+        const { category, badgeClass } = categorize(score.pc, n.code, n.type);
         return {
           code: n.code,
           label: n.label,

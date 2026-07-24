@@ -11,13 +11,11 @@ import { CUIDA_INTERPRETATION, buildCuidaAIInputFromFindings } from '../../tests
 
 export type EnCategory = 'BAJO' | 'NORMAL' | 'ALTO';
 export type QualLevel = 'MUY_BAJO' | 'BAJO' | 'MEDIO' | 'ALTO' | 'MUY_ALTO';
-export type ParentingStyle = 'INDUCTIVO' | 'RIGIDO' | 'PERMISIVO' | 'SOBREPROTECTOR' | 'MIXTO';
 
 export interface QualitativeLevel { en: number; level: QualLevel; }
 export interface JointReadingFlag { pattern: string; description: string; scalesInvolved: string[]; }
 export interface CriticalItemFlag { itemNumber: number; escala: string; content: string; reason: string; rawResponse: number | null; }
 export interface DeseabilidadInterpretation { en: number; level: QualLevel; contaminationRisk: boolean; scalesToInterpretWithCaution: string[]; }
-export interface ParentingStyleResult { predominantStyle: ParentingStyle; confidence: 'ALTA' | 'MEDIA' | 'BAJA'; supportingScales: string[]; recommendation: string; }
 
 export interface CuidaFindings {
   manualScoring: CuidaManualScoring;
@@ -28,7 +26,6 @@ export interface CuidaFindings {
   deseabilidadInterpretation: DeseabilidadInterpretation;
   jointReadingFlags: JointReadingFlag[];
   criticalItemsToClarify: CriticalItemFlag[];
-  parentingStyleInference: ParentingStyleResult;
   generatedAt: string;
   warnings: string[];
 }
@@ -235,20 +232,6 @@ export class CuidaResultsComponent implements OnInit {
     if (en === 'ALTO') return 'badge-danger';
     if (en === 'BAJO') return 'badge-warn';
     return 'badge-ok';
-  }
-
-  getParentingStyleLabel(style: ParentingStyle): string {
-    const map: Record<ParentingStyle, string> = {
-      INDUCTIVO: 'Inductivo', RIGIDO: 'Rígido', PERMISIVO: 'Permisivo',
-      SOBREPROTECTOR: 'Sobreprotector', MIXTO: 'Mixto / Indeterminado',
-    };
-    return map[style] ?? style;
-  }
-
-  getConfidenceClass(c: 'ALTA' | 'MEDIA' | 'BAJA'): string {
-    if (c === 'ALTA') return 'badge-ok';
-    if (c === 'MEDIA') return 'badge-warn';
-    return 'badge-neutral';
   }
 
   getScaleLabel(key: string): string {

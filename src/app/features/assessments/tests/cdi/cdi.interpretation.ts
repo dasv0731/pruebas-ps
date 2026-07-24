@@ -1,31 +1,17 @@
 import { InterpretationConfig, ScoringResult, ClinicalRule, AIInput } from '../../models/test.interfaces';
 import type { CdiScoringData } from '../../components/cdi-results/cdi-results.component';
 
+// Solo se conserva el punto de corte de cribado que el manual TEA respalda
+// (PD Total ≥ 19, Del Barrio 1997). Las antiguas bandas <10 / 10-18 y las reglas
+// de "predominio" D vs A (ratio 1.5×) eran cortes INVENTADOS que el manual no
+// recoge; se han suprimido. La clasificación clínica real se hace por PERCENTIL
+// baremado (ver classification.ts en la Lambda cdi-score): ≤85 sin síntomas,
+// 90-95 leve, 96-99 severa. Fuente: correccion/CDI-guia-de-correccion.md §5.
 const CLINICAL_RULES: ClinicalRule[] = [
   {
-    condition: (r) => r.totalScore < 10,
-    finding: 'Puntuación total BAJA (<10/54): sin indicadores significativos de sintomatología depresiva',
-    severity: 'LOW',
-  },
-  {
-    condition: (r) => r.totalScore >= 10 && r.totalScore < 19,
-    finding: 'Puntuación total MODERADA (10-18/54): presencia de algunos síntomas depresivos leves',
-    severity: 'MODERATE',
-  },
-  {
     condition: (r) => r.totalScore >= 19,
-    finding: 'Puntuación total ALTA (≥19/54): SUPERA EL PUNTO DE CORTE CLÍNICO. Indica posible trastorno depresivo',
+    finding: 'Puntuación total directa ≥ 19/54: supera el punto de corte de cribado del manual (Del Barrio, 1997); posible caso a confirmar con baremo y evaluación multimodal',
     severity: 'HIGH',
-  },
-  {
-    condition: (r) => (r.subscales?.['Disforia (D)'] || 0) > (r.subscales?.['Autoestima Negativa (A)'] || 0) * 1.5,
-    finding: 'Predominio marcado de disforia sobre autoestima negativa: el componente afectivo-emocional es más prominente',
-    severity: 'MODERATE',
-  },
-  {
-    condition: (r) => (r.subscales?.['Autoestima Negativa (A)'] || 0) > (r.subscales?.['Disforia (D)'] || 0) * 1.5,
-    finding: 'Predominio de autoestima negativa sobre disforia: el componente cognitivo-autoevaluativo es más prominente',
-    severity: 'MODERATE',
   },
 ];
 
@@ -38,7 +24,7 @@ REGLAS:
 - Usa solo los datos proporcionados.
 - El punto de corte clínico es 19. Indica claramente si se supera o no.
 - Interpreta las subescalas de Disforia y Autoestima Negativa.
-- Considera que es población infantil (7-17 años).
+- Considera que es población infantil (7-15 años).
 - Concluye con la relevancia para el contexto pericial.
 - Escribe en párrafos narrativos, sin encabezados ni viñetas.
 - Si se aporta puntuación baremada (PC/T), priorízala sobre la directa.
@@ -54,7 +40,7 @@ REGLAS:
     }
     return {
       testName: 'CDI - Inventario de Depresión Infantil',
-      testDescription: 'Evalúa síntomas depresivos en niños de 7 a 17 años',
+      testDescription: 'Evalúa síntomas depresivos en niños de 7 a 15 años',
       scores: {
         'Puntuación total': result.totalScore,
         'Máximo posible': 54,

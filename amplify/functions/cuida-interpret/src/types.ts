@@ -1,6 +1,5 @@
 export type EnCategory = 'BAJO' | 'NORMAL' | 'ALTO';
 export type QualLevel = 'MUY_BAJO' | 'BAJO' | 'MEDIO' | 'ALTO' | 'MUY_ALTO';
-export type ParentingStyle = 'INDUCTIVO' | 'RIGIDO' | 'PERMISIVO' | 'SOBREPROTECTOR' | 'MIXTO';
 export type ReportMode = 'COMPLETE' | 'NOT_INTERPRETABLE';
 
 export interface CuidaEscalas {
@@ -59,13 +58,6 @@ export interface DeseabilidadInterpretation {
   scalesToInterpretWithCaution: string[];
 }
 
-export interface ParentingStyleResult {
-  predominantStyle: ParentingStyle;
-  confidence: 'ALTA' | 'MEDIA' | 'BAJA';
-  supportingScales: string[];
-  recommendation: string;
-}
-
 export interface ProfileValidity {
   isValid: boolean;
   reason: string | null;
@@ -80,7 +72,6 @@ export interface CuidaFindings {
   deseabilidadInterpretation: DeseabilidadInterpretation;
   jointReadingFlags: JointReadingFlag[];
   criticalItemsToClarify: CriticalItemFlag[];
-  parentingStyleInference: ParentingStyleResult;
   generatedAt: string;
   warnings: string[];
 }

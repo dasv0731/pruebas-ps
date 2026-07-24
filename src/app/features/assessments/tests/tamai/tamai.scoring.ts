@@ -1,74 +1,25 @@
 import { TestScoring, ScoringResult } from '../../models/test.interfaces';
 
+/**
+ * ⚠️ El TAMAI NO se corrige a mano ni por software propio.
+ *
+ * La clave ítem→factor del TAMAI (qué elemento puntúa en cada factor/subfactor)
+ * NO consta en el manual de TEA: la corrección es informática y propiedad de
+ * TEACorrige. Cualquier suma "por rangos de índice" es una clave INVENTADA que
+ * produciría puntuaciones directas sin fundamento — inaceptable en un informe
+ * pericial. Fuente: correccion/TAMAI-guia-de-correccion.md §1, §5, §9.
+ *
+ * Por eso el flujo real es la TRANSCRIPCIÓN de las PD y PC que devuelve
+ * TEACorrige (componentes tamai-entry / tamai-results, source 'TEA_MANUAL_TAMAI').
+ * Este `score()` existe solo para cumplir la interfaz `TestScoring`; se bloquea
+ * como fail-safe para que nunca se emita una corrección local fabricada.
+ */
 export const TAMAI_SCORING: TestScoring = {
-  score(answers: number[]): ScoringResult {
-    // SÍ = 1, NO = 2 (opción seleccionada)
-    // Convertir a 1/0: opción 1 (SÍ) = 1, opción 2 (NO) = 0
-    const binary: number[] = answers.map((a) => a === 1 ? 1 : 0);
-
-    const personalItems = binary.slice(0, 22);
-    const escolarItems = binary.slice(22, 42);
-    const socialItems = binary.slice(42, 60);
-    const satisfaccionItems = binary.slice(60, 77);
-    const escolarPosItems = binary.slice(77, 88);
-    const socialPosItems = binary.slice(88, 105);
-    const familiarItems = binary.slice(105, 110);
-    const hermanosItems = binary.slice(110, 115);
-    const padreItems = binary.slice(115, 145);
-    const madreItems = binary.slice(145, 175);
-
-    const personalScore = personalItems.reduce((s, v) => s + v, 0);
-    const escolarScore = escolarItems.reduce((s, v) => s + v, 0);
-    const socialScore = socialItems.reduce((s, v) => s + v, 0);
-    const satisfaccionScore = satisfaccionItems.reduce((s, v) => s + v, 0);
-    const escolarPosScore = escolarPosItems.reduce((s, v) => s + v, 0);
-    const socialPosScore = socialPosItems.reduce((s, v) => s + v, 0);
-    const familiarScore = familiarItems.reduce((s, v) => s + v, 0);
-    const hermanosScore = hermanosItems.reduce((s, v) => s + v, 0);
-    const padreScore = padreItems.reduce((s, v) => s + v, 0);
-    const madreScore = madreItems.reduce((s, v) => s + v, 0);
-
-    const totalScore = binary.reduce((s, v) => s + v, 0);
-    const maxScore = binary.length;
-
-    return {
-      totalScore,
-      maxScore,
-      percentage: Math.round((totalScore / maxScore) * 100),
-      subscales: {
-        'Adaptación Personal': personalScore,
-        'Adaptación Escolar': escolarScore,
-        'Adaptación Social': socialScore,
-        'Satisfacción Personal': satisfaccionScore,
-        'Adaptación Escolar (positiva)': escolarPosScore,
-        'Adaptación Social (positiva)': socialPosScore,
-        'Adaptación Familiar': familiarScore,
-        'Relación con Hermanos': hermanosScore,
-        'Relación con Padre': padreScore,
-        'Relación con Madre': madreScore,
-      },
-      details: {
-        personalScore,
-        personalMax: 22,
-        escolarScore,
-        escolarMax: 20,
-        socialScore,
-        socialMax: 18,
-        satisfaccionScore,
-        satisfaccionMax: 17,
-        escolarPosScore,
-        escolarPosMax: 11,
-        socialPosScore,
-        socialPosMax: 17,
-        familiarScore,
-        familiarMax: 5,
-        hermanosScore,
-        hermanosMax: 5,
-        padreScore,
-        padreMax: 30,
-        madreScore,
-        madreMax: 30,
-      },
-    };
+  score(_answers: number[]): ScoringResult {
+    throw new Error(
+      'El TAMAI no admite corrección local: sus puntuaciones deben obtenerse de ' +
+        'TEACorrige (software oficial de TEA) y transcribirse (PD y PC) en el ' +
+        'formulario de entrada del TAMAI. No existe clave ítem→factor publicada.',
+    );
   },
 };

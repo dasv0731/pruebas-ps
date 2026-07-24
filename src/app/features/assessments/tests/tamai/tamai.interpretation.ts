@@ -54,7 +54,8 @@ REGLAS:
 - Interpreta cada área de adaptación (personal, escolar, social, familiar).
 - Incluye la percepción hacia padre y madre si hay datos relevantes.
 - Relaciona los hallazgos entre sí (ej: inadaptación escolar con social).
-- Las puntuaciones son percentiles (PC) baremados por TEA; >=75 alto, >=85 muy alto en inadaptación.
+- Las puntuaciones son percentiles (PC) baremados por TEA. Factores generales (G, P, E, S, Pa, M) en sistema Hepta: Muy bajo 1-5, Bajo 6-20, Casi bajo 21-40, Medio 41-60, Casi alto 61-80, Alto 81-95, Muy alto 96-99. Subfactores y escalas no generales (F, H, Dis, PI, Contr.) en Indicación Crítica: Sin constatar 1-65, Constatada 66-80, Bien constatada 81-95, Muy constatada 96-99.
+- DIRECCIÓN: en P, E, S, F, H, Dis mayor PC = mayor inadaptación/problema. En Educación del padre (Pa) y madre (M) mayor PC = estilo educador MÁS adecuado (favorable); un PC bajo en Pa/M es lo desfavorable.
 - Concluye con la relevancia para el contexto pericial.
 - Escribe en párrafos narrativos, sin encabezados ni viñetas.`,
 
@@ -94,8 +95,11 @@ export function buildTamaiAIInputFromRows(
       pc: r.pc,
       categoria: r.category,
     })),
+    // Escalas destacadas = las que el badge marca como clínicamente atendibles
+    // (badge-high / badge-critical). Es direccional: para Pa/M destaca la
+    // educación POCO adecuada (PC bajo), para inadaptación el PC alto.
     escalasDestacadas: rows
-      .filter((r) => r.category === 'Alta' || r.category === 'Muy alta')
+      .filter((r) => r.badgeClass === 'badge-high' || r.badgeClass === 'badge-critical')
       .map((r) => ({ code: r.code, label: r.label, pc: r.pc, categoria: r.category })),
     context: 'Evaluación pericial judicial - población infantil',
   };

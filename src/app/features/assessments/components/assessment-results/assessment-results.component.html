@@ -44,6 +44,35 @@
         </div>
       </div>
 
+      <!-- Baremo STAI (Tabla 9: centil / decatipo por sexo·edad) -->
+      <div *ngIf="staiNormed" class="baremo-section">
+        <h3>Puntuaciones baremadas (Tabla 9)</h3>
+        <p *ngIf="staiNormed.grupoBaremo" class="baremo-group">Baremo: {{ staiNormed.grupoBaremo }}</p>
+        <div *ngIf="staiNormed.avisoBaremo" class="baremo-aviso">{{ staiNormed.avisoBaremo }}</div>
+        <table class="baremo-table" *ngIf="staiNormed.baremoAplicado">
+          <thead><tr><th>Escala</th><th>PD (0-60)</th><th>Centil</th><th>Decatipo</th></tr></thead>
+          <tbody>
+            <tr><td>Ansiedad Estado (A/E)</td><td>{{ staiNormed.estado.pd }}</td><td>{{ staiNormed.estado.centil }}</td><td>{{ staiNormed.estado.decatipo }}</td></tr>
+            <tr><td>Ansiedad Rasgo (A/R)</td><td>{{ staiNormed.rasgo.pd }}</td><td>{{ staiNormed.rasgo.centil }}</td><td>{{ staiNormed.rasgo.decatipo }}</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Baremo STAIC (Tabla 7: percentil / puntuación S por sexo·curso) -->
+      <div *ngIf="staicNormed" class="baremo-section">
+        <h3>Puntuaciones baremadas (Tabla 7)</h3>
+        <p *ngIf="staicNormed.grupoBaremo" class="baremo-group">Baremo: {{ staicNormed.grupoBaremo }}</p>
+        <div *ngIf="staicNormed.avisoBaremo" class="baremo-aviso">{{ staicNormed.avisoBaremo }}</div>
+        <table class="baremo-table" *ngIf="staicNormed.baremoAplicado">
+          <thead><tr><th>Escala</th><th>PD (20-60)</th><th>Percentil</th><th>Punt. S</th></tr></thead>
+          <tbody>
+            <tr><td>Ansiedad Estado (A-E)</td><td>{{ staicNormed.estado.pd }}</td><td>{{ staicNormed.estado.percentil }}</td><td>{{ staicNormed.estado.s }}</td></tr>
+            <tr><td>Ansiedad Rasgo (A-R)</td><td>{{ staicNormed.rasgo.pd }}</td><td>{{ staicNormed.rasgo.percentil }}</td><td>{{ staicNormed.rasgo.s }}</td></tr>
+          </tbody>
+        </table>
+        <div class="baremo-aviso">Nota: la clave de elementos inversos de A-E no está verificada contra el ejemplar oficial de TEA; la PD de A-E es provisional.</div>
+      </div>
+
       <!-- Interpretación IA -->
       <div class="interpretation-section">
         <div class="interpretation-header">

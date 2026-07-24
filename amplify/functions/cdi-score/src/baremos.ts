@@ -83,32 +83,36 @@ export const BAREM_TOTAL: BaremTable = {
 export const BAREM_DISFORIA: BaremTable = {
   name: 'DISFORIA',
   maxPossible: 32,
+  // Transcripción verificada contra CDI-guia-de-correccion.md §4 (baremo DISFORIA,
+  // manual TEA págs. 38 impresa) — tabla verificada visualmente a 500 dpi por el OCR
+  // había degradado las celdas. Sustituye la versión previa que tenía 36 celdas
+  // erróneas (V9-10, V11-15 y las tres columnas de mujeres desplazadas/omitidas).
   rows: [
     //   Pc   z      T    V7-8        V9-10       V11-15      M7-8        M9-10       M11-15
     row(   1, -1.11, 39,  x(),        x(),        x(),        x(),        x(),        x()        ),
     row(   5, -1.11, 39,  x(),        x(),        x(),        x(),        x(),        x()        ),
-    row(  10, -1.11, 39,  x(),        x(),        v(0),       x(),        x(),        x()        ),
+    row(  10, -1.11, 39,  x(),        x(),        v(0),       x(),        v(0),       v(0)       ),
     row(  15, -0.84, 42,  v(0),       v(0),       x(),        v(0),       x(),        x()        ),
     row(  20, -0.84, 42,  x(),        x(),        x(),        x(),        v(1),       v(1)       ),
     row(  25, -0.84, 42,  v(1),       v(1),       v(1),       v(1),       x(),        x()        ),
     row(  30, -0.57, 44,  x(),        x(),        x(),        x(),        x(),        x()        ),
-    row(  35, -0.57, 44,  v(2),       x(),        x(),        v(2),       x(),        x()        ),
-    row(  40, -0.57, 44,  x(),        v(2),       v(2),       x(),        x(),        v(2)       ),
-    row(  45, -0.30, 47,  x(),        x(),        x(),        x(),        x(),        x()        ),
-    row(  50, -0.30, 47,  v(3),       v(3),       x(),        x(),        v(2),       x()        ),
+    row(  35, -0.57, 44,  v(2),       x(),        x(),        x(),        v(2),       v(2)       ),
+    row(  40, -0.57, 44,  x(),        v(2),       v(2),       v(2),       x(),        x()        ),
+    row(  45, -0.30, 47,  x(),        x(),        x(),        x(),        v(3),       x()        ),
+    row(  50, -0.30, 47,  v(3),       v(3),       x(),        x(),        x(),        v(3)       ),
     row(  55,  0.00, 50,  x(),        x(),        v(3),       v(3),       x(),        x()        ),
-    row(  60,  0.00, 50,  v(4),       v(4),       x(),        x(),        v(3),       v(4)       ),
-    row(  65,  0.23, 52,  x(),        x(),        x(),        x(),        x(),        x()        ),
-    row(  70,  0.23, 52,  v(5),       v(5),       v(4),       x(),        x(),        v(5)       ),
-    row(  75,  0.50, 55,  v(6),       x(),        x(),        v(4),       v(5),       x()        ),
-    row(  80,  0.77, 58,  x(),        v(6),       v(5),       x(),        x(),        r(6,7)     ),
-    row(  85,  1.04, 60,  v(7),       v(7),       r(6,7),     r(7,8),     v(6),       v(8)       ),
-    row(  90,  1.31, 63,  v(8),       v(8),       v(8),       x(),        v(7),       v(9)       ),
-    row(  91,  1.57, 66,  v(9),       v(9),       v(9),       x(),        v(8),       v(10)      ),
-    row(  92,  1.57, 66,  x(),        x(),        x(),        x(),        x(),        v(11)      ),
+    row(  60,  0.00, 50,  v(4),       v(4),       x(),        x(),        v(4),       v(4)       ),
+    row(  65,  0.23, 52,  x(),        x(),        v(4),       v(4),       v(5),       x()        ),
+    row(  70,  0.23, 52,  v(5),       v(5),       v(5),       v(5),       x(),        v(5)       ),
+    row(  75,  0.50, 55,  v(6),       v(6),       x(),        x(),        v(6),       v(6)       ),
+    row(  80,  0.77, 58,  x(),        v(7),       v(6),       v(6),       v(7),       r(7,8)     ),
+    row(  85,  1.04, 60,  v(7),       v(8),       r(7,8),     r(7,8),     v(8),       v(9)       ),
+    row(  90,  1.31, 63,  v(8),       v(9),       v(9),       x(),        v(9),       v(10)      ),
+    row(  91,  1.57, 66,  v(9),       v(10),      v(10),      x(),        v(10),      v(11)      ),
+    row(  92,  1.57, 66,  x(),        x(),        x(),        x(),        x(),        v(12)      ),
     row(  95,  2.11, 71,  r(10,12),   r(11,12),   r(11,14),   v(9),       r(11,12),   r(13,14)   ),
     row(  96,  2.11, 71,  r(13,15),   r(13,15),   r(15,18),   r(10,11),   r(13,14),   r(15,16)   ),
-    row(  97,  2.38, 74,  r(16,18),   r(16,18),   r(19,21),   r(12,13),   r(15,16),   r(17,18)   ),
+    row(  97,  2.38, 74,  r(16,18),   r(16,19),   r(19,21),   r(12,13),   r(15,16),   r(17,18)   ),
     row(  98,  2.92, 79,  r(19,21),   r(20,21),   r(22,25),   v(14),      r(17,18),   r(19,20)   ),
     row(  99,  3.19, 82,  r(22,32),   r(22,32),   r(26,32),   r(15,32),   r(19,32),   r(21,32)   ),
   ],
@@ -118,14 +122,10 @@ export const BAREM_DISFORIA: BaremTable = {
 // BAREMOS ESCALA AUTOESTIMA NEGATIVA (manual TEA, página 39)
 // ══════════════════════════════════════════════════════════
 //
-// ⚠️ RECONSTRUCCIÓN PROVISIONAL en las columnas de NIÑAS (M7-8, M9-10, M11-15),
-// filas Pc50 y Pc95-99. La transcripción original tenía celdas no monótonas y
-// solapadas (percentiles invertidos: una PD menor daba percentil mayor). Se han
-// ajustado a valores monótonos plausibles marcados con "[RECON p39]" para no
-// entregar percentiles invertidos, PERO NO están verificados contra el manual.
-// PENDIENTE: sustituir por los valores exactos de la página 39 (Autoestima
-// Negativa, Mujeres 7-8 / 9-10 / 11-15, filas Pc95 a Pc99). Las columnas de
-// varones (V) y las tablas TOTAL y DISFORIA no se han tocado (estaban correctas).
+// Transcripción verificada contra CDI-guia-de-correccion.md §4 (baremo AUTOESTIMA,
+// manual TEA pág. 39 impresa). Sustituye la "reconstrucción provisional" previa que
+// tenía 12 celdas erróneas en las columnas de mujeres (M9-10 filas Pc95-99 y M11-15
+// filas Pc45-95). Puntuación ALTA = autoestima baja (escala de autoestima negativa).
 
 export const BAREM_AUTOESTIMA: BaremTable = {
   name: 'AUTOESTIMA',
@@ -142,21 +142,21 @@ export const BAREM_AUTOESTIMA: BaremTable = {
     row(  30, -0.46, 45,  x(),        x(),        v(5),       v(3),       v(4),       x()        ),
     row(  35, -0.46, 45,  x(),        v(4),       x(),        x(),        x(),        v(6)       ),
     row(  40, -0.16, 48,  v(4),       x(),        v(6),       v(4),       x(),        x()        ),
-    row(  45, -0.16, 48,  x(),        x(),        x(),        x(),        v(5),       x()        ),
-    row(  50, -0.16, 48,  v(5),       v(5),       v(7),       x(),        x(),        v(7)       ), // [RECON p39] M11-15: v(6)->v(7) (dup con Pc35)
+    row(  45, -0.16, 48,  x(),        x(),        x(),        x(),        v(5),       v(7)       ),
+    row(  50, -0.16, 48,  v(5),       v(5),       v(7),       x(),        x(),        x()        ),
     row(  55,  0.13, 51,  x(),        x(),        x(),        v(5),       x(),        v(8)       ),
     row(  60,  0.13, 51,  v(6),       v(6),       v(8),       x(),        v(6),       x()        ),
     row(  65,  0.42, 54,  x(),        x(),        x(),        v(6),       x(),        x()        ),
-    row(  70,  0.42, 54,  v(7),       v(7),       v(9),       x(),        v(7),       x()        ),
-    row(  75,  0.72, 57,  x(),        x(),        x(),        v(7),       x(),        v(9)       ),
+    row(  70,  0.42, 54,  v(7),       v(7),       v(9),       x(),        v(7),       v(9)       ),
+    row(  75,  0.72, 57,  x(),        x(),        x(),        v(7),       x(),        x()        ),
     row(  80,  0.72, 57,  v(8),       v(8),       v(10),      x(),        v(8),       v(10)      ),
-    row(  85,  1.02, 60,  x(),        v(9),       v(11),      v(8),       v(9),       x()        ),
-    row(  90,  1.32, 63,  v(9),       v(10),      v(12),      v(9),       v(10),      v(11)      ),
+    row(  85,  1.02, 60,  x(),        v(9),       v(11),      v(8),       v(9),       v(11)      ),
+    row(  90,  1.32, 63,  v(9),       v(10),      v(12),      v(9),       v(10),      v(12)      ),
     row(  91,  1.32, 63,  v(10),      v(11),      x(),        v(10),      x(),        x()        ),
-    row(  95,  1.61, 66,  v(11),      r(12,13),   v(13),      r(11,12),   r(11,12),   v(12)      ), // [RECON p39] M9-10: r(11,13)->r(11,12); M11-15: r(15,16)->v(12)
-    row(  96,  1.91, 69,  v(12),      r(14,15),   v(14),      v(13),      r(13,14),   r(13,14)   ), // [RECON p39] M7-8: v(12)->v(13); M9-10: v(13)->r(13,14)
-    row(  97,  1.91, 69,  v(13),      r(16,17),   v(15),      v(14),      r(15,16),   r(15,16)   ),
+    row(  95,  1.61, 66,  v(11),      r(12,13),   v(13),      r(11,12),   v(11),      v(13)      ),
+    row(  96,  1.91, 69,  v(12),      r(14,15),   v(14),      v(13),      v(12),      v(14)      ),
+    row(  97,  1.91, 69,  v(13),      r(16,17),   v(15),      v(14),      v(13),      r(15,16)   ),
     row(  98,  2.15, 71,  v(14),      v(18),      v(16),      v(15),      x(),        r(17,18)   ),
-    row(  99,  2.21, 72,  r(15,22),   r(19,22),   r(17,22),   r(16,22),   r(17,22),   r(19,22)   ), // [RECON p39] M9-10: r(14,22)->r(17,22)
+    row(  99,  2.21, 72,  r(15,22),   r(19,22),   r(17,22),   r(16,22),   r(14,22),   r(19,22)   ),
   ],
 };

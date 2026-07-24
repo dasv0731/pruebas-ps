@@ -3,7 +3,7 @@ import { TestConfig } from '../../models/test.interfaces';
 export const CDI_CONFIG: TestConfig = {
   shortName: 'CDI',
   name: 'CDI - Inventario de Depresión Infantil',
-  description: 'Evalúa síntomas depresivos en niños de 7 a 17 años',
+  description: 'Evalúa síntomas depresivos en niños de 7 a 15 años',
   totalQuestions: 27,
   optionsPerQuestion: 3,
   questionType: 'TEXT_OPTIONS',

@@ -5,6 +5,8 @@ import { AssessmentService } from '../../services/assessment.service';
 import { AIService, AIResponse } from '../../../../core/services/ai.service';
 import { TestLoaderService } from '../../services/test-loader.service';
 import { getTestInterpretation } from '../../tests/test-registry';
+import { buildStaiAIInput, staiNormedScores, StaiNormedResult } from '../../tests/stai/stai.interpretation';
+import { buildStaicAIInput, staicNormedScores, StaicNormedResult } from '../../tests/staic/staic.interpretation';
 
 @Component({
   selector: 'app-assessment-results',
@@ -27,6 +29,10 @@ export class AssessmentResultsComponent implements OnInit {
   loading = true;
   generating = false;
   error = '';
+
+  // Puntuaciones baremadas (STAI / STAIC) para mostrar centil·decatipo / percentil·S.
+  staiNormed: StaiNormedResult | null = null;
+  staicNormed: StaicNormedResult | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -126,10 +132,33 @@ export class AssessmentResultsComponent implements OnInit {
           this.interpretationDate = saved.generatedAt || '';
         }
       }
+
+      // Baremar STAI / STAIC con sexo y edad de la sesión (Tabla 9 / Tabla 7).
+      this.computeNormedScores();
     } catch (err: any) {
       this.error = err.message || 'Error al cargar resultados';
     } finally {
       this.loading = false;
+    }
+  }
+
+  private computeNormedScores(): void {
+    this.staiNormed = null;
+    this.staicNormed = null;
+    const shortName = this.assessment?.shortName || '';
+    if ((shortName !== 'STAI' && shortName !== 'STAIC') || !this.answers.length) return;
+
+    const scoringResult = this.testLoader.score(shortName, this.answers);
+    if (!scoringResult) return;
+    const estado = scoringResult.subscales?.['Ansiedad Estado'] ?? 0;
+    const rasgo = scoringResult.subscales?.['Ansiedad Rasgo'] ?? 0;
+    const sex = this.session?.subjectSex ?? null;
+    const age = this.session?.subjectAgeYears ?? null;
+
+    if (shortName === 'STAI') {
+      this.staiNormed = staiNormedScores(estado, rasgo, sex, age);
+    } else {
+      this.staicNormed = staicNormedScores(estado, rasgo, sex, age);
     }
   }
 
@@ -167,7 +196,19 @@ export class AssessmentResultsComponent implements OnInit {
         // Usar interpretación modular
         const scoringResult = this.testLoader.score(shortName, this.answers);
         if (scoringResult) {
-          const aiInput = interpretation.buildAIInput(scoringResult);
+          const sex = this.session?.subjectSex ?? null;
+          const age = this.session?.subjectAgeYears ?? null;
+          // STAI / STAIC se baremán por sexo·edad (Tabla 9 / Tabla 7); la ruta
+          // genérica buildAIInput no recibe esos datos, así que se usa el
+          // builder específico con el baremo aplicado.
+          let aiInput: unknown;
+          if (shortName === 'STAI') {
+            aiInput = buildStaiAIInput(scoringResult, sex, age);
+          } else if (shortName === 'STAIC') {
+            aiInput = buildStaicAIInput(scoringResult, sex, age);
+          } else {
+            aiInput = interpretation.buildAIInput(scoringResult);
+          }
           aiData = JSON.stringify(aiInput);
           systemPrompt = interpretation.systemPrompt;
           maxTokens = interpretation.maxTokens;

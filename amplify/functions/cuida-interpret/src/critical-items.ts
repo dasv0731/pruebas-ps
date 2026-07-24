@@ -85,7 +85,7 @@ const MANUAL_CRITICAL_ITEMS: ManualCriticalItem[] = [
     itemNumber: 189,
     escala: 'Ideológico',
     content:
-      'Con la cantidad de niños que necesitan un hogar me planteo tener hijos en lugar de los propios',
+      'Con la cantidad de niños que necesitan un hogar es absurdo traer un hijo al mundo',
     getEn: () => 5,
     alwaysFlag: true,
   },

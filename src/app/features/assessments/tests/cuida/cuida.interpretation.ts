@@ -4,8 +4,8 @@ import type { CuidaFindings } from '../../components/cuida-results/cuida-results
 /**
  * Interpretación IA del CUIDA. La Lambda cuida-interpret ya calcula y
  * persiste CuidaFindings completos (niveles cualitativos, deseabilidad,
- * patrones de lectura conjunta, ítems críticos, estilo de crianza y
- * warnings) dentro de AssessmentScoring.scores. Esta narrativa se genera en
+ * patrones de lectura conjunta, ítems críticos y warnings) dentro de
+ * AssessmentScoring.scores. Esta narrativa se genera en
  * el front a partir de esos findings ya persistidos; no se toca la Lambda.
  *
  * `CUIDA_INTERPRETATION` conserva la forma `InterpretationConfig` (requerida
@@ -25,7 +25,8 @@ REGLAS:
 - Si reportMode es 'NOT_INTERPRETABLE', LIMÍTATE a documentar la invalidez del protocolo y no interpretes escalas clínicas.
 - Cita las escalas con nivel MUY_BAJO, BAJO, ALTO o MUY_ALTO (las de nivel MEDIO no requieren comentario individual).
 - Comenta la deseabilidad social y su riesgo de contaminación sobre otras escalas si corresponde.
-- Incorpora los patrones de lectura conjunta (jointReadingFlags) y el estilo de crianza inferido (parentingStyleInference).
+- Incorpora los patrones de lectura conjunta (jointReadingFlags) si los hay.
+- El CUIDA no evalúa "estilos educativos" con una escala propia: NO afirmes un estilo de crianza como resultado del test; a lo sumo describe tendencias cualitativas a partir de las escalas y remítelas a la entrevista.
 - Señala los ítems críticos a clarificar en entrevista si los hay.
 - Concluye con la relevancia para el contexto pericial (evaluación de capacidades parentales).`,
 
@@ -98,7 +99,6 @@ export function buildCuidaAIInputFromFindings(
       escala: c.escala,
       reason: c.reason,
     })),
-    parentingStyleInference: findings.parentingStyleInference,
     warnings: findings.warnings || [],
     context: 'Evaluación pericial judicial - capacidades parentales',
   };

@@ -189,7 +189,7 @@ const CUIDA_QUESTIONS = [
   "Me considero capaz de hacer las cosas tan bien como los demás.",
   "En situaciones muy tensas me irrito.",
   "Me cuesta trabajo relacionarme con la gente cuando estoy en algún acto social.",
-  "Con la cantidad de niños que necesitan un hogar me planteo tener hijos en lugar de los propios.",
+  "Con la cantidad de niños que necesitan un hogar es absurdo traer un hijo al mundo.",
 ];
 
 const CUIDA_INSTRUCTIONS = `En este cuadernillo encontrará una serie de preguntas relacionadas con su forma de pensar y actuar en determinadas situaciones.

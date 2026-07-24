@@ -110,7 +110,10 @@ export class CuidaScoringEntryComponent implements OnInit {
     const pd = () => [null, [Validators.required, Validators.min(0)]];
 
     this.form = this.fb.group({
-      baremo: ['Ecuador, población general, mujeres y varones', Validators.required],
+      // Guía §1/§9.1: en procesos de evaluación/selección (contexto pericial) se
+      // recomienda el baremo de ADOPTANTES; conjunto V+M salvo justificación. No
+      // existe baremo "Ecuador" (las muestras del manual son españolas).
+      baremo: ['Adoptantes (muestra española), conjunto varones y mujeres', Validators.required],
       escalas: this.fb.group({
         altruismo: en19(), apertura: en19(), asertividad: en19(),
         autoestima: en19(), resolverProblemas: en19(), empatia: en19(),

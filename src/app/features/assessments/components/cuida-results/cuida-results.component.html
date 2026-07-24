@@ -191,24 +191,6 @@
       </ng-container>
     </div>
 
-    <!-- ── Estilo de crianza ── -->
-    <div class="card">
-      <h3>Estilo de crianza inferido</h3>
-      <div class="parenting-header">
-        <div class="parenting-style-badge" [class]="'style-' + findings.parentingStyleInference.predominantStyle.toLowerCase()">
-          {{ getParentingStyleLabel(findings.parentingStyleInference.predominantStyle) }}
-        </div>
-        <span class="cat-badge" [class]="getConfidenceClass(findings.parentingStyleInference.confidence)">
-          Confianza {{ findings.parentingStyleInference.confidence }}
-        </span>
-      </div>
-      <p class="parenting-rec">{{ findings.parentingStyleInference.recommendation }}</p>
-      <div *ngIf="findings.parentingStyleInference.supportingScales.length > 0" class="parenting-scales">
-        <span class="kv-label">Escalas concordantes: </span>
-        {{ formatScaleList(findings.parentingStyleInference.supportingScales) }}
-      </div>
-    </div>
-
     <!-- ── Advertencias ── -->
     <div *ngIf="findings.warnings.length > 0" class="alert-warning">
       <div class="alert-icon">ℹ</div>

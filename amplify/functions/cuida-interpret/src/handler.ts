@@ -9,7 +9,10 @@ import { computeQualitativeLevels } from './qualitative';
 import { evaluateDeseabilidad } from './deseabilidad';
 import { detectJointReadingFlags } from './joint-reading';
 import { computeCriticalItemFlags } from './critical-items';
-import { inferParentingStyle } from './parenting-style';
+// El clasificador de "estilo de crianza" se retiró: el CUIDA no tiene una escala
+// de estilos educativos; el manual solo permite "plantear tendencias" de forma
+// cualitativa (guía §9.1). Un veredicto de estilo con confianza numérica era una
+// regla de decisión inventada, y su perfil "sano" exigía agresividad ALTA.
 
 let client: ReturnType<typeof generateClient<Schema>> | null = null;
 
@@ -100,12 +103,6 @@ export const handler = async (event: any): Promise<CuidaFindings> => {
       ),
       jointReadingFlags: [],
       criticalItemsToClarify: [],
-      parentingStyleInference: {
-        predominantStyle: 'MIXTO',
-        confidence: 'BAJA',
-        supportingScales: [],
-        recommendation: 'Perfil no interpretable por protocolo inválido.',
-      },
       generatedAt: new Date().toISOString(),
       warnings,
     };
@@ -147,12 +144,6 @@ export const handler = async (event: any): Promise<CuidaFindings> => {
       manualScoring.cuidado,
       rawAnswers,
       manualScoring.itemsCriticosTea ?? [],
-    );
-
-    // 8. Estilo de crianza
-    findings.parentingStyleInference = inferParentingStyle(
-      manualScoring.escalas,
-      manualScoring.cuidado,
     );
 
     findings.warnings = warnings;
@@ -214,12 +205,6 @@ function buildErrorResult(errorMessage: string, manualScoring: CuidaManualScorin
     },
     jointReadingFlags: [],
     criticalItemsToClarify: [],
-    parentingStyleInference: {
-      predominantStyle: 'MIXTO',
-      confidence: 'BAJA',
-      supportingScales: [],
-      recommendation: 'No disponible.',
-    },
     generatedAt: new Date().toISOString(),
     warnings: [errorMessage],
   };
