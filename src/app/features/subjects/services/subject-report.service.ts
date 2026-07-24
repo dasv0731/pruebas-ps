@@ -81,11 +81,23 @@ export class SubjectReportService {
       status: 'COMPLETED',
       version,
       isCurrent: true,
+      isStale: false,
       aiModel,
       generatedAt: new Date().toISOString(),
     });
     if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
     return data;
+  }
+
+  async markInterviewReportStale(subjectId: string): Promise<void> {
+    const list = await (client.models as any).SubjectInterviewReport.list({
+      filter: { subjectId: { eq: subjectId }, isCurrent: { eq: true } },
+    });
+    for (const item of list.data ?? []) {
+      if (item.isStale !== true) {
+        await (client.models as any).SubjectInterviewReport.update({ id: item.id, isStale: true });
+      }
+    }
   }
 
   // ── SUBJECT REPORT (Informe final por implicado) ──
