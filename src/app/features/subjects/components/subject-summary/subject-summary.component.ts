@@ -10,6 +10,7 @@ import { AIService, AIResponse } from '../../../../core/services/ai.service';
 import { CaseService } from '../../../../core/services/case.service';
 import { ReportPrintService } from '../../../../core/services/report-print.service';
 import { SUBJECT_TYPE_LABELS, SubjectType } from '../../../../core/models/types';
+import { partitionForConsolidation, InterviewAnalysisPair } from '../../../interviews/interview-lifecycle';
 
 @Component({
   selector: 'app-subject-summary',
@@ -40,6 +41,8 @@ export class SubjectSummaryComponent implements OnInit {
   editingSubjectReport = false;
   assessmentReportContent = '';
   interviewReportContent = '';
+  interviewReportStale = false;
+  excludedInterviews: { interviewDate: string; reason: string }[] = [];
   subjectReportContent = '';
   caseNumber = '';
   error = '';
@@ -91,18 +94,26 @@ export class SubjectSummaryComponent implements OnInit {
 
       const interviews = await this.interviewService.listBySubject(this.subjectId);
       this.totalInterviews = interviews.filter((i: any) => i.status === 'COMPLETED' || i.status === 'ANALYZED').length;
-      this.analyses = [];
+      const pairs: InterviewAnalysisPair[] = [];
       for (const interview of interviews) {
-        if (interview.status === 'COMPLETED' || interview.status === 'ANALYZED') {
-          const analysis = await this.interviewService.getAnalysis(interview.id);
-          if (analysis) {
-            this.analyses.push({
-              date: interview.interviewDate,
-              content: analysis.content,
-            });
-          }
-        }
+        const analysis = (interview.status === 'COMPLETED' || interview.status === 'ANALYZED')
+          ? await this.interviewService.getAnalysis(interview.id)
+          : null;
+        pairs.push({
+          interviewId: interview.id,
+          interviewDate: interview.interviewDate,
+          status: interview.status,
+          analysis: analysis ? { content: analysis.content, isStale: (analysis as any).isStale ?? false } : null,
+        });
       }
+      const partition = partitionForConsolidation(pairs);
+      this.analyses = partition.included.map((i) => ({ date: i.interviewDate, content: i.content }));
+      this.excludedInterviews = partition.excluded.map((e) => ({
+        interviewDate: e.interviewDate,
+        reason: e.reason === 'BORRADOR' ? 'en borrador'
+          : e.reason === 'SIN_ANALISIS' ? 'sin análisis'
+          : 'análisis obsoleto',
+      }));
       this.totalCompletedInterviews = this.totalInterviews;
 
       this.assessmentReport = await this.subjectReportService.getAssessmentReport(this.subjectId);
@@ -114,6 +125,7 @@ export class SubjectSummaryComponent implements OnInit {
       if (this.interviewReport) {
         this.interviewReportContent = this.interviewReport.content;
       }
+      this.interviewReportStale = (this.interviewReport as any)?.isStale ?? false;
 
       this.subjectReport = await this.subjectReportService.getSubjectReport(this.subjectId);
       if (this.subjectReport) {
@@ -180,6 +192,7 @@ export class SubjectSummaryComponent implements OnInit {
         await this.subjectReportService.saveInterviewReport(this.subjectId, response.content, response.model || 'deepseek-chat');
         this.interviewReportContent = response.content;
         this.interviewReport = { content: response.content };
+        this.interviewReportStale = false;
       } else {
         this.error = response.error || 'Error al generar consolidado';
       }
@@ -195,6 +208,7 @@ export class SubjectSummaryComponent implements OnInit {
       this.error = '';
       await this.subjectReportService.saveInterviewReport(this.subjectId, this.interviewReportContent, 'MANUAL');
       this.interviewReport = { content: this.interviewReportContent };
+      this.interviewReportStale = false;
       this.editingInterview = false;
     } catch (err: any) {
       this.error = err.message || 'Error al guardar';

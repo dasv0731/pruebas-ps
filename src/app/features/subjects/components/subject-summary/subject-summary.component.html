@@ -106,6 +106,14 @@
       Faltan {{ totalCompletedInterviews - analyses.length }} entrevista(s) por analizar con IA antes de consolidar.
     </div>
 
+    <div *ngIf="interviewReportStale" class="alert-warning">
+      ⚠ El consolidado está desactualizado (cambió alguna entrevista). Regenérelo.
+    </div>
+    <div *ngIf="excludedInterviews.length > 0" class="notice">
+      {{ excludedInterviews.length }} entrevista(s) excluida(s):
+      <span *ngFor="let e of excludedInterviews">{{ e.interviewDate }} ({{ e.reason }}) </span>
+    </div>
+
     <div *ngIf="generatingInterview" class="generating-msg">
       Consolidando análisis de entrevistas con IA...
     </div>

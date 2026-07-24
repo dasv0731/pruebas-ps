@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { InterviewService } from '../../services/interview.service';
 import { SubjectService } from '../../../../core/services/subject.service';
 import { CaseService } from '../../../../core/services/case.service';
+import { SubjectReportService } from '../../../subjects/services/subject-report.service';
 
 @Component({
   selector: 'app-interview-list',
@@ -26,7 +27,8 @@ export class InterviewListComponent implements OnInit {
     private router: Router,
     private interviewService: InterviewService,
     private subjectService: SubjectService,
-    private caseService: CaseService
+    private caseService: CaseService,
+    private subjectReportService: SubjectReportService,
   ) {}
 
   async ngOnInit() {
@@ -93,6 +95,7 @@ export class InterviewListComponent implements OnInit {
     }
     try {
       await this.interviewService.delete(interviewId);
+      await this.subjectReportService.markInterviewReportStale(this.subjectId);
       await this.loadData();
     } catch (err: any) {
       this.error = err.message || 'Error al eliminar la entrevista';
