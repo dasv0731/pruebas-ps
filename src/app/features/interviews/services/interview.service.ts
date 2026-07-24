@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../../../../amplify/data/resource';
 import { listAll } from '../../../core/utils/paginate';
+import { statusForSource } from '../interview-lifecycle';
 
 const client = generateClient<Schema>();
 
@@ -67,16 +68,17 @@ export class InterviewService {
     return [...data].sort((a, b) => (b.version ?? 0) - (a.version ?? 0))[0];
   }
 
-  async saveAnalysis(interviewId: string, content: string, aiModel: string) {
+  async saveAnalysis(
+    interviewId: string,
+    content: string,
+    opts: { source: 'AI' | 'MANUAL'; aiModel?: string },
+  ) {
     const existing = await client.models.InterviewAnalysis.list({
       filter: { interviewId: { eq: interviewId } },
     });
     if (existing.data) {
       for (const item of existing.data) {
-        await client.models.InterviewAnalysis.update({
-          id: item.id,
-          isCurrent: false,
-        });
+        await client.models.InterviewAnalysis.update({ id: item.id, isCurrent: false });
       }
     }
 
@@ -85,14 +87,34 @@ export class InterviewService {
     const { data, errors } = await client.models.InterviewAnalysis.create({
       interviewId,
       content,
-      source: 'AI' as const,
-      status: 'COMPLETED' as const,
+      source: opts.source,
+      status: statusForSource(opts.source),
       version,
       isCurrent: true,
-      aiModel,
+      isStale: false,
+      aiModel: opts.aiModel ?? null,
       generatedAt: new Date().toISOString(),
     });
     if (errors) throw new Error(errors.map((e) => e.message).join(', '));
     return data;
+  }
+
+  /**
+   * Reabre una entrevista COMPLETED/ANALYZED a DRAFT para corregir la
+   * transcripción (traza `reopenedAt`) y marca su análisis vigente como obsoleto.
+   * Devuelve el subjectId para que el componente marque el consolidado obsoleto.
+   */
+  async reopenInterview(interviewId: string): Promise<{ subjectId: string }> {
+    const interview = await this.getById(interviewId);
+    if (!interview) throw new Error('Entrevista no encontrada');
+
+    await this.update(interviewId, { status: 'DRAFT' });
+    await client.models.Interview.update({ id: interviewId, reopenedAt: new Date().toISOString() });
+
+    const current = await this.getAnalysis(interviewId);
+    if (current) {
+      await client.models.InterviewAnalysis.update({ id: current.id, isStale: true });
+    }
+    return { subjectId: interview.subjectId };
   }
 }
