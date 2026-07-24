@@ -150,7 +150,7 @@
     </div>
 
     <app-analysis-output
-      *ngIf="analysis && !generating"
+      *ngIf="analysis && !generating && caseLocked"
       [content]="analysis"
     ></app-analysis-output>
 

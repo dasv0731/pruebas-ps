@@ -259,7 +259,7 @@ const schema = a.schema({
       status: a.ref('InterpretationStatus').required(),
       version: a.integer().required(),
       isCurrent: a.boolean().required(),
-      isStale: a.boolean().required(),
+      isStale: a.boolean(),
       aiModel: a.string(),
       generatedAt: a.datetime(),
       interview: a.belongsTo('Interview', 'interviewId'),
@@ -299,7 +299,7 @@ const schema = a.schema({
       status: a.ref('InterpretationStatus').required(),
       version: a.integer().required(),
       isCurrent: a.boolean().required(),
-      isStale: a.boolean().required(),
+      isStale: a.boolean(),
       aiModel: a.string(),
       generatedAt: a.datetime(),
     })
