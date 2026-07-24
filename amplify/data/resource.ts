@@ -238,6 +238,7 @@ const schema = a.schema({
       interviewDate: a.date().required(),
       transcript: a.string(),
       extractionRequest: a.string(),
+      reopenedAt: a.datetime(),
       status: a.ref('InterviewStatus').required(),
       subject: a.belongsTo('Subject', 'subjectId'),
       analysis: a.hasMany('InterviewAnalysis', 'interviewId'),
@@ -258,6 +259,7 @@ const schema = a.schema({
       status: a.ref('InterpretationStatus').required(),
       version: a.integer().required(),
       isCurrent: a.boolean().required(),
+      isStale: a.boolean().required(),
       aiModel: a.string(),
       generatedAt: a.datetime(),
       interview: a.belongsTo('Interview', 'interviewId'),
@@ -297,6 +299,7 @@ const schema = a.schema({
       status: a.ref('InterpretationStatus').required(),
       version: a.integer().required(),
       isCurrent: a.boolean().required(),
+      isStale: a.boolean().required(),
       aiModel: a.string(),
       generatedAt: a.datetime(),
     })
