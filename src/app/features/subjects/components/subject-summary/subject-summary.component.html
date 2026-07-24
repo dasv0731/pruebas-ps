@@ -93,7 +93,7 @@
         <button
           class="btn btn-primary"
           (click)="generateInterviewReport()"
-          [disabled]="generatingInterview || analyses.length === 0 || analyses.length < totalCompletedInterviews || caseLocked">
+          [disabled]="generatingInterview || analyses.length === 0 || caseLocked">
           {{ generatingInterview ? 'Generando...' : (interviewReport ? 'Regenerar con IA' : 'Generar con IA') }}
         </button>
       </div>
@@ -102,11 +102,7 @@
     <div *ngIf="analyses.length === 0" class="empty-state">
       No hay análisis de entrevistas disponibles. Genere los análisis desde cada entrevista completada.
     </div>
-    <div *ngIf="analyses.length > 0 && analyses.length < totalCompletedInterviews" class="pending-msg">
-      Faltan {{ totalCompletedInterviews - analyses.length }} entrevista(s) por analizar con IA antes de consolidar.
-    </div>
-
-    <div *ngIf="interviewReportStale" class="alert-warning">
+    <div *ngIf="interviewReportStale && !caseLocked" class="alert-warning">
       ⚠ El consolidado está desactualizado (cambió alguna entrevista). Regenérelo.
     </div>
     <div *ngIf="excludedInterviews.length > 0" class="notice">

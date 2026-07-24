@@ -145,7 +145,7 @@
       ⚠️ {{ analysisWarning }}
     </div>
 
-    <div *ngIf="analysisIsStale && analysis" class="alert-warning">
+    <div *ngIf="analysisIsStale && analysis && !caseLocked" class="alert-warning">
       ⚠ El análisis no corresponde a la transcripción actual. Regenérelo o revíselo.
     </div>
 
