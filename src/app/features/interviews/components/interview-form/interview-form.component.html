@@ -7,6 +7,10 @@
     <span *ngIf="isEdit" class="badge" [ngClass]="getStatusClass()">
       {{ getStatusLabel() }}
     </span>
+    <button *ngIf="canReopenInterview()" type="button" class="btn btn-secondary"
+            (click)="reopenInterview()" [disabled]="reopening">
+      {{ reopening ? 'Reabriendo...' : 'Reabrir para corregir' }}
+    </button>
   </div>
 
   <app-skeleton *ngIf="loading" variant="card" [lines]="4" label="Cargando entrevista..."></app-skeleton>
@@ -141,9 +145,20 @@
       ⚠️ {{ analysisWarning }}
     </div>
 
+    <div *ngIf="analysisIsStale && analysis" class="alert-warning">
+      ⚠ El análisis no corresponde a la transcripción actual. Regenérelo o revíselo.
+    </div>
+
     <app-analysis-output
       *ngIf="analysis && !generating"
       [content]="analysis"
     ></app-analysis-output>
+
+    <ng-container *ngIf="analysis && !caseLocked">
+      <textarea [(ngModel)]="analysis" name="analysisEdit" rows="12" class="form-control"></textarea>
+      <button type="button" class="btn btn-primary" (click)="saveAnalysisEdit()" [disabled]="savingAnalysis">
+        {{ savingAnalysis ? 'Guardando...' : 'Guardar cambios (revisado)' }}
+      </button>
+    </ng-container>
   </div>
 </div>

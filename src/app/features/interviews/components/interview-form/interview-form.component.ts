@@ -9,6 +9,8 @@ import { AnalysisOutputComponent } from '../../../../shared/components/analysis-
 import { SkeletonComponent } from '../../../../shared/components/skeleton/skeleton.component';
 import { ErrorStateComponent } from '../../../../shared/components/error-state/error-state.component';
 import { EmptyStateComponent } from '../../../../shared/components/empty-state/empty-state.component';
+import { SubjectReportService } from '../../../subjects/services/subject-report.service';
+import { canReopen } from '../../interview-lifecycle';
 
 @Component({
   selector: 'app-interview-form',
@@ -38,6 +40,9 @@ export class InterviewFormComponent implements OnInit {
   analysisVersion = 0;
   analysisDate = '';
   analysisWarning = '';
+  analysisIsStale = false;
+  reopening = false;
+  savingAnalysis = false;
 
   form: InterviewInput = {
     subjectId: '',
@@ -56,7 +61,8 @@ export class InterviewFormComponent implements OnInit {
     private aiService: AIService,
     private route: ActivatedRoute,
     private router: Router,
-    private caseService: CaseService
+    private caseService: CaseService,
+    private subjectReportService: SubjectReportService,
   ) {}
 
   async ngOnInit() {
@@ -100,6 +106,7 @@ export class InterviewFormComponent implements OnInit {
           this.analysis = saved.content;
           this.analysisVersion = saved.version;
           this.analysisDate = saved.generatedAt || '';
+          this.analysisIsStale = (saved as any).isStale ?? false;
         }
       }
     } catch (err: any) {
@@ -119,6 +126,10 @@ export class InterviewFormComponent implements OnInit {
 
   canGenerateAnalysis(): boolean {
     return this.isCompleted() && !this.caseLocked && !!this.form.transcript && this.form.transcript.trim().length > 0;
+  }
+
+  canReopenInterview(): boolean {
+    return canReopen(this.form.status, this.caseLocked);
   }
 
   async onSubmit(): Promise<boolean> {
@@ -189,11 +200,12 @@ export class InterviewFormComponent implements OnInit {
       );
 
       if (response.success && response.content) {
-        await this.interviewService.saveAnalysis(
-          this.interviewId,
-          response.content,
-          response.model || 'deepseek-chat'
-        );
+        await this.interviewService.saveAnalysis(this.interviewId, response.content, {
+          source: 'AI',
+          aiModel: response.model || 'deepseek-chat',
+        });
+        this.analysisIsStale = false;
+        await this.subjectReportService.markInterviewReportStale(this.subjectId);
 
         // El análisis ya está persistido en BD: reflejarlo en la UI de inmediato,
         // antes del cambio de estado (que es secundario y no debe perder el análisis).
@@ -272,6 +284,39 @@ export class InterviewFormComponent implements OnInit {
       this.error = err.message || 'Error al guardar los focos a resaltar';
     } finally {
       this.savingExtraction = false;
+    }
+  }
+
+  async reopenInterview() {
+    if (!this.canReopenInterview() || !this.interviewId) return;
+    try {
+      this.reopening = true;
+      this.error = '';
+      const { subjectId } = await this.interviewService.reopenInterview(this.interviewId);
+      await this.subjectReportService.markInterviewReportStale(subjectId);
+      this.form.status = 'DRAFT';
+      this.analysisIsStale = true;
+    } catch (err: any) {
+      this.error = err.message || 'Error al reabrir la entrevista';
+    } finally {
+      this.reopening = false;
+    }
+  }
+
+  async saveAnalysisEdit() {
+    if (!this.interviewId || this.caseLocked || !this.analysis.trim()) return;
+    try {
+      this.savingAnalysis = true;
+      this.error = '';
+      await this.interviewService.saveAnalysis(this.interviewId, this.analysis, { source: 'MANUAL' });
+      this.analysisVersion++;
+      this.analysisDate = new Date().toISOString();
+      this.analysisIsStale = false;
+      await this.subjectReportService.markInterviewReportStale(this.subjectId);
+    } catch (err: any) {
+      this.error = err.message || 'Error al guardar el análisis';
+    } finally {
+      this.savingAnalysis = false;
     }
   }
 }
