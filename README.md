@@ -28,6 +28,31 @@ npx ampx sandbox --once
 
 El sandbox actual es `amplify-peritajesapp-Marke-sandbox-646fa0ab84`, en `us-east-1`. No incluir credenciales ni secrets en el repositorio.
 
+## Entornos desplegados
+
+La aplicacion se publica con AWS Amplify Gen 2 desde el repositorio GitHub
+`dasv0731/pruebas-ps`. Cada rama mantiene backend y datos aislados (Cognito,
+AppSync, DynamoDB y Lambdas); nunca se comparten datos de evaluados entre
+entornos.
+
+| Entorno | Rama | URL | Uso |
+| --- | --- | --- | --- |
+| Desarrollo | `dev` | `https://dev.d1ka3d76sfoihq.amplifyapp.com` | Validacion funcional antes de publicar. |
+| Produccion | `main` | `https://main.d1ka3d76sfoihq.amplifyapp.com` | Uso operativo. |
+
+Amplify ejecuta automaticamente el backend (`ampx pipeline-deploy`) y el build
+Angular en cada push a estas ramas.
+
+### Promocion
+
+1. Publicar una version en desarrollo: `git push origin HEAD:dev`.
+2. Validar la version en la URL de desarrollo.
+3. Promover el mismo commit a produccion mediante `main` y hacer `git push origin main`.
+
+Los secrets se guardan por entorno en AWS Amplify/SSM y no se versionan. En
+particular, `DEEPSEEK_API_KEY` debe configurarse y rotarse por separado para
+`dev`, `main` y cualquier sandbox.
+
 ## Rutas principales
 
 - `/cases`: zona autenticada para la psicologa.
