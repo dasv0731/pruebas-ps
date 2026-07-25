@@ -3,28 +3,56 @@
 </div>
 
 <ng-template #authenticatedLayout>
-  <amplify-authenticator [hideSignUp]="true">
-    <ng-template amplifySlot="header">
-      <div style="text-align: center; padding: 20px 0 0 0;">
-        <h2>Peritajes Psicológicos</h2>
-        <p>Ingrese con sus credenciales</p>
-      </div>
-    </ng-template>
+  <div *ngIf="checkingAuth" class="auth-screen">
+    <div class="auth-card auth-loading">Comprobando sesión...</div>
+  </div>
 
-    <ng-template amplifySlot="authenticated" let-user="user" let-signOut="signOut">
-      <div class="app-container">
+  <div *ngIf="!checkingAuth && !isAuthenticated" class="auth-screen">
+    <form class="auth-card" (ngSubmit)="onSignIn()">
+      <div class="auth-brand">
+        <span class="brand-mark" aria-hidden="true">P</span>
+        <strong>Peritajes Psicológicos</strong>
+      </div>
+      <p>Acceso profesional al gestor de expedientes periciales.</p>
+
+      <label for="login-email">Email</label>
+      <input id="login-email" name="email" type="email" [(ngModel)]="loginEmail" autocomplete="username" required>
+
+      <label for="login-password">Contraseña</label>
+      <input id="login-password" name="password" type="password" [(ngModel)]="loginPassword" autocomplete="current-password" required>
+
+      <div *ngIf="loginError" class="auth-error">{{ loginError }}</div>
+      <button class="btn btn-primary auth-submit" type="submit" [disabled]="loggingIn">
+        {{ loggingIn ? 'Iniciando sesión...' : 'Iniciar sesión' }}
+      </button>
+      <p class="auth-public-link">¿Eres persona evaluada? <a routerLink="/evaluate">Acceder con código</a></p>
+    </form>
+  </div>
+
+  <div *ngIf="!checkingAuth && isAuthenticated" class="app-container">
         <header class="app-header">
-          <h1>Peritajes Psicológicos</h1>
+          <div class="header-main">
+            <a class="brand" routerLink="/cases" aria-label="Ir a casos">
+              <span class="brand-mark" aria-hidden="true">P</span>
+              <span>Peritajes Psicológicos</span>
+            </a>
+            <nav class="app-nav" aria-label="Navegación principal">
+              <a routerLink="/cases" routerLinkActive="nav-link-active" [routerLinkActiveOptions]="{ exact: true }">
+                Casos
+              </a>
+              <a routerLink="/pending-tests" routerLinkActive="nav-link-active" [routerLinkActiveOptions]="{ exact: true }">
+                Pruebas pendientes
+              </a>
+            </nav>
+          </div>
           <div class="header-actions">
-            <span class="user-email">{{ user?.signInDetails?.loginId }}</span>
-            <button class="btn-logout" (click)="signOut()">Cerrar sesión</button>
+            <span class="user-email">{{ loginEmail || 'Sesión profesional' }}</span>
+            <button class="btn-logout" (click)="onSignOut()">Cerrar sesión</button>
           </div>
         </header>
         <app-breadcrumb></app-breadcrumb>
         <main class="app-main">
           <router-outlet></router-outlet>
         </main>
-      </div>
-    </ng-template>
-  </amplify-authenticator>
+  </div>
 </ng-template>

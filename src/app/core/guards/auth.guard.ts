@@ -13,9 +13,9 @@ export class AuthGuard implements CanActivate {
       await getCurrentUser();
       return true;
     } catch {
-      // Sin sesión: redirigir a la raíz (que muestra el authenticator de Amplify)
-      // en vez de cancelar en silencio la navegación (dejaría pantalla en blanco).
-      return this.router.createUrlTree(['/']);
+      // La ruta de login no está protegida, por lo que siempre puede mostrar el
+      // acceso en lugar de reintentar el guard sobre la ruta raíz.
+      return this.router.createUrlTree(['/login']);
     }
   }
 }

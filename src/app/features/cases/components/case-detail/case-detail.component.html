@@ -96,11 +96,58 @@
           <td class="actions">
             <button class="btn btn-primary btn-sm" (click)="goToAssessments(s.id)">Pruebas</button>
             <button class="btn btn-primary btn-sm" (click)="goToInterviews(s.id)">Entrevistas</button>
-            <button class="btn btn-secondary btn-sm" (click)="goToEditSubject(s.id)" [disabled]="caseLocked">Editar</button>
+            <button class="btn btn-secondary btn-sm" (click)="goToEditSubject(s)" [disabled]="caseLocked">Editar</button>
             <button class="btn btn-danger btn-sm" (click)="onDeleteSubject(s.id)" [disabled]="caseLocked">Eliminar</button>
           </td>
         </tr>
       </tbody>
     </table>
   </div>
+</div>
+
+<div *ngIf="editCaseOpen" class="modal-backdrop" (click)="closeEditCase()">
+  <form class="form-modal" (ngSubmit)="updateCase()" (click)="$event.stopPropagation()">
+    <div class="modal-header"><h3>Editar caso</h3><button type="button" class="modal-close" (click)="closeEditCase()" aria-label="Cerrar">×</button></div>
+    <div class="modal-body">
+      <div *ngIf="editCaseError" class="error-msg">{{ editCaseError }}</div>
+      <div class="modal-grid">
+        <label class="modal-field full">Número de caso *<input [(ngModel)]="editCase.caseNumber" name="editCaseNumber" required></label>
+        <label class="modal-field">Juzgado<input [(ngModel)]="editCase.court" name="editCaseCourt"></label>
+        <label class="modal-field">Jurisdicción<input [(ngModel)]="editCase.jurisdiction" name="editCaseJurisdiction"></label>
+        <label class="modal-field">Tipo de juicio<input [(ngModel)]="editCase.caseType" name="editCaseType"></label>
+        <label class="modal-field">Fecha de inicio<input type="date" [(ngModel)]="editCase.startDate" name="editCaseStartDate"></label>
+        <label class="modal-field full">Descripción<textarea [(ngModel)]="editCase.description" name="editCaseDescription" rows="3"></textarea></label>
+        <label class="modal-field full">Notas internas<textarea [(ngModel)]="editCase.notes" name="editCaseNotes" rows="2"></textarea></label>
+      </div>
+    </div>
+    <div class="modal-actions"><button type="button" class="btn btn-secondary" (click)="closeEditCase()">Cancelar</button><button type="submit" class="btn btn-primary" [disabled]="savingCase">{{ savingCase ? 'Guardando...' : 'Actualizar caso' }}</button></div>
+  </form>
+</div>
+
+<div *ngIf="newSubjectOpen" class="modal-backdrop" (click)="closeNewSubject()">
+  <form class="form-modal" (ngSubmit)="createSubject()" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>{{ editingSubjectId ? 'Editar implicado' : 'Nuevo implicado' }}</h3>
+      <button type="button" class="modal-close" (click)="closeNewSubject()" aria-label="Cerrar">×</button>
+    </div>
+    <div class="modal-body">
+      <div *ngIf="newSubjectError" class="error-msg">{{ newSubjectError }}</div>
+      <div class="modal-grid">
+        <label class="modal-field">Nombre *<input [(ngModel)]="newSubject.firstName" name="modalFirstName" required></label>
+        <label class="modal-field">Apellido *<input [(ngModel)]="newSubject.lastName" name="modalLastName" required></label>
+        <label class="modal-field">Tipo *<select [(ngModel)]="newSubject.subjectType" name="modalSubjectType"><option *ngFor="let option of subjectTypeLabels | keyvalue" [value]="option.key">{{ option.value }}</option></select></label>
+        <label class="modal-field">Sexo *<select [(ngModel)]="newSubject.sex" name="modalSex" required><option [ngValue]="undefined" disabled>Seleccionar</option><option value="MALE">Masculino</option><option value="FEMALE">Femenino</option></select></label>
+        <label class="modal-field">Fecha de nacimiento *<input type="date" [(ngModel)]="newSubject.dateOfBirth" name="modalDateOfBirth" required></label>
+        <label class="modal-field">Documento *<input [(ngModel)]="newSubject.documentId" name="modalDocumentId" required></label>
+        <label class="modal-field">Teléfono<input type="tel" [(ngModel)]="newSubject.contactPhone" name="modalPhone"></label>
+        <label class="modal-field">Email<input type="email" [(ngModel)]="newSubject.contactEmail" name="modalEmail"></label>
+        <label class="modal-field full">Dirección<input [(ngModel)]="newSubject.address" name="modalAddress"></label>
+        <label class="modal-field full">Notas<textarea [(ngModel)]="newSubject.notes" name="modalNotes" rows="2"></textarea></label>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-secondary" (click)="closeNewSubject()">Cancelar</button>
+      <button type="submit" class="btn btn-primary" [disabled]="creatingSubject">{{ creatingSubject ? 'Guardando...' : (editingSubjectId ? 'Actualizar implicado' : 'Agregar implicado') }}</button>
+    </div>
+  </form>
 </div>

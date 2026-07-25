@@ -40,10 +40,12 @@ export class SubjectSummaryComponent implements OnInit {
   editingInterview = false;
   editingSubjectReport = false;
   assessmentReportContent = '';
+  assessmentReportStale = false;
   interviewReportContent = '';
   interviewReportStale = false;
   excludedInterviews: { interviewDate: string; reason: string }[] = [];
   subjectReportContent = '';
+  subjectReportStale = false;
   caseNumber = '';
   error = '';
 
@@ -120,6 +122,7 @@ export class SubjectSummaryComponent implements OnInit {
       if (this.assessmentReport) {
         this.assessmentReportContent = this.assessmentReport.content;
       }
+      this.assessmentReportStale = this.assessmentReport?.isStale === true;
 
       this.interviewReport = await this.subjectReportService.getInterviewReport(this.subjectId);
       if (this.interviewReport) {
@@ -131,6 +134,7 @@ export class SubjectSummaryComponent implements OnInit {
       if (this.subjectReport) {
         this.subjectReportContent = this.subjectReport.content;
       }
+      this.subjectReportStale = this.subjectReport?.isStale === true;
     
     } catch (err: any) {
       this.error = err.message || 'Error al cargar datos';
@@ -154,7 +158,8 @@ export class SubjectSummaryComponent implements OnInit {
       if (response.success && response.content) {
         await this.subjectReportService.saveAssessmentReport(this.subjectId, response.content, response.model || 'deepseek-chat');
         this.assessmentReportContent = response.content;
-        this.assessmentReport = { content: response.content };
+        this.assessmentReport = { content: response.content, isStale: false };
+        this.assessmentReportStale = false;
       } else {
         this.error = response.error || 'Error al generar consolidado';
       }
@@ -169,7 +174,8 @@ export class SubjectSummaryComponent implements OnInit {
     try {
       this.error = '';
       await this.subjectReportService.saveAssessmentReport(this.subjectId, this.assessmentReportContent, 'MANUAL');
-      this.assessmentReport = { content: this.assessmentReportContent };
+      this.assessmentReport = { content: this.assessmentReportContent, isStale: false };
+      this.assessmentReportStale = false;
       this.editingAssessment = false;
     } catch (err: any) {
       this.error = err.message || 'Error al guardar';
@@ -191,7 +197,7 @@ export class SubjectSummaryComponent implements OnInit {
       if (response.success && response.content) {
         await this.subjectReportService.saveInterviewReport(this.subjectId, response.content, response.model || 'deepseek-chat');
         this.interviewReportContent = response.content;
-        this.interviewReport = { content: response.content };
+        this.interviewReport = { content: response.content, isStale: false };
         this.interviewReportStale = false;
       } else {
         this.error = response.error || 'Error al generar consolidado';
@@ -207,7 +213,7 @@ export class SubjectSummaryComponent implements OnInit {
     try {
       this.error = '';
       await this.subjectReportService.saveInterviewReport(this.subjectId, this.interviewReportContent, 'MANUAL');
-      this.interviewReport = { content: this.interviewReportContent };
+      this.interviewReport = { content: this.interviewReportContent, isStale: false };
       this.interviewReportStale = false;
       this.editingInterview = false;
     } catch (err: any) {
@@ -218,12 +224,12 @@ export class SubjectSummaryComponent implements OnInit {
   // ── Informe final del implicado ──
 
   canGenerateSubjectReport(): boolean {
-    return !!this.assessmentReportContent || !!this.interviewReportContent;
+    return this.hasCurrentAssessmentReport() || this.hasCurrentInterviewReport();
   }
 
   getMissingConsolidado(): 'pruebas' | 'entrevistas' | null {
-    if (!this.assessmentReportContent) return 'pruebas';
-    if (!this.interviewReportContent) return 'entrevistas';
+    if (!this.hasCurrentAssessmentReport()) return 'pruebas';
+    if (!this.hasCurrentInterviewReport()) return 'entrevistas';
     return null;
   }
 
@@ -244,8 +250,8 @@ export class SubjectSummaryComponent implements OnInit {
       this.generatingSubjectReport = true;
       this.error = '';
       const response: AIResponse = await this.aiService.generateSubjectReport(
-        this.assessmentReportContent || null,
-        this.interviewReportContent || null
+        this.hasCurrentAssessmentReport() ? this.assessmentReportContent : null,
+        this.hasCurrentInterviewReport() ? this.interviewReportContent : null,
       );
       if (response.success && response.content) {
         await this.subjectReportService.saveSubjectReport(
@@ -254,6 +260,7 @@ export class SubjectSummaryComponent implements OnInit {
         this.subjectReportContent = response.content;
         this.subjectReport = await this.subjectReportService.getSubjectReport(this.subjectId);
         this.subjectReportContent = this.subjectReport?.content || response.content;
+        this.subjectReportStale = this.subjectReport?.isStale === true;
       } else {
         this.error = response.error || 'Error al generar informe final';
       }
@@ -272,6 +279,7 @@ export class SubjectSummaryComponent implements OnInit {
       );
       this.subjectReport = await this.subjectReportService.getSubjectReport(this.subjectId);
       this.subjectReportContent = this.subjectReport?.content || this.subjectReportContent;
+      this.subjectReportStale = this.subjectReport?.isStale === true;
       this.editingSubjectReport = false;
     } catch (err: any) {
       this.error = err.message || 'Error al guardar';
@@ -299,7 +307,15 @@ export class SubjectSummaryComponent implements OnInit {
   }
 
   isSubjectReportLocked(): boolean {
-    return this.subjectReport?.status === 'APPROVED';
+    return this.subjectReport?.status === 'APPROVED' && !this.subjectReportStale;
+  }
+
+  private hasCurrentAssessmentReport(): boolean {
+    return !!this.assessmentReportContent && !this.assessmentReportStale;
+  }
+
+  private hasCurrentInterviewReport(): boolean {
+    return !!this.interviewReportContent && !this.interviewReportStale;
   }
 
   getStatusLabel(status: string): string {

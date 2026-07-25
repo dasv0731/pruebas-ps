@@ -1,0 +1,152 @@
+<div class="pending-page">
+  <section class="page-intro">
+    <div>
+      <p class="eyebrow">Corrección externa</p>
+      <h2>Pruebas pendientes</h2>
+      <p class="intro-copy">
+        Reúne CUIDA, TAMAI y PAI completados que todavía no tienen resultados transcritos de TEACorrige.
+      </p>
+    </div>
+    <button class="btn btn-secondary" type="button" (click)="loadData()" [disabled]="loading || downloading">
+      {{ loading ? 'Cargando...' : 'Actualizar' }}
+    </button>
+  </section>
+
+  <div *ngIf="error" class="feedback feedback-error" role="alert">{{ error }}</div>
+  <div *ngIf="notice" class="feedback feedback-success" role="status">{{ notice }}</div>
+
+  <div *ngIf="!loading" class="summary-grid" aria-label="Resumen de pendientes">
+    <div class="summary-card">
+      <span class="summary-value">{{ items.length }}</span>
+      <span class="summary-label">Pendientes de TEA</span>
+    </div>
+    <div class="summary-card">
+      <span class="summary-value">{{ selectedCount }}</span>
+      <span class="summary-label">Seleccionadas</span>
+    </div>
+    <div class="summary-card summary-card-accent">
+      <span class="summary-value">{{ countForFilter }}</span>
+      <span class="summary-label">Coinciden con el filtro</span>
+    </div>
+  </div>
+
+  <section *ngIf="!loading" class="card toolbar-card">
+    <div class="toolbar">
+      <label class="search-field">
+        <span>Buscar</span>
+        <input
+          type="search"
+          [(ngModel)]="search"
+          placeholder="Implicado, caso o prueba"
+          aria-label="Buscar pruebas pendientes"
+        />
+      </label>
+
+      <label class="filter-field">
+        <span>Prueba</span>
+        <select [(ngModel)]="testFilter" aria-label="Filtrar por prueba">
+          <option value="ALL">Todas</option>
+          <option *ngFor="let test of testTypes" [value]="test">{{ test }}</option>
+        </select>
+      </label>
+
+      <button class="btn btn-ghost" type="button" (click)="clearFilters()">Limpiar filtros</button>
+    </div>
+
+    <div class="batch-actions">
+      <label class="select-all">
+        <input type="checkbox" [checked]="isAllFilteredSelected()" (change)="toggleAllFiltered()" />
+        Seleccionar visibles
+      </label>
+      <div class="download-actions">
+        <button class="btn btn-primary" type="button" (click)="downloadAll()" [disabled]="downloading || items.length === 0">
+          Descargar todas
+        </button>
+        <button class="btn btn-primary" type="button" (click)="downloadSelected()" [disabled]="downloading || selectedCount === 0">
+          {{ downloading ? 'Generando XML...' : 'Descargar seleccionadas' }}
+        </button>
+        <button
+          *ngFor="let test of testTypes"
+          class="btn btn-secondary btn-sm"
+          type="button"
+          (click)="downloadType(test)"
+          [disabled]="downloading || selectedItems.length === 0"
+        >
+          Descargar {{ test }}
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <section *ngIf="!loading && filteredItems.length > 0" class="card table-card">
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col" class="check-column"><span class="sr-only">Seleccionar</span></th>
+            <th scope="col">Prueba</th>
+            <th scope="col">Implicado</th>
+            <th scope="col">Caso</th>
+            <th scope="col">Aplicación</th>
+            <th scope="col">Respuestas</th>
+            <th scope="col" class="actions-column">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of filteredItems">
+            <td class="check-column">
+              <input
+                type="checkbox"
+                [checked]="isSelected(item.id)"
+                (change)="toggleSelection(item)"
+                [attr.aria-label]="'Seleccionar ' + item.shortName + ' de ' + item.subjectName"
+              />
+            </td>
+            <td>
+              <strong>{{ item.shortName }}</strong>
+              <span class="cell-muted">Corrección TEA</span>
+            </td>
+            <td>
+              <strong>{{ item.subjectName }}</strong>
+              <span class="cell-muted">{{ item.subjectType }}</span>
+            </td>
+            <td>{{ item.caseNumber }}</td>
+            <td>{{ item.completedAt ? (item.completedAt | date:'dd/MM/yyyy') : 'Sin fecha' }}</td>
+            <td>
+              <span
+                class="badge"
+                [ngClass]="item.isExportable ? 'badge-completed' : 'badge-pending'"
+                [title]="item.validationIssues.join(' ')"
+              >
+                {{ item.isExportable ? getAnswerLabel(item) : 'Requiere revisión' }}
+              </span>
+            </td>
+            <td class="row-actions">
+              <span *ngIf="!item.isExportable" class="cell-warning" [title]="item.validationIssues.join(' ')">
+                {{ item.validationIssues[0] }}
+              </span>
+              <button class="btn btn-primary btn-sm" type="button" (click)="goToEntry(item)">
+                Ingresar resultados
+              </button>
+              <button class="btn btn-ghost btn-sm" type="button" (click)="goToCase(item)">
+                Ver caso
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section *ngIf="!loading && filteredItems.length === 0" class="empty-panel">
+    <div class="empty-mark">✓</div>
+    <h3>{{ items.length === 0 ? 'No hay pruebas pendientes' : 'No hay coincidencias' }}</h3>
+    <p *ngIf="items.length === 0">
+      Las pruebas CUIDA, TAMAI y PAI aparecerán aquí cuando estén completadas y todavía no tengan resultados de TEACorrige.
+    </p>
+    <p *ngIf="items.length > 0">Prueba a cambiar la búsqueda o el filtro seleccionado.</p>
+    <button *ngIf="items.length > 0" class="btn btn-secondary" type="button" (click)="clearFilters()">
+      Limpiar filtros
+    </button>
+  </section>
+</div>

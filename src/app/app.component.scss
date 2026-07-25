@@ -5,18 +5,70 @@
 }
 
 .app-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--space-3) var(--space-6);
-  background-color: #1a365d;
-  color: var(--color-primary-fg);
+  gap: var(--space-5);
+  min-height: 58px;
+  padding: 0 max(var(--space-6), calc((100vw - var(--container-wide)) / 2));
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
 
-  h1 {
-    margin: 0;
-    font-size: var(--text-xl);
-    font-weight: 600;
-    letter-spacing: -0.01em;
+  .header-main {
+    display: flex;
+    align-items: center;
+    gap: var(--space-6);
+    min-width: 0;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    color: var(--color-text);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    letter-spacing: -.01em;
+    text-decoration: none;
+    white-space: nowrap;
+
+    &:hover { color: var(--color-text); text-decoration: none; }
+  }
+
+  .brand-mark {
+    display: grid;
+    width: 26px;
+    height: 26px;
+    place-items: center;
+    border-radius: var(--radius-sm);
+    background: var(--color-primary);
+    color: #fff;
+    font-size: 13px;
+  }
+
+  .app-nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+
+    a {
+      color: #475467;
+      padding: 7px 13px;
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
+      font-weight: 500;
+      text-decoration: none;
+
+      &:hover,
+      &.nav-link-active {
+        color: var(--color-primary);
+        background: var(--color-primary-soft);
+      }
+    }
   }
 
   .header-actions {
@@ -27,15 +79,15 @@
 
   .user-email {
     font-size: var(--text-sm);
-    opacity: 0.85;
+    color: var(--color-text-muted);
   }
 
   .btn-logout {
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    color: var(--color-primary-fg);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    color: #475467;
     padding: var(--space-1) var(--space-3);
-    border-radius: var(--radius-sm);
     cursor: pointer;
     font-size: var(--text-xs);
     font-family: inherit;
@@ -45,14 +97,93 @@
       border-color var(--duration-fast) var(--easing-out);
 
     &:hover {
-      background: rgba(255, 255, 255, 0.12);
-      border-color: rgba(255, 255, 255, 0.85);
+      background: var(--color-bg);
+      border-color: #c1c8d2;
+    }
+  }
+}
+
+.auth-screen {
+  display: grid;
+  min-height: 100vh;
+  padding: 24px;
+  place-items: center;
+  background: radial-gradient(120% 120% at 50% 0%, #eef2f8 0%, var(--color-bg) 60%);
+}
+
+.auth-card {
+  display: flex;
+  width: min(380px, 100%);
+  flex-direction: column;
+  padding: 32px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-lg);
+
+  .auth-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+  }
+
+  > p {
+    margin: 10px 0 22px;
+    color: var(--color-text-muted);
+    font-size: 13px;
+  }
+
+  label {
+    margin-bottom: 6px;
+    color: #475467;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  input {
+    width: 100%;
+    margin-bottom: 14px;
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+}
+
+.auth-loading { display: grid; min-height: 120px; place-items: center; color: var(--color-text-muted); }
+.auth-submit { width: 100%; margin-top: 6px; padding: 11px; }
+.auth-error { margin-bottom: 14px; padding: 10px 12px; border: 1px solid #f6d4cd; border-radius: var(--radius-md); background: var(--color-danger-bg); color: var(--color-danger-fg); font-size: 13px; }
+.auth-card .auth-public-link { margin: 18px 0 0; padding-top: 16px; border-top: 1px solid #eef0f3; text-align: center; }
+.auth-public-link a { font-weight: 600; }
+
+@media (max-width: 760px) {
+  .app-header {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: var(--space-3) var(--space-4);
+
+    .header-main {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: var(--space-2);
+      width: 100%;
+    }
+
+    .app-nav {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .header-actions {
+      justify-content: space-between;
+      width: 100%;
     }
   }
 }
 
 .app-main {
   flex: 1;
-  padding: var(--space-6);
+  width: min(100%, var(--container-wide));
+  margin: 0 auto;
+  padding: 26px var(--space-6) 80px;
   background-color: var(--color-bg);
 }

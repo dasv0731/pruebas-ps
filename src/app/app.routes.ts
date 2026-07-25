@@ -4,8 +4,15 @@ import { AuthGuard } from './core/guards/auth.guard';
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'cases',
+    redirectTo: 'login',
     pathMatch: 'full',
+  },
+  {
+    path: 'login',
+    loadComponent: () =>
+      import('./features/auth/login-placeholder.component').then(
+        (m) => m.LoginPlaceholderComponent
+      ),
   },
   // ── Rutas públicas del evaluado ──
   {
@@ -33,6 +40,14 @@ export const routes: Routes = [
           ),
       },
     ],
+  },
+  {
+    path: 'pending-tests',
+    canActivate: [AuthGuard],
+    loadComponent: () =>
+      import('./features/assessments/components/pending-assessments/pending-assessments.component').then(
+        (m) => m.PendingAssessmentsComponent
+      ),
   },
   // ── Rutas autenticadas de la psicóloga ──
   {

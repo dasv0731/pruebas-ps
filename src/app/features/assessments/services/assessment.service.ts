@@ -3,6 +3,7 @@ import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../../../../amplify/data/resource';
 import { TestLoaderService } from './test-loader.service';
 import { SubjectService } from '../../../core/services/subject.service';
+import { SubjectReportService } from '../../subjects/services/subject-report.service';
 import { listAll } from '../../../core/utils/paginate';
 
 const client = generateClient<Schema>();
@@ -29,7 +30,8 @@ export class AssessmentService {
 
   constructor(
     private testLoader: TestLoaderService,
-    private subjectService: SubjectService
+    private subjectService: SubjectService,
+    private subjectReportService: SubjectReportService,
   ) {}
 
   // ── CATÁLOGO ──
@@ -168,6 +170,7 @@ export class AssessmentService {
       status: 'SCORED' as SessionStatus,
       completedAt: new Date().toISOString(),
     });
+    await this.markReportsStaleForSession(sessionId);
 
     return totalScore;
   }
@@ -228,6 +231,7 @@ export class AssessmentService {
       generatedAt: new Date().toISOString(),
     });
     if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
+    await this.markReportsStaleForSessionFromScoring(scoringId);
     return data;
   }
 
@@ -262,6 +266,7 @@ export class AssessmentService {
     if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
 
     await this.updateSession(sessionId, { status: 'SCORED' as SessionStatus });
+    await this.markReportsStaleForSession(sessionId);
   }
 
   async saveTAMAIScoring(sessionId: string, tamaiScoring: object): Promise<void> {
@@ -288,6 +293,7 @@ export class AssessmentService {
     });
     if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
     await this.updateSession(sessionId, { status: 'SCORED' as SessionStatus });
+    await this.markReportsStaleForSession(sessionId);
   }
 
   async savePAIScoring(sessionId: string, paiScoring: object): Promise<void> {
@@ -314,6 +320,7 @@ export class AssessmentService {
     });
     if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
     await this.updateSession(sessionId, { status: 'SCORED' as SessionStatus });
+    await this.markReportsStaleForSession(sessionId);
   }
 
   // ── COMPLETE SESSION ──
@@ -359,5 +366,19 @@ export class AssessmentService {
       age--;
     }
     return age;
+  }
+
+  private async markReportsStaleForSession(sessionId: string): Promise<void> {
+    const session = await this.getSession(sessionId);
+    if (session?.subjectId) {
+      await this.subjectReportService.markReportsStaleForSubject(session.subjectId);
+    }
+  }
+
+  private async markReportsStaleForSessionFromScoring(scoringId: string): Promise<void> {
+    const scoring = await (client.models as any).AssessmentScoring.get({ id: scoringId });
+    if (scoring.data?.sessionId) {
+      await this.markReportsStaleForSession(scoring.data.sessionId);
+    }
   }
 }

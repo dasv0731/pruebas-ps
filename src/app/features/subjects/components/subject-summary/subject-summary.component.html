@@ -58,6 +58,9 @@
     <div *ngIf="interpretations.length > 0 && interpretations.length < totalScoredTests" class="pending-msg">
       Faltan {{ totalScoredTests - interpretations.length }} prueba(s) por interpretar con IA antes de consolidar.
     </div>
+    <div *ngIf="assessmentReportStale && assessmentReportContent" class="alert-warning">
+      El consolidado de pruebas está desactualizado porque cambió una corrección o interpretación. Regenérelo.
+    </div>
 
     <div *ngIf="generatingAssessment" class="generating-msg">
       Consolidando interpretaciones de pruebas con IA...
@@ -161,6 +164,9 @@
       Falta el consolidado de {{ getMissingConsolidado() }}. El informe puede generarse,
       pero dejará constancia de que esa fuente no está disponible.
     </div>
+    <div *ngIf="subjectReportStale" class="alert-warning">
+      El informe del implicado está desactualizado porque cambió uno de sus consolidados. Regenérelo o revíselo antes de aprobarlo.
+    </div>
 
     <div *ngIf="generatingSubjectReport" class="generating-msg">
       Generando informe final del implicado con IA...
@@ -190,11 +196,14 @@
         <button class="btn btn-secondary" (click)="changeSubjectReportStatus('DRAFT')">Volver a borrador</button>
         <button class="btn btn-approve" (click)="changeSubjectReportStatus('APPROVED')">Aprobar informe</button>
       </div>
-      <div *ngIf="subjectReport.status === 'APPROVED'" class="approved-msg">
+      <div *ngIf="subjectReport.status === 'APPROVED' && !subjectReportStale" class="approved-msg">
         Este informe está aprobado y bloqueado. Para editarlo, debe desbloquearlo primero.
         <button class="btn btn-secondary btn-sm" (click)="changeSubjectReportStatus('DRAFT')" style="margin-top: 8px;">
           Desbloquear para edición
         </button>
+      </div>
+      <div *ngIf="subjectReport.status === 'APPROVED' && subjectReportStale" class="approved-msg">
+        Este informe estaba aprobado, pero quedó desactualizado. Debe regenerarlo o revisarlo antes de volver a aprobarlo.
       </div>
     </div>
   </div>

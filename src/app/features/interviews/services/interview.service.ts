@@ -3,6 +3,7 @@ import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../../../../amplify/data/resource';
 import { listAll } from '../../../core/utils/paginate';
 import { statusForSource } from '../interview-lifecycle';
+import { SubjectReportService } from '../../subjects/services/subject-report.service';
 
 const client = generateClient<Schema>();
 
@@ -20,6 +21,8 @@ export interface InterviewInput {
   providedIn: 'root',
 })
 export class InterviewService {
+
+  constructor(private subjectReportService: SubjectReportService) {}
 
   async listBySubject(subjectId: string) {
     return listAll((args) => client.models.Interview.list({
@@ -50,8 +53,12 @@ export class InterviewService {
   }
 
   async delete(id: string) {
+    const interview = await this.getById(id);
     const { data, errors } = await client.models.Interview.delete({ id });
     if (errors) throw new Error(errors.map((e) => e.message).join(', '));
+    if (interview?.subjectId) {
+      await this.subjectReportService.markInterviewReportStale(interview.subjectId);
+    }
     return data;
   }
 

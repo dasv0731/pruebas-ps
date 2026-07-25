@@ -20,14 +20,6 @@
           placeholder="Ej: 2026-0001"
         />
       </div>
-      <div class="form-group">
-        <label for="status">Estado *</label>
-        <select id="status" [(ngModel)]="form.status" name="status">
-          <option *ngFor="let opt of statusOptions | keyvalue" [value]="opt.key">
-            {{ opt.value }}
-          </option>
-        </select>
-      </div>
     </div>
 
     <div class="form-row">

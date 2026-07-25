@@ -62,3 +62,28 @@
     </tbody>
   </table>
 </div>
+
+<div *ngIf="newCaseOpen" class="modal-backdrop" (click)="closeNewCase()">
+  <form class="form-modal" (ngSubmit)="createCase()" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>{{ editingCaseId ? 'Editar caso' : 'Nuevo caso' }}</h3>
+      <button type="button" class="modal-close" (click)="closeNewCase()" aria-label="Cerrar">×</button>
+    </div>
+    <div class="modal-body">
+      <div *ngIf="newCaseError" class="error-msg">{{ newCaseError }}</div>
+      <div class="modal-grid">
+        <label class="modal-field full">Número de caso *<input [(ngModel)]="newCase.caseNumber" name="newCaseNumber" placeholder="Ej: 2026-0001" required></label>
+        <label class="modal-field">Juzgado<input [(ngModel)]="newCase.court" name="newCaseCourt"></label>
+        <label class="modal-field">Jurisdicción<input [(ngModel)]="newCase.jurisdiction" name="newCaseJurisdiction"></label>
+        <label class="modal-field">Tipo de juicio<input [(ngModel)]="newCase.caseType" name="newCaseType" placeholder="Custodia, adopción..."></label>
+        <label class="modal-field">Fecha de inicio<input type="date" [(ngModel)]="newCase.startDate" name="newCaseStartDate"></label>
+        <label class="modal-field full">Descripción<textarea [(ngModel)]="newCase.description" name="newCaseDescription" rows="3"></textarea></label>
+        <label class="modal-field full">Notas internas<textarea [(ngModel)]="newCase.notes" name="newCaseNotes" rows="2"></textarea></label>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-secondary" (click)="closeNewCase()">Cancelar</button>
+      <button type="submit" class="btn btn-primary" [disabled]="creatingCase">{{ creatingCase ? 'Guardando...' : (editingCaseId ? 'Actualizar caso' : 'Crear caso') }}</button>
+    </div>
+  </form>
+</div>

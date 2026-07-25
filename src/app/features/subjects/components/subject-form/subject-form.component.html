@@ -42,41 +42,35 @@
           </option>
         </select>
       </div>
-      <div class="form-group">
-        <label for="status">Estado</label>
-        <select id="status" [(ngModel)]="form.status" name="status">
-          <option *ngFor="let opt of statusOptions | keyvalue" [value]="opt.key">
-            {{ opt.value }}
-          </option>
-        </select>
-      </div>
     </div>
 
     <div class="form-row">
       <div class="form-group">
-        <label for="documentId">Identificación</label>
+        <label for="documentId">Identificación *</label>
         <input
           id="documentId"
           type="text"
           [(ngModel)]="form.documentId"
           name="documentId"
+          required
           placeholder="Cédula o documento"
         />
       </div>
       <div class="form-group">
-        <label for="dateOfBirth">Fecha de nacimiento</label>
+        <label for="dateOfBirth">Fecha de nacimiento *</label>
         <input
           id="dateOfBirth"
           type="date"
           [(ngModel)]="form.dateOfBirth"
           name="dateOfBirth"
+          required
         />
       </div>
     </div>
 
     <div class="form-row">
       <div class="form-group">
-        <label for="sex">Sexo</label>
+        <label for="sex">Sexo *</label>
         <select id="sex" [(ngModel)]="form.sex" name="sex" required>
           <option [ngValue]="undefined" disabled>-- Seleccionar --</option>
           <option *ngFor="let opt of sexOptions | keyvalue" [value]="opt.key">

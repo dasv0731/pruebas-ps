@@ -1,8 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { CaseService } from '../../../../core/services/case.service';
+import { CaseService, CaseInput } from '../../../../core/services/case.service';
 import { SubjectService } from '../../../../core/services/subject.service';
+import { SubjectInput } from '../../../../core/services/subject.service';
 import { AssessmentService } from '../../../assessments/services/assessment.service';
 import { InterviewService } from '../../../interviews/services/interview.service';
 import {
@@ -14,7 +16,7 @@ import {
 @Component({
   selector: 'app-case-detail',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './case-detail.component.html',
   styleUrl: './case-detail.component.scss',
 })
@@ -30,6 +32,15 @@ export class CaseDetailComponent implements OnInit {
   statusLabels: Record<string, string> = CASE_STATUS_LABELS;
   subjectTypeLabels: Record<string, string> = SUBJECT_TYPE_LABELS;
   subjectStatusLabels: Record<string, string> = SUBJECT_STATUS_LABELS;
+  newSubjectOpen = false;
+  editCaseOpen = false;
+  savingCase = false;
+  editCaseError = '';
+  editCase: CaseInput = this.emptyCase();
+  creatingSubject = false;
+  editingSubjectId = '';
+  newSubjectError = '';
+  newSubject: SubjectInput = this.emptySubject();
 
   constructor(
     private route: ActivatedRoute,
@@ -88,15 +99,100 @@ export class CaseDetailComponent implements OnInit {
   }
 
   goToEdit() {
-    this.router.navigate(['/cases', this.caseId, 'edit']);
+    this.editCase = {
+      caseNumber: this.caseData.caseNumber, court: this.caseData.court ?? '',
+      jurisdiction: this.caseData.jurisdiction ?? '', caseType: this.caseData.caseType ?? '',
+      description: this.caseData.description ?? '', notes: this.caseData.notes ?? '',
+      startDate: this.caseData.startDate ?? '', endDate: this.caseData.endDate ?? '',
+      status: this.caseData.status,
+    };
+    this.editCaseError = '';
+    this.editCaseOpen = true;
+  }
+
+  closeEditCase() {
+    if (!this.savingCase) this.editCaseOpen = false;
+  }
+
+  async updateCase() {
+    if (!this.editCase.caseNumber.trim()) {
+      this.editCaseError = 'El número de caso es obligatorio';
+      return;
+    }
+    try {
+      this.savingCase = true;
+      this.editCaseError = '';
+      await this.caseService.update(this.caseId, this.editCase);
+      this.editCaseOpen = false;
+      await this.loadData();
+    } catch (err: any) {
+      this.editCaseError = err.message || 'Error al actualizar el caso';
+    } finally {
+      this.savingCase = false;
+    }
   }
 
   goToNewSubject() {
-    this.router.navigate(['/cases', this.caseId, 'subjects', 'new']);
+    this.newSubject = this.emptySubject();
+    this.newSubjectError = '';
+    this.editingSubjectId = '';
+    this.newSubjectOpen = true;
   }
 
-  goToEditSubject(subjectId: string) {
-    this.router.navigate(['/cases', this.caseId, 'subjects', subjectId, 'edit']);
+  closeNewSubject() {
+    if (!this.creatingSubject) this.newSubjectOpen = false;
+  }
+
+  async createSubject() {
+    if (!this.newSubject.firstName.trim() || !this.newSubject.lastName.trim()) {
+      this.newSubjectError = 'Nombre y apellido son obligatorios';
+      return;
+    }
+    if (!this.newSubject.sex || !this.newSubject.dateOfBirth || !this.newSubject.documentId?.trim()) {
+      this.newSubjectError = 'Sexo, fecha de nacimiento y documento son obligatorios';
+      return;
+    }
+    try {
+      this.creatingSubject = true;
+      this.newSubjectError = '';
+      if (this.editingSubjectId) {
+        await this.subjectService.update(this.editingSubjectId, this.newSubject);
+      } else {
+        await this.subjectService.create(this.newSubject);
+      }
+      this.newSubjectOpen = false;
+      await this.loadData();
+    } catch (err: any) {
+      this.newSubjectError = err.message || 'Error al crear el implicado';
+    } finally {
+      this.creatingSubject = false;
+    }
+  }
+
+  private emptySubject(): SubjectInput {
+    return {
+      caseId: this.caseId,
+      firstName: '', lastName: '', dateOfBirth: '', sex: undefined,
+      documentId: '', subjectType: 'MADRE', status: 'PENDING',
+      contactPhone: '', contactEmail: '', address: '', notes: '',
+    };
+  }
+
+  private emptyCase(): CaseInput {
+    return { caseNumber: '', court: '', jurisdiction: '', caseType: '', description: '', notes: '', startDate: '', endDate: '', status: 'ACTIVE' };
+  }
+
+  goToEditSubject(subjectData: any) {
+    this.newSubject = {
+      caseId: this.caseId, firstName: subjectData.firstName, lastName: subjectData.lastName,
+      dateOfBirth: subjectData.dateOfBirth ?? '', sex: subjectData.sex ?? undefined,
+      documentId: subjectData.documentId ?? '', subjectType: subjectData.subjectType,
+      status: subjectData.status, contactPhone: subjectData.contactPhone ?? '',
+      contactEmail: subjectData.contactEmail ?? '', address: subjectData.address ?? '', notes: subjectData.notes ?? '',
+    };
+    this.newSubjectError = '';
+    this.editingSubjectId = subjectData.id;
+    this.newSubjectOpen = true;
   }
 
   async onDeleteSubject(subjectId: string) {

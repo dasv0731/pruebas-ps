@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
-import { AmplifyAuthenticatorModule, AuthenticatorService } from '@aws-amplify/ui-angular';
+import { RouterOutlet, Router, NavigationEnd, RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { AuthService } from './core/services/auth.service';
 import { BreadcrumbComponent } from './core/components/breadcrumb/breadcrumb.component';
 import { filter } from 'rxjs/operators';
@@ -10,16 +10,28 @@ import { Hub } from 'aws-amplify/utils';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, AmplifyAuthenticatorModule, CommonModule, BreadcrumbComponent],
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    CommonModule,
+    FormsModule,
+    BreadcrumbComponent,
+  ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })
 export class AppComponent implements OnInit, OnDestroy {
   isPublicRoute = false;
+  checkingAuth = true;
+  isAuthenticated = false;
+  loginEmail = '';
+  loginPassword = '';
+  loginError = '';
+  loggingIn = false;
   private hubUnsubscribe: (() => void) | null = null;
 
   constructor(
-    public authenticator: AuthenticatorService,
     private authService: AuthService,
     private router: Router
   ) {}
@@ -33,15 +45,37 @@ export class AppComponent implements OnInit, OnDestroy {
 
     this.isPublicRoute = window.location.pathname.startsWith('/evaluate');
 
-    if (!this.isPublicRoute) {
-      this.authService.checkAuth();
+    // Do not query the persisted Cognito session during bootstrap. In some
+    // browsers that lookup can block the first paint of the auth screen.
+    if (!this.isPublicRoute) this.checkingAuth = false;
 
-      // Después del sign-in el router-outlet acaba de montarse: forzar navegación
-      this.hubUnsubscribe = Hub.listen('auth', ({ payload }) => {
-        if (payload.event === 'signedIn') {
-          setTimeout(() => this.router.navigate(['/cases']), 0);
-        }
-      });
+    this.hubUnsubscribe = Hub.listen('auth', ({ payload }) => {
+      if (payload.event === 'signedIn') {
+        this.isAuthenticated = true;
+        this.checkingAuth = false;
+        setTimeout(() => this.router.navigate(['/cases']), 0);
+      }
+      if (payload.event === 'signedOut') this.isAuthenticated = false;
+    });
+  }
+
+  async onSignIn() {
+    if (!this.loginEmail || !this.loginPassword || this.loggingIn) return;
+    try {
+      this.loggingIn = true;
+      this.loginError = '';
+      await this.authService.login(this.loginEmail, this.loginPassword);
+      this.isAuthenticated = true;
+      await this.router.navigate(['/cases']);
+    } catch (err: any) {
+      if (err.name === 'UserAlreadyAuthenticatedException') {
+        this.isAuthenticated = true;
+        await this.router.navigate(['/cases']);
+        return;
+      }
+      this.loginError = err.message || 'No se pudo iniciar sesión. Verifique sus credenciales.';
+    } finally {
+      this.loggingIn = false;
     }
   }
 
@@ -51,5 +85,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   async onSignOut() {
     await this.authService.logout();
+    this.isAuthenticated = false;
+    this.loginPassword = '';
   }
 }

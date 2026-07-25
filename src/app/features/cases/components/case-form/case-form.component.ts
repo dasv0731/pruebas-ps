@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CaseService, CaseInput } from '../../../../core/services/case.service';
-import { CASE_STATUS_LABELS } from '../../../../core/models/types';
 
 @Component({
   selector: 'app-case-form',
@@ -18,8 +17,6 @@ export class CaseFormComponent implements OnInit {
   loading = false;
   saving = false;
   error = '';
-  statusOptions = CASE_STATUS_LABELS;
-
   form: CaseInput = {
     caseNumber: '',
     court: '',

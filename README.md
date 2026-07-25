@@ -1,27 +1,69 @@
-# PeritajesApp
+# pruebas-ps
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 18.2.21.
+Aplicacion Angular para gestionar peritajes psicologicos forenses. El flujo principal es:
 
-## Development server
+`Caso -> implicados -> entrevistas/pruebas -> informes -> informe del caso`
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+## Stack
 
-## Code scaffolding
+- Angular 19 con componentes standalone y lazy loading.
+- AWS Amplify Gen 2: Cognito, AppSync, DynamoDB y Lambdas.
+- Correccion automatica: STAI/STAIC y CDI.
+- Correccion externa en TEACorrige: CUIDA, TAMAI y PAI.
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+## Desarrollo local
 
-## Build
+```bash
+npm install
+npm start
+```
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+La aplicacion queda disponible en `http://localhost:4200/`.
 
-## Running unit tests
+Para trabajar contra el sandbox Amplify configurado:
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+```bash
+npx ampx sandbox --once
+```
 
-## Running end-to-end tests
+El sandbox actual es `amplify-peritajesapp-Marke-sandbox-646fa0ab84`, en `us-east-1`. No incluir credenciales ni secrets en el repositorio.
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+## Rutas principales
 
-## Further help
+- `/cases`: zona autenticada para la psicologa.
+- `/pending-tests`: bandeja global de CUIDA, TAMAI y PAI pendientes de TEACorrige.
+- `/evaluate`: portal publico para que el evaluado complete una prueba mediante codigo.
+- `/cases/:caseId/subjects/:subjectId/assessments`: catalogo y resultados de pruebas.
+- `/cases/:caseId/report`: informe del caso.
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+## Correccion TEA
+
+Las pruebas CUIDA, TAMAI y PAI se exportan como XML agrupados por tipo desde la bandeja `/pending-tests`. Tras corregirlos en TEACorrige, los resultados se transcriben en los formularios `cuida-entry`, `tamai-entry` y `pai-entry`.
+
+CUIDA debe conservar exactamente 189 items. El item 189 oficial es:
+
+> Con la cantidad de niños que necesitan un hogar es absurdo traer un hijo al mundo.
+
+## Comandos de verificacion
+
+```bash
+npm run build
+npx tsc -p tsconfig.app.json --noEmit
+npx tsc -p tsconfig.spec.json --noEmit
+npm run validate:baremos
+```
+
+Los tests se ejecutan con Karma:
+
+```bash
+npm test -- --watch=false --browsers=ChromeHeadless
+```
+
+Actualmente Karma/ChromeHeadless puede no finalizar en este entorno. Las validaciones de runtime pendientes estan documentadas en `MEMORIA-pruebas-ps.md` y `docs/arquitectura-ui-y-flujos.md`.
+
+## Documentacion
+
+- `docs/arquitectura-ui-y-flujos.md`: inventario de pantallas, rutas, procesos y decisiones URL/modal.
+- `docs/superpowers/specs/`: especificaciones de features.
+- `docs/superpowers/plans/`: planes de implementacion.
+- `MEMORIA-pruebas-ps.md`: memoria portable del proyecto, fuera del repositorio.

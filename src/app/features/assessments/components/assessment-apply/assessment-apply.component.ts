@@ -164,9 +164,17 @@ export class AssessmentApplyComponent implements OnInit {
         JSON.stringify(answersArray)
       );
 
-      // Scoring: CDI va por Lambda (backend), el resto por el service viejo (frontend)
+      // CDI se puntua en backend. Las pruebas TEA solo se corrigen despues de
+      // exportarlas y transcribir el perfil devuelto por TEACorrige.
       if (this.shortName === 'CDI') {
         await this.cdiScoringService.scoreAuthenticated(this.sessionId);
+      } else if (this.assessment?.scoringType === 'TEA') {
+        this.router.navigate([
+          '/cases', this.caseId,
+          'subjects', this.subjectId,
+          'assessments', this.sessionId, this.getTeaPendingRoute(),
+        ]);
+        return;
       } else {
         await this.assessmentService.scoreSession(this.sessionId, answersArray, this.shortName);
       }
@@ -180,6 +188,15 @@ export class AssessmentApplyComponent implements OnInit {
       this.error = err.message || 'Error al enviar respuestas';
     } finally {
       this.submitting = false;
+    }
+  }
+
+  private getTeaPendingRoute(): string {
+    switch (this.shortName) {
+      case 'CUIDA': return 'cuida-pending';
+      case 'TAMAI': return 'tamai-pending';
+      case 'PAI': return 'pai-pending';
+      default: return 'results';
     }
   }
 }

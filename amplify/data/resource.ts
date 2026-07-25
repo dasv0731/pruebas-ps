@@ -280,6 +280,7 @@ const schema = a.schema({
       status: a.ref('InterpretationStatus').required(),
       version: a.integer().required(),
       isCurrent: a.boolean().required(),
+      isStale: a.boolean(),
       aiModel: a.string(),
       generatedAt: a.datetime(),
     })
@@ -320,6 +321,7 @@ const schema = a.schema({
       status: a.enum(['DRAFT', 'REVIEWED', 'APPROVED']),
       version: a.integer().required(),
       isCurrent: a.boolean().required(),
+      isStale: a.boolean(),
       aiModel: a.string(),
       generatedAt: a.datetime(),
     })

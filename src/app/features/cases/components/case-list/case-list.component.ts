@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { CaseService } from '../../../../core/services/case.service';
+import { CaseService, CaseInput } from '../../../../core/services/case.service';
 import { CASE_STATUS_LABELS, CaseStatus } from '../../../../core/models/types';
 import { SubjectReportService } from '../../../subjects/services/subject-report.service';
 import { FormsModule } from '@angular/forms';
@@ -22,6 +22,11 @@ export class CaseListComponent implements OnInit {
   filteredCases: any[] = [];
   caseReportStatus: Record<string, string> = {};
   statusLabels: Record<string, string> = CASE_STATUS_LABELS;
+  newCaseOpen = false;
+  editingCaseId = '';
+  creatingCase = false;
+  newCaseError = '';
+  newCase: CaseInput = this.emptyCase();
   
   constructor(
     private caseService: CaseService,
@@ -54,7 +59,59 @@ export class CaseListComponent implements OnInit {
   }
 
   goToNew() {
-    this.router.navigate(['/cases/new']);
+    this.newCase = this.emptyCase();
+    this.newCaseError = '';
+    this.editingCaseId = '';
+    this.newCaseOpen = true;
+  }
+
+  openEditCase(caseData: any) {
+    this.newCase = {
+      caseNumber: caseData.caseNumber,
+      court: caseData.court ?? '',
+      jurisdiction: caseData.jurisdiction ?? '',
+      caseType: caseData.caseType ?? '',
+      description: caseData.description ?? '',
+      notes: caseData.notes ?? '',
+      startDate: caseData.startDate ?? '',
+      endDate: caseData.endDate ?? '',
+      status: caseData.status,
+    };
+    this.newCaseError = '';
+    this.editingCaseId = caseData.id;
+    this.newCaseOpen = true;
+  }
+
+  closeNewCase() {
+    if (!this.creatingCase) this.newCaseOpen = false;
+  }
+
+  async createCase() {
+    if (!this.newCase.caseNumber.trim()) {
+      this.newCaseError = 'El número de caso es obligatorio';
+      return;
+    }
+    try {
+      this.creatingCase = true;
+      this.newCaseError = '';
+      const created = this.editingCaseId
+        ? await this.caseService.update(this.editingCaseId, this.newCase)
+        : await this.caseService.create(this.newCase);
+      this.newCaseOpen = false;
+      await this.loadCases();
+      if (!this.editingCaseId && created?.id) this.goToDetail(created.id);
+    } catch (err: any) {
+      this.newCaseError = err.message || 'Error al crear el caso';
+    } finally {
+      this.creatingCase = false;
+    }
+  }
+
+  private emptyCase(): CaseInput {
+    return {
+      caseNumber: '', court: '', jurisdiction: '', caseType: '',
+      description: '', notes: '', startDate: '', endDate: '', status: 'ACTIVE',
+    };
   }
 
   goToDetail(caseId: string) {
@@ -62,7 +119,8 @@ export class CaseListComponent implements OnInit {
   }
 
   goToEdit(caseId: string) {
-    this.router.navigate(['/cases', caseId, 'edit']);
+    const caseData = this.cases.find((item) => item.id === caseId);
+    if (caseData) this.openEditCase(caseData);
   }
 
   async onDelete(caseId: string) {

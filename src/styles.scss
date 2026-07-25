@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Serif:ital,wght@0,400;0,500;1,400&display=swap');
+
 /* You can add global styles to this file, and also import other style files */
 @import '../node_modules/@aws-amplify/ui-angular/theme.css';
 
@@ -9,45 +11,45 @@
    ───────────────────────────────────────────────────────── */
 :root {
   /* Color — Brand */
-  --color-primary: #2563eb;
-  --color-primary-hover: #1d4ed8;
-  --color-primary-active: #1e40af;
+  --color-primary: #35507d;
+  --color-primary-hover: #2a4368;
+  --color-primary-active: #263b5e;
   --color-primary-fg: #ffffff;
-  --color-primary-soft: #eff6ff;
+  --color-primary-soft: #eef2f8;
 
   /* Color — Neutrals (page surfaces) */
-  --color-bg: #f7f8fa;
+  --color-bg: #f4f6f9;
   --color-surface: #ffffff;
-  --color-surface-muted: #f3f4f6;
+  --color-surface-muted: #fafbfc;
   --color-surface-elevated: #ffffff;
 
   /* Color — Text */
-  --color-text: #111827;
-  --color-text-muted: #6b7280;
-  --color-text-subtle: #9ca3af;
+  --color-text: #1f2733;
+  --color-text-muted: #667085;
+  --color-text-subtle: #98a2b3;
   --color-text-on-primary: #ffffff;
 
   /* Color — Borders */
-  --color-border: #e5e7eb;
-  --color-border-strong: #d1d5db;
-  --color-border-focus: #2563eb;
+  --color-border: #e4e7ec;
+  --color-border-strong: #d5dae2;
+  --color-border-focus: #35507d;
 
   /* Color — Status */
-  --color-success: #16a34a;
-  --color-success-bg: #dcfce7;
-  --color-success-fg: #166534;
+  --color-success: #2f8a4f;
+  --color-success-bg: #e8f5ec;
+  --color-success-fg: #287842;
 
-  --color-warning: #d97706;
-  --color-warning-bg: #fef3c7;
-  --color-warning-fg: #b45309;
+  --color-warning: #b5751a;
+  --color-warning-bg: #fdf3e7;
+  --color-warning-fg: #9a681a;
 
-  --color-danger: #dc2626;
-  --color-danger-bg: #fee2e2;
-  --color-danger-fg: #b91c1c;
+  --color-danger: #c14a34;
+  --color-danger-bg: #fdecea;
+  --color-danger-fg: #a53c28;
 
-  --color-info: #2563eb;
-  --color-info-bg: #dbeafe;
-  --color-info-fg: #1e40af;
+  --color-info: #35507d;
+  --color-info-bg: #e8f0fb;
+  --color-info-fg: #2f5da8;
 
   /* Spacing scale (4pt base) */
   --space-1: 4px;
@@ -61,17 +63,17 @@
   --space-12: 48px;
 
   /* Radius */
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-xl: 12px;
+  --radius-sm: 7px;
+  --radius-md: 9px;
+  --radius-lg: 12px;
+  --radius-xl: 14px;
   --radius-full: 9999px;
 
   /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
-  --shadow-focus: 0 0 0 3px rgba(37, 99, 235, 0.20);
+  --shadow-sm: 0 1px 2px rgba(31, 39, 51, 0.04);
+  --shadow-md: 0 6px 18px -12px rgba(31, 39, 51, 0.30);
+  --shadow-lg: 0 24px 60px -20px rgba(16, 24, 40, 0.40);
+  --shadow-focus: 0 0 0 3px rgba(53, 80, 125, 0.18);
 
   /* Type scale */
   --text-xs: 0.75rem;     /* 12px */
@@ -87,8 +89,8 @@
 
   /* Page containers */
   --container-narrow: 720px;
-  --container-default: 960px;
-  --container-wide: 1200px;
+  --container-default: 980px;
+  --container-wide: 1180px;
 
   /* Motion */
   --duration-fast: 120ms;
@@ -140,13 +142,27 @@ html {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
   font-size: var(--text-base);
   line-height: var(--line-base);
   color: var(--color-text);
   background-color: var(--color-bg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6, button, input, textarea, select {
+  font-family: inherit;
+}
+
+code, .mono, .case-number, .session-code, .tabular {
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+textarea.report-editor,
+.report-content,
+.analysis-output {
+  font-family: 'IBM Plex Serif', Georgia, serif;
 }
 
 a {
@@ -175,12 +191,12 @@ th.num,
   justify-content: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   border: 1px solid transparent;
   cursor: pointer;
   font-family: inherit;
   font-size: var(--text-sm);
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1.2;
   transition:
     background-color var(--duration-fast) var(--easing-out),
@@ -205,12 +221,12 @@ th.num,
   }
 
   &-secondary {
-    background-color: var(--color-surface-muted);
-    color: var(--color-text);
-    border-color: var(--color-border);
+    background-color: var(--color-surface);
+    color: #475467;
+    border-color: var(--color-border-strong);
 
     &:hover:not(:disabled) {
-      background-color: var(--color-border);
+      background-color: var(--color-bg);
     }
   }
 
@@ -243,7 +259,7 @@ th.num,
    ───────────────────────────────────────────────────────── */
 .card {
   background: var(--color-surface);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);
   padding: var(--space-5);
 
@@ -312,3 +328,68 @@ th.num,
 .container-narrow  { max-width: var(--container-narrow); }
 .container-default { max-width: var(--container-default); }
 .container-wide    { max-width: var(--container-wide); }
+
+/* Shared handoff primitives. Existing feature components progressively consume
+   these styles through their established semantic class names. */
+.form-control,
+input:not([type='checkbox']):not([type='radio']),
+select,
+textarea {
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: #fbfcfe;
+  color: #344054;
+  transition: border-color var(--duration-fast) var(--easing-out), box-shadow var(--duration-fast) var(--easing-out);
+}
+
+.form-control:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-focus);
+}
+
+table {
+  border-color: var(--color-border);
+}
+
+th {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+
+.loading,
+.empty-state,
+.generating-msg {
+  color: var(--color-text-muted);
+}
+
+.error-msg,
+.alert-critical,
+.alert-critical-full {
+  color: var(--color-danger-fg);
+  background: var(--color-danger-bg);
+  border-color: #f6d4cd;
+}
+
+.alert-warning,
+.notice,
+.stale-warning {
+  border-radius: var(--radius-md);
+}
+
+@media (max-width: 760px) {
+  .container-narrow,
+  .container-default,
+  .container-wide {
+    padding: var(--space-4);
+  }
+
+  table {
+    min-width: 620px;
+  }
+}

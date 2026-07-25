@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { SubjectService, SubjectInput } from '../../../../core/services/subject.service';
-import { SUBJECT_TYPE_LABELS, SUBJECT_STATUS_LABELS, SEX_LABELS } from '../../../../core/models/types';
+import { SUBJECT_TYPE_LABELS, SEX_LABELS } from '../../../../core/models/types';
 
 @Component({
   selector: 'app-subject-form',
@@ -20,7 +20,6 @@ export class SubjectFormComponent implements OnInit {
   saving = false;
   error = '';
   typeOptions = SUBJECT_TYPE_LABELS;
-  statusOptions = SUBJECT_STATUS_LABELS;
   sexOptions = SEX_LABELS;
 
   form: SubjectInput = {
@@ -98,6 +97,11 @@ export class SubjectFormComponent implements OnInit {
 
     if (!this.form.dateOfBirth) {
       this.error = 'La fecha de nacimiento es obligatoria';
+      return;
+    }
+
+    if (!this.form.documentId?.trim()) {
+      this.error = 'El documento de identidad es obligatorio';
       return;
     }
 
