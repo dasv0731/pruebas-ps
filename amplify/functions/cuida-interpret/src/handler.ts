@@ -149,7 +149,7 @@ export const handler = async (event: any): Promise<CuidaFindings> => {
     findings.warnings = warnings;
 
     // 9. Persistir nueva versión
-    await persistFindings(dataClient, sessionId, findings, scoringRecord.version ?? 1);
+    await persistFindings(dataClient, sessionId, findings, scoringRecord.version ?? 1, (session as any).owner);
 
     return findings;
   } catch (err: any) {
@@ -164,6 +164,7 @@ async function persistFindings(
   sessionId: string,
   findings: CuidaFindings,
   currentVersion: number,
+  owner?: string,
 ): Promise<void> {
   // Invalidar scoring actual
   const existing = await dataClient.models.AssessmentScoring.list({

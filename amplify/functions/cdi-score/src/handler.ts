@@ -210,7 +210,7 @@ export const handler = async (event: any): Promise<CdiScoringResult> => {
       warnings,
     };
 
-    await persistScoring(dataClient, sessionId, result);
+    await persistScoring(dataClient, sessionId, result, (session as any).owner);
 
     // 9. Actualizar la sesión a SCORED
     await dataClient.models.AssessmentSession.update({
@@ -238,6 +238,7 @@ async function persistScoring(
   dataClient: any,
   sessionId: string,
   result: CdiScoringResult,
+  owner?: string,
 ): Promise<void> {
   // Invalidar scorings anteriores
   const existing = await dataClient.models.AssessmentScoring.list({

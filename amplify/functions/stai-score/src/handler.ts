@@ -138,7 +138,7 @@ export const handler = async (event: any): Promise<StaiScoringResult> => {
     };
 
     // 7. Persistir AssessmentScoring
-    await persistScoring(dataClient, sessionId, result);
+    await persistScoring(dataClient, sessionId, result, (session as any).owner);
 
     // 8. Actualizar sesión a SCORED
     await dataClient.models.AssessmentSession.update({
@@ -165,6 +165,7 @@ async function persistScoring(
   dataClient: any,
   sessionId: string,
   result: StaiScoringResult,
+  owner?: string,
 ): Promise<void> {
   const existing = await dataClient.models.AssessmentScoring.list({
     filter: { sessionId: { eq: sessionId } },

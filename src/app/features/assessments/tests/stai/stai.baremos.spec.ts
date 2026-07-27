@@ -10,7 +10,7 @@ describe('STAI baremos (Tabla 9)', () => {
   it('clasifica edad en grupos: ≤19 adolescente, ≥20 adulto', () => {
     expect(staiAgeGroup(19)).toBe('ADOL');
     expect(staiAgeGroup(20)).toBe('ADULT');
-    expect(staiAgeGroup(12)).toBe('ADOL');
+    expect(staiAgeGroup(12)).toBeNull();
     expect(staiAgeGroup(45)).toBe('ADULT');
   });
 

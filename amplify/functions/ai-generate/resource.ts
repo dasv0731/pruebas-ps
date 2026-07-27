@@ -10,6 +10,6 @@ export const aiGenerate = defineFunction({
     // por lo que se reutiliza el mismo cliente sin SDK adicional.
     DEEPSEEK_API_KEY: secret('DEEPSEEK_API_KEY'),
     AI_BASE_URL: 'https://api.deepseek.com/anthropic',
-    AI_MODEL: 'deepseek-chat',
+    AI_MODEL: 'deepseek-v4-flash',
   },
 });

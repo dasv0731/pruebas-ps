@@ -3,6 +3,7 @@ import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/data';
 import { getAmplifyDataClientConfig } from '@aws-amplify/backend/function/runtime';
 import { computeScore } from './scoring';
+import { getAssessmentPrompt } from '../../ai-generate/src/assessment-prompts';
 
 let client: ReturnType<typeof generateClient<Schema>> | null = null;
 
@@ -65,8 +66,10 @@ async function getAssessmentInfo(dataClient: any, assessmentId: string, assessme
 }
 
 export const handler = async (event: any): Promise<any> => {
-  const field: string = event?.info?.fieldName || '';
   const args = typeof event.arguments === 'string' ? JSON.parse(event.arguments) : (event.arguments || {});
+  // Amplify Gen 2 function handlers do not expose the GraphQL field name.
+  // The caller sends the operation explicitly so one Lambda can serve the portal.
+  const operation: string = String(args.operation || event?.info?.fieldName || '');
   const dataClient = await getClient();
 
   try {
@@ -76,9 +79,9 @@ export const handler = async (event: any): Promise<any> => {
     }
     const allowedIds = new Set(parseIds(evalSession.assessmentSessionIds));
 
-    switch (field) {
+    switch (operation) {
       // ── Validar código y devolver la lista de pruebas (mínimo necesario) ──
-      case 'evalValidateCode': {
+      case 'VALIDATE': {
         const tests: any[] = [];
         for (const id of allowedIds) {
           const r = await dataClient.models.AssessmentSession.get({ id });
@@ -103,7 +106,7 @@ export const handler = async (event: any): Promise<any> => {
       }
 
       // ── Datos de una prueba concreta (con respuestas para reanudar) ──
-      case 'evalGetTest': {
+      case 'GET_TEST': {
         const sessionId = String(args.sessionId || '');
         if (!allowedIds.has(sessionId)) {
           return { ok: false, error: 'La prueba no pertenece a esta sesión' };
@@ -123,7 +126,7 @@ export const handler = async (event: any): Promise<any> => {
       }
 
       // ── Guardar progreso; si final=true, completar y puntuar server-side ──
-      case 'evalSaveProgress': {
+      case 'SAVE_PROGRESS': {
         const sessionId = String(args.sessionId || '');
         if (!allowedIds.has(sessionId)) {
           return { ok: false, error: 'La prueba no pertenece a esta sesión' };
@@ -161,7 +164,19 @@ export const handler = async (event: any): Promise<any> => {
         );
 
         if (computed) {
-          await persistScoring(dataClient, sessionId, computed);
+          const scoring = await persistScoring(dataClient, sessionId, computed, r.data?.owner);
+          try {
+            await generateAutomaticInterpretation(
+              dataClient,
+              scoring,
+              shortName,
+              computed,
+              evalSession,
+              r.data?.owner,
+            );
+          } catch (error) {
+            console.error('[eval-portal] Automatic interpretation failed:', error);
+          }
           await dataClient.models.AssessmentSession.update({ id: sessionId, status: 'SCORED' });
           return { ok: true, status: 'SCORED' };
         }
@@ -170,13 +185,13 @@ export const handler = async (event: any): Promise<any> => {
       }
 
       // ── Cerrar la sesión de evaluación ──
-      case 'evalComplete': {
+      case 'COMPLETE': {
         await dataClient.models.EvaluationSession.update({ id: evalSession.id, status: 'COMPLETED' });
         return { ok: true };
       }
 
       default:
-        return { ok: false, error: `Operación no soportada: ${field}` };
+        return { ok: false, error: `Operación no soportada: ${operation}` };
     }
   } catch (err: any) {
     console.error('[eval-portal] Error:', err);
@@ -185,7 +200,7 @@ export const handler = async (event: any): Promise<any> => {
 };
 
 /** Persiste un AssessmentScoring invalidando el anterior (versionado). */
-async function persistScoring(dataClient: any, sessionId: string, computed: any): Promise<void> {
+async function persistScoring(dataClient: any, sessionId: string, computed: any, owner?: string): Promise<any> {
   const existing = await dataClient.models.AssessmentScoring.list({ filter: { sessionId: { eq: sessionId } } });
   let maxVersion = 0;
   for (const item of existing.data || []) {
@@ -194,7 +209,7 @@ async function persistScoring(dataClient: any, sessionId: string, computed: any)
       await dataClient.models.AssessmentScoring.update({ id: item.id, isCurrent: false });
     }
   }
-  await dataClient.models.AssessmentScoring.create({
+  const created = await dataClient.models.AssessmentScoring.create({
     sessionId,
     totalScore: computed.totalScore,
     scores: JSON.stringify(computed.scores),
@@ -206,4 +221,80 @@ async function persistScoring(dataClient: any, sessionId: string, computed: any)
     scoringVersion: computed.scoringVersion,
     reportMode: computed.reportMode,
   });
+  if (created.errors) throw new Error(created.errors.map((error: any) => error.message).join(', '));
+  return created.data;
+}
+
+async function generateAutomaticInterpretation(
+  dataClient: any,
+  scoring: any,
+  shortName: string,
+  computed: any,
+  evalSession: any,
+  owner?: string,
+): Promise<void> {
+  if (!scoring?.id) throw new Error('No se pudo crear el scoring para interpretar');
+  const prompt = getAssessmentPrompt(shortName);
+  const inputSnapshot = {
+    testCode: shortName,
+    result: computed.scores,
+    subjectSex: evalSession.subjectSex ?? null,
+    subjectAgeYears: evalSession.subjectAgeYears ?? null,
+  };
+  const response = await fetch(`${(process.env['AI_BASE_URL'] || 'https://api.deepseek.com/anthropic').replace(/\/$/, '')}/v1/messages`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': process.env['DEEPSEEK_API_KEY'] || '',
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: process.env['AI_MODEL'] || 'deepseek-v4-flash',
+      max_tokens: prompt.maxTokens,
+      system: prompt.system,
+      messages: [{ role: 'user', content: JSON.stringify(inputSnapshot) }],
+    }),
+  });
+  if (!response.ok) {
+    throw new Error(`AI API error: ${response.status} - ${await response.text()}`);
+  }
+  const payload: any = await response.json();
+  const text = Array.isArray(payload?.content)
+    ? payload.content.find((block: any) => block?.type === 'text' && typeof block?.text === 'string')?.text
+    : payload?.content;
+  if (typeof text !== 'string' || !text.trim()) {
+    throw new Error(`La IA no devolvio contenido de texto: ${JSON.stringify(payload).slice(0, 500)}`);
+  }
+  const parsed = JSON.parse(text.trim().replace(/^```json\s*|\s*```$/g, ''));
+  if (!parsed?.narrative || typeof parsed.narrative !== 'string') {
+    throw new Error('La IA no devolvio una narrativa estructurada');
+  }
+
+  const existing = await dataClient.models.AssessmentInterpretation.list({
+    filter: { scoringId: { eq: scoring.id } },
+  });
+  for (const item of existing.data ?? []) {
+    if (item.isCurrent) await dataClient.models.AssessmentInterpretation.update({ id: item.id, isCurrent: false });
+  }
+  const created = await dataClient.models.AssessmentInterpretation.create({
+    scoringId: scoring.id,
+    content: parsed.narrative.trim(),
+    source: 'AI',
+    status: 'COMPLETED',
+    version: (existing.data?.length ?? 0) + 1,
+    isCurrent: true,
+    aiModel: process.env['AI_MODEL'] || 'deepseek-v4-flash',
+    generatedAt: new Date().toISOString(),
+    promptId: prompt.id,
+    promptVersion: prompt.version,
+    inputSnapshot: JSON.stringify(inputSnapshot),
+    structuredContent: JSON.stringify({
+      narrative: parsed.narrative.trim(),
+      summary: typeof parsed.summary === 'string' ? parsed.summary : '',
+      findings: Array.isArray(parsed.findings) ? parsed.findings : [],
+      limitations: Array.isArray(parsed.limitations) ? parsed.limitations : [],
+      reviewFlags: Array.isArray(parsed.reviewFlags) ? parsed.reviewFlags : [],
+    }),
+  });
+  if (created.errors) throw new Error(created.errors.map((error: any) => error.message).join(', '));
 }

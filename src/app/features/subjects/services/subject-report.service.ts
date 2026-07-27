@@ -25,6 +25,7 @@ export class SubjectReportService {
     content: string,
     aiModel: string,
     source?: 'AI' | 'MANUAL',
+    aiResponse?: { promptId?: string; promptVersion?: number; inputSnapshot?: Record<string, unknown> },
   ) {
     const isManual = source === 'MANUAL' || aiModel === 'MANUAL';
     await this.markReportsStaleForSubject(subjectId);
@@ -52,6 +53,9 @@ export class SubjectReportService {
       isStale: false,
       aiModel: isManual ? null : aiModel,
       generatedAt: new Date().toISOString(),
+      promptId: aiResponse?.promptId,
+      promptVersion: aiResponse?.promptVersion,
+      inputSnapshot: aiResponse?.inputSnapshot ? JSON.stringify(aiResponse.inputSnapshot) : undefined,
     });
     if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
     return data;
@@ -72,6 +76,7 @@ export class SubjectReportService {
     content: string,
     aiModel: string,
     source?: 'AI' | 'MANUAL',
+    aiResponse?: { promptId?: string; promptVersion?: number; inputSnapshot?: Record<string, unknown> },
   ) {
     const isManual = source === 'MANUAL' || aiModel === 'MANUAL';
     await this.markReportsStaleForSubject(subjectId);
@@ -99,6 +104,9 @@ export class SubjectReportService {
       isStale: false,
       aiModel: isManual ? null : aiModel,
       generatedAt: new Date().toISOString(),
+      promptId: aiResponse?.promptId,
+      promptVersion: aiResponse?.promptVersion,
+      inputSnapshot: aiResponse?.inputSnapshot ? JSON.stringify(aiResponse.inputSnapshot) : undefined,
     });
     if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
     return data;

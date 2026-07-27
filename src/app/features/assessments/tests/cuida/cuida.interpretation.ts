@@ -77,8 +77,7 @@ export function buildCuidaAIInputFromFindings(
   findings: CuidaFindings,
   meta: { edad?: number; sexo?: string } = {}
 ): Record<string, any> {
-  const escalasNoMedio = Object.entries(findings.qualitativeLevels || {})
-    .filter(([, v]) => v.level !== 'MEDIO')
+  const escalas = Object.entries(findings.qualitativeLevels || {})
     .map(([key, v]) => ({
       key,
       label: ALL_ESCALAS_LABELS[key] ?? key,
@@ -91,7 +90,8 @@ export function buildCuidaAIInputFromFindings(
     meta,
     reportMode: findings.reportMode,
     profileValidity: findings.profileValidity,
-    escalas: escalasNoMedio,
+    escalas,
+    indicesControl: findings.manualScoring?.indices,
     deseabilidadInterpretation: findings.deseabilidadInterpretation,
     jointReadingFlags: findings.jointReadingFlags,
     criticalItemsToClarify: (findings.criticalItemsToClarify || []).map((c) => ({

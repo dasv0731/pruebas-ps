@@ -13,7 +13,7 @@ export interface SubjectInput {
   caseId: string;
   firstName: string;
   lastName: string;
-  dateOfBirth?: string;
+  dateOfBirth: string;
   sex?: Sex;
   documentId?: string;
   subjectType: SubjectType;
@@ -46,7 +46,14 @@ export class SubjectService {
   }
 
   async create(input: SubjectInput) {
-    const { data, errors } = await client.models.Subject.create(input);
+    if (!input.dateOfBirth || !input.sex) {
+      throw new Error('La fecha de nacimiento y el sexo son obligatorios');
+    }
+    const { data, errors } = await client.models.Subject.create({
+      ...input,
+      dateOfBirth: input.dateOfBirth,
+      sex: input.sex,
+    });
     if (errors) {
       throw new Error(errors.map((e) => e.message).join(', '));
     }

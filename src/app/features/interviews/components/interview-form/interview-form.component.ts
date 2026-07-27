@@ -11,6 +11,10 @@ import { ErrorStateComponent } from '../../../../shared/components/error-state/e
 import { EmptyStateComponent } from '../../../../shared/components/empty-state/empty-state.component';
 import { SubjectReportService } from '../../../subjects/services/subject-report.service';
 import { canReopen } from '../../interview-lifecycle';
+import {
+  DEFAULT_INTERVIEW_PROMPT_ID,
+  INTERVIEW_PROMPT_OPTIONS,
+} from '../../interview-prompt-catalog';
 
 @Component({
   selector: 'app-interview-form',
@@ -43,12 +47,14 @@ export class InterviewFormComponent implements OnInit {
   analysisIsStale = false;
   reopening = false;
   savingAnalysis = false;
+  readonly promptOptions = INTERVIEW_PROMPT_OPTIONS;
 
   form: InterviewInput = {
     subjectId: '',
     interviewDate: '',
     transcript: '',
     extractionRequest: '',
+    analysisPromptId: DEFAULT_INTERVIEW_PROMPT_ID,
     status: 'DRAFT',
   };
 
@@ -97,6 +103,7 @@ export class InterviewFormComponent implements OnInit {
           interviewDate: data.interviewDate,
           transcript: data.transcript ?? '',
           extractionRequest: (data as any).extractionRequest ?? '',
+          analysisPromptId: (data as any).analysisPromptId ?? DEFAULT_INTERVIEW_PROMPT_ID,
           status: data.status as 'DRAFT' | 'COMPLETED' | 'ANALYZED',
         };
         this.extractionDirty = false;
@@ -196,6 +203,7 @@ export class InterviewFormComponent implements OnInit {
 
       const response: AIResponse = await this.aiService.generateInterviewAnalysis(
         this.form.transcript!,
+        this.form.analysisPromptId || DEFAULT_INTERVIEW_PROMPT_ID,
         this.form.extractionRequest?.trim() || undefined,
       );
 
@@ -203,6 +211,10 @@ export class InterviewFormComponent implements OnInit {
         await this.interviewService.saveAnalysis(this.interviewId, response.content, {
           source: 'AI',
           aiModel: response.model || 'deepseek-chat',
+          promptId: response.promptId,
+          promptVersion: response.promptVersion,
+          inputSnapshot: response.inputSnapshot,
+          structuredContent: response.structuredContent,
         });
         this.analysisIsStale = false;
         await this.subjectReportService.markInterviewReportStale(this.subjectId);

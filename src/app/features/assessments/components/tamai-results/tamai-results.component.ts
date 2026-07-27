@@ -198,10 +198,9 @@ export class TamaiResultsComponent implements OnInit {
         edad: this.session?.subjectAgeYears,
         sexo: this.session?.subjectSex,
       });
-      const r: AIResponse = await this.aiService.generateAssessmentInterpretation(
-        JSON.stringify(input), TAMAI_INTERPRETATION.systemPrompt, TAMAI_INTERPRETATION.maxTokens);
+      const r: AIResponse = await this.aiService.generateAssessmentInterpretation('TAMAI', JSON.stringify(input));
       if (r.success && r.content) {
-        await this.assessmentService.saveInterpretation(this.scoring.id, r.content, r.model || 'deepseek-chat');
+        await this.assessmentService.saveInterpretation(this.scoring.id, r.content, r.model || 'deepseek-chat', 'AI', r);
         this.interpretation = r.content;
         this.interpretationVersion++;
         this.interpretationDate = new Date().toISOString();

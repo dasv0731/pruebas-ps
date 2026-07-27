@@ -1,4 +1,4 @@
-import { defineFunction } from '@aws-amplify/backend';
+import { defineFunction, secret } from '@aws-amplify/backend';
 
 /**
  * Lambda mediadora del portal público del evaluado. TODAS las operaciones del
@@ -9,6 +9,11 @@ import { defineFunction } from '@aws-amplify/backend';
 export const evalPortal = defineFunction({
   name: 'eval-portal',
   entry: './src/handler.ts',
-  timeoutSeconds: 30,
+  timeoutSeconds: 60,
   memoryMB: 256,
+  environment: {
+    DEEPSEEK_API_KEY: secret('DEEPSEEK_API_KEY'),
+    AI_BASE_URL: 'https://api.deepseek.com/anthropic',
+    AI_MODEL: 'deepseek-v4-flash',
+  },
 });

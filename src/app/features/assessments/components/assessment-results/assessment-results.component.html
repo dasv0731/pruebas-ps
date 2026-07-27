@@ -77,12 +77,16 @@
       <div class="interpretation-section">
         <div class="interpretation-header">
           <h3>Interpretación clínica</h3>
-          <button
-            class="btn btn-primary"
-            (click)="generateInterpretation()"
-            [disabled]="generating">
-            {{ generating ? 'Generando...' : (interpretation ? 'Regenerar con IA' : 'Generar con IA') }}
-          </button>
+            <button
+              *ngIf="!isAutomaticInterpretation()"
+              class="btn btn-primary"
+              (click)="generateInterpretation()"
+              [disabled]="generating">
+              {{ generating ? 'Generando...' : (interpretation ? 'Regenerar con IA' : 'Generar con IA') }}
+            </button>
+            <button *ngIf="isAutomaticInterpretation()" class="btn btn-secondary" type="button" disabled>
+              Interpretación automática
+            </button>
         </div>
 
         <div *ngIf="generating" class="generating-msg">
@@ -94,7 +98,9 @@
         </div>
 
         <div *ngIf="!interpretation && !generating" class="interpretation-empty">
-          No se ha generado una interpretación clínica. Haga clic en "Generar con IA" para crear una.
+          {{ isAutomaticInterpretation()
+            ? 'La interpretación se genera automáticamente al calificar la prueba.'
+            : 'No se ha generado una interpretación clínica. Haga clic en "Generar con IA" para crear una.' }}
         </div>
       </div>
 

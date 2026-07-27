@@ -17,6 +17,10 @@ import { BAREM_TOTAL, BAREM_DISFORIA, BAREM_AUTOESTIMA } from '../../cdi-score/s
 import { resolveAgeGroup, resolveTableColumn, lookupScore } from '../../cdi-score/src/lookup';
 import { classifyTotal } from '../../cdi-score/src/classification';
 import { analyzeItems } from '../../cdi-score/src/item-analysis';
+import {
+  staicCourseGroupFromAge,
+  staicLookup,
+} from '../../../../src/app/features/assessments/tests/staic/staic.baremos';
 
 export interface ComputedScore {
   totalScore: number;
@@ -56,7 +60,11 @@ function scoreStai(answers: number[]): ComputedScore {
   };
 }
 
-function scoreStaic(answers: number[]): ComputedScore {
+function scoreStaic(
+  answers: number[],
+  subjectSex: string | null | undefined,
+  subjectAgeYears: number | null | undefined,
+): ComputedScore {
   let estado = 0;
   let rasgo = 0;
   for (let i = 0; i < 40; i++) {
@@ -71,6 +79,23 @@ function scoreStaic(answers: number[]): ComputedScore {
     else rasgo += corrected;
   }
   const totalScore = estado + rasgo;
+  const hasNormativeData =
+    (subjectSex === 'MALE' || subjectSex === 'FEMALE') && subjectAgeYears != null;
+  const courseGroup = hasNormativeData ? staicCourseGroupFromAge(subjectAgeYears) : null;
+  const normativeGroup = hasNormativeData
+    ? {
+        sex: subjectSex,
+        ageYears: subjectAgeYears,
+        courseGroup,
+        courseGroupInferredFromAge: true,
+      }
+    : null;
+  const normedScores = normativeGroup
+    ? {
+        estado: staicLookup(estado, { courseGroup: courseGroup!, sex: subjectSex as 'MALE' | 'FEMALE', scale: 'estado' }),
+        rasgo: staicLookup(rasgo, { courseGroup: courseGroup!, sex: subjectSex as 'MALE' | 'FEMALE', scale: 'rasgo' }),
+      }
+    : null;
   return {
     totalScore,
     scores: {
@@ -79,6 +104,12 @@ function scoreStaic(answers: number[]): ComputedScore {
       percentage: Math.round((totalScore / 120) * 100),
       subscales: { 'Ansiedad Estado': estado, 'Ansiedad Rasgo': rasgo },
       details: { estadoScore: estado, rasgoScore: rasgo, estadoMax: 60, rasgoMax: 60 },
+      normativeGroup,
+      normedScores,
+      warnings: [
+        ...(normativeGroup ? ['El grupo de curso se infirió desde la edad; confirmar el curso escolar real.'] : ['Faltan datos del evaluado para baremar.']),
+        'La clave de inversos de Ansiedad Estado debe verificarse contra el manual TEA antes de uso pericial.',
+      ],
     },
   };
 }
@@ -151,7 +182,7 @@ export function computeScore(
     case 'STAI':
       return scoreStai(answers);
     case 'STAIC':
-      return scoreStaic(answers);
+      return scoreStaic(answers, subjectSex, subjectAgeYears);
     case 'CDI':
       return scoreCdi(answers, subjectSex, subjectAgeYears);
     default:

@@ -110,9 +110,9 @@
             </span>
           </td>
           <td>
-            <span *ngIf="s.status === 'SCORED' && interpretationStatus[s.id]" class="badge badge-active">Interpretada</span>
-            <span *ngIf="s.status === 'SCORED' && !interpretationStatus[s.id]" class="badge badge-pending">Pendiente</span>
-            <span *ngIf="s.status !== 'SCORED'" class="badge badge-archived">—</span>
+            <span *ngIf="scoringStatus[s.id] && interpretationStatus[s.id]" class="badge badge-active">Interpretada</span>
+            <span *ngIf="scoringStatus[s.id] && !interpretationStatus[s.id]" class="badge badge-pending">Pendiente</span>
+            <span *ngIf="!scoringStatus[s.id]" class="badge badge-archived">—</span>
           </td>
           <td class="actions">
             <button
@@ -123,16 +123,28 @@
               Aplicar
             </button>
             <button
-              *ngIf="s.status === 'SCORED'"
+              *ngIf="(s.status === 'COMPLETED' || s.status === 'SCORED') && isTeaSession(s)"
+              class="btn btn-secondary btn-sm"
+              (click)="goToManualScoring(s)">
+              {{ s.status === 'SCORED' ? 'Editar calificación TEA' : 'Ingresar calificación TEA' }}
+            </button>
+            <button
+              *ngIf="canPrintAnswers(s)"
+              class="btn btn-secondary btn-sm"
+              (click)="printAnswers(s)">
+              Imprimir respuestas
+            </button>
+            <button
+              *ngIf="scoringStatus[s.id] && isAutomaticScoringSession(s)"
               class="btn btn-secondary btn-sm"
               (click)="goToResults(s.id)">
               Ver resultados
             </button>
             <button
-              *ngIf="s.status === 'SCORED'"
+              *ngIf="scoringStatus[s.id]"
               class="btn btn-secondary btn-sm"
-              (click)="printAnswers(s)">
-              Imprimir respuestas
+              (click)="goToResults(s.id)">
+              Ver interpretación
             </button>
           </td>
         </tr>

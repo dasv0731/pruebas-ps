@@ -11,6 +11,7 @@ import { CaseService } from '../../../../core/services/case.service';
 import { ReportPrintService } from '../../../../core/services/report-print.service';
 import { SUBJECT_TYPE_LABELS, SubjectType } from '../../../../core/models/types';
 import { partitionForConsolidation, InterviewAnalysisPair } from '../../../interviews/interview-lifecycle';
+import { ASSESSMENT_REPORT_PROMPTS, INTERVIEW_REPORT_PROMPTS } from '../../report-prompt-catalog';
 
 @Component({
   selector: 'app-subject-summary',
@@ -48,6 +49,12 @@ export class SubjectSummaryComponent implements OnInit {
   subjectReportStale = false;
   caseNumber = '';
   error = '';
+  readonly assessmentPromptOptions = ASSESSMENT_REPORT_PROMPTS;
+  readonly interviewPromptOptions = INTERVIEW_REPORT_PROMPTS;
+  assessmentPromptId = 'ASSESSMENT_INTEGRAL';
+  interviewPromptId = 'INTERVIEW_INTEGRAL';
+  assessmentInstruction = '';
+  interviewInstruction = '';
 
   constructor(
     private route: ActivatedRoute,
@@ -85,9 +92,18 @@ export class SubjectSummaryComponent implements OnInit {
           if (scoring) {
             const interp = await this.assessmentService.getInterpretation(scoring.id);
             if (interp) {
+              let structuredContent: unknown = null;
+              try {
+                structuredContent = typeof (interp as any).structuredContent === 'string'
+                  ? JSON.parse((interp as any).structuredContent)
+                  : (interp as any).structuredContent ?? null;
+              } catch {
+                structuredContent = null;
+              }
               this.interpretations.push({
                 assessmentName: session.assessmentName,
                 content: interp.content,
+                structuredContent,
               });
             }
           }
@@ -153,10 +169,16 @@ export class SubjectSummaryComponent implements OnInit {
     try {
       this.generatingAssessment = true;
       this.error = '';
-      const texts = this.interpretations.map((i) => `--- ${i.assessmentName} ---\n${i.content}`);
-      const response: AIResponse = await this.aiService.generateSubjectAssessmentReport(texts);
+      const reportInputs = this.interpretations.map((i) => ({
+        assessmentName: i.assessmentName,
+        structuredInterpretation: i.structuredContent,
+        narrativeFallback: i.content,
+      }));
+      const response: AIResponse = await this.aiService.generateSubjectAssessmentReport(
+        reportInputs, this.assessmentPromptId, this.assessmentInstruction.trim() || undefined,
+      );
       if (response.success && response.content) {
-        await this.subjectReportService.saveAssessmentReport(this.subjectId, response.content, response.model || 'deepseek-chat');
+        await this.subjectReportService.saveAssessmentReport(this.subjectId, response.content, response.model || 'deepseek-chat', undefined, response);
         this.assessmentReportContent = response.content;
         this.assessmentReport = { content: response.content, isStale: false };
         this.assessmentReportStale = false;
@@ -193,9 +215,11 @@ export class SubjectSummaryComponent implements OnInit {
       this.generatingInterview = true;
       this.error = '';
       const texts = this.analyses.map((a) => `--- Entrevista ${a.date} ---\n${a.content}`);
-      const response: AIResponse = await this.aiService.generateSubjectInterviewReport(texts);
+      const response: AIResponse = await this.aiService.generateSubjectInterviewReport(
+        texts, this.interviewPromptId, this.interviewInstruction.trim() || undefined,
+      );
       if (response.success && response.content) {
-        await this.subjectReportService.saveInterviewReport(this.subjectId, response.content, response.model || 'deepseek-chat');
+        await this.subjectReportService.saveInterviewReport(this.subjectId, response.content, response.model || 'deepseek-chat', undefined, response);
         this.interviewReportContent = response.content;
         this.interviewReport = { content: response.content, isStale: false };
         this.interviewReportStale = false;

@@ -90,20 +90,27 @@ export class EvaluationService {
 
   /** Valida el código; devuelve { evalSessionId, subjectName, tests } o null. */
   async validateCode(code: string) {
-    const parsed = this.parsePortal(await (publicClient.queries as any).evalValidateCode({ code }));
+    const parsed = this.parsePortal(await (publicClient.queries as any).evalValidateCode({
+      code,
+      operation: 'VALIDATE',
+    }));
     return parsed?.valid ? parsed : null;
   }
 
   /** Datos de una prueba (estado + respuestas guardadas para reanudar) o null. */
   async getTest(code: string, sessionId: string) {
-    const parsed = this.parsePortal(await (publicClient.queries as any).evalGetTest({ code, sessionId }));
+    const parsed = this.parsePortal(await (publicClient.queries as any).evalGetTest({
+      code,
+      sessionId,
+      operation: 'GET_TEST',
+    }));
     return parsed?.ok ? parsed : null;
   }
 
   /** Guarda progreso; si final=true, la Lambda completa y puntúa server-side. */
   async saveProgress(code: string, sessionId: string, answersJson: string, final: boolean) {
     const parsed = this.parsePortal(await (publicClient.mutations as any).evalSaveProgress({
-      code, sessionId, answersJson, final,
+      code, sessionId, answersJson, final, operation: 'SAVE_PROGRESS',
     }));
     if (!parsed?.ok) throw new Error(parsed?.error || 'Error al guardar las respuestas');
     return parsed;
@@ -111,7 +118,10 @@ export class EvaluationService {
 
   /** Cierra la sesión de evaluación (valida el código server-side). */
   async completeEval(code: string) {
-    const parsed = this.parsePortal(await (publicClient.mutations as any).evalComplete({ code }));
+    const parsed = this.parsePortal(await (publicClient.mutations as any).evalComplete({
+      code,
+      operation: 'COMPLETE',
+    }));
     if (!parsed?.ok) throw new Error(parsed?.error || 'Error al finalizar la sesión');
     return parsed;
   }

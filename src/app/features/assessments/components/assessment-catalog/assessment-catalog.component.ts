@@ -24,6 +24,7 @@ export class AssessmentCatalogComponent implements OnInit, OnDestroy {
   evaluationUrl = '';
   loading = true;
   interpretationStatus: Record<string, boolean> = {};
+  scoringStatus: Record<string, boolean> = {};
   generatingSession = false;
   caseLocked = false;
   error = '';
@@ -61,6 +62,7 @@ export class AssessmentCatalogComponent implements OnInit, OnDestroy {
         const currentSessions = JSON.stringify(this.sessions.map((s: any) => s.status));
 
         if (previousSessions !== currentSessions) {
+          await this.refreshScoringStatus();
           this.evaluationSession = await this.evaluationService.getEvaluationSessionBySubject(this.subjectId);
         }
       }
@@ -83,19 +85,7 @@ export class AssessmentCatalogComponent implements OnInit, OnDestroy {
       this.caseLocked = caseData?.status === 'COMPLETED';
       this.assessments = await this.assessmentService.listAssessments();
       this.sessions = await this.assessmentService.listSessionsBySubject(this.subjectId);
-      // Verificar estado de interpretación IA por sesión
-      this.interpretationStatus = {};
-      for (const session of this.sessions) {
-        if (session.status === 'SCORED') {
-          const scoring = await this.assessmentService.getScoring(session.id);
-          if (scoring) {
-            const interp = await this.assessmentService.getInterpretation(scoring.id);
-            this.interpretationStatus[session.id] = !!interp;
-          } else {
-            this.interpretationStatus[session.id] = false;
-          }
-        }
-      }
+      await this.refreshScoringStatus();
       this.evaluationSession = await this.evaluationService.getEvaluationSessionBySubject(this.subjectId);
       if (this.evaluationSession) {
         this.evaluationUrl = `${window.location.origin}/evaluate?code=${this.evaluationSession.accessCode}`;
@@ -109,6 +99,23 @@ export class AssessmentCatalogComponent implements OnInit, OnDestroy {
       this.error = err.message || 'Error al cargar datos';
     } finally {
       this.loading = false;
+    }
+  }
+
+  private async refreshScoringStatus(): Promise<void> {
+    // Las sesiones cambian primero a SCORED desde el portal del evaluado; el
+    // scoring y su interpretación se consultan aparte para actualizar acciones.
+    this.interpretationStatus = {};
+    this.scoringStatus = {};
+    for (const session of this.sessions) {
+      const scoring = await this.assessmentService.getScoring(session.id);
+      this.scoringStatus[session.id] = !!scoring;
+      if (scoring) {
+        const interp = await this.assessmentService.getInterpretation(scoring.id);
+        this.interpretationStatus[session.id] = !!interp;
+      } else {
+        this.interpretationStatus[session.id] = false;
+      }
     }
   }
 
@@ -207,6 +214,9 @@ export class AssessmentCatalogComponent implements OnInit, OnDestroy {
       this.generatingSession = true;
       this.error = '';
 
+      // Freeze demographics with every assessment session, not only at completion.
+      const ageYears = this.calculateAgeYears(this.subject.dateOfBirth);
+
       // Crear sesiones para las nuevas selecciones
       for (const assessment of newSelections) {
         await this.assessmentService.createSession({
@@ -216,6 +226,8 @@ export class AssessmentCatalogComponent implements OnInit, OnDestroy {
           status: 'CREATED',
           currentQuestion: 0,
           startedAt: new Date().toISOString(),
+          subjectAgeYears: ageYears,
+          subjectSex: this.subject.sex,
         });
       }
 
@@ -228,9 +240,6 @@ export class AssessmentCatalogComponent implements OnInit, OnDestroy {
 
       const subjectName = `${this.subject.firstName} ${this.subject.lastName}`;
       const sessionIds = pendingSessions.map((s) => s.id);
-
-      // Calcular edad al momento de crear la sesión de evaluación
-      const ageYears = this.calculateAgeYears(this.subject.dateOfBirth);
 
       this.evaluationSession = await this.evaluationService.createEvaluationSession(
         this.subjectId,
@@ -311,6 +320,34 @@ export class AssessmentCatalogComponent implements OnInit, OnDestroy {
       '/cases', this.caseId,
       'subjects', this.subjectId,
       'assessments', sessionId, 'results',
+    ]);
+  }
+
+  isTeaSession(session: any): boolean {
+    const assessment = this.assessments.find((item: any) => item.id === session.assessmentId);
+    return assessment?.scoringType === 'TEA';
+  }
+
+  isAutomaticScoringSession(session: any): boolean {
+    const assessment = this.assessments.find((item: any) => item.id === session.assessmentId);
+    return assessment?.scoringType === 'LOCAL';
+  }
+
+  canPrintAnswers(session: any): boolean {
+    return session.status === 'COMPLETED' || session.status === 'SCORED';
+  }
+
+  goToManualScoring(session: any) {
+    const assessment = this.assessments.find((item: any) => item.id === session.assessmentId);
+    const shortName = assessment?.shortName?.toLowerCase();
+    if (!shortName || !['cuida', 'tamai', 'pai'].includes(shortName)) {
+      this.error = 'Esta prueba no usa corrección manual de TEACorrige.';
+      return;
+    }
+    this.router.navigate([
+      '/cases', this.caseId,
+      'subjects', this.subjectId,
+      'assessments', session.id, `${shortName}-entry`,
     ]);
   }
 

@@ -39,16 +39,18 @@ export function staiNormedScores(
   sex?: Sex | null,
   ageYears?: number | null,
 ): StaiNormedResult {
-  const canBaremar = !!sex && ageYears != null && !Number.isNaN(ageYears);
+  const ageGroup = ageYears != null && !Number.isNaN(ageYears)
+    ? staiAgeGroup(ageYears)
+    : null;
+  const canBaremar = !!sex && ageGroup !== null;
   let estadoNorm: StaiNorm | null = null;
   let rasgoNorm: StaiNorm | null = null;
   let grupo: string | null = null;
 
   if (canBaremar) {
-    const ageGroup = staiAgeGroup(ageYears as number);
-    grupo = `${ageGroup === 'ADOL' ? 'Adolescente (≤19)' : 'Adulto (≥20)'} · ${sex === 'MALE' ? 'Varón' : 'Mujer'}`;
-    estadoNorm = staiLookup(estadoPd, { ageGroup, sex: sex as Sex, scale: 'estado' });
-    rasgoNorm = staiLookup(rasgoPd, { ageGroup, sex: sex as Sex, scale: 'rasgo' });
+    grupo = `${ageGroup === 'ADOL' ? 'Adolescente (16-19)' : 'Adulto (≥20)'} · ${sex === 'MALE' ? 'Varón' : 'Mujer'}`;
+    estadoNorm = staiLookup(estadoPd, { ageGroup: ageGroup!, sex: sex as Sex, scale: 'estado' });
+    rasgoNorm = staiLookup(rasgoPd, { ageGroup: ageGroup!, sex: sex as Sex, scale: 'rasgo' });
   }
 
   return {
@@ -58,7 +60,9 @@ export function staiNormedScores(
     grupoBaremo: grupo,
     avisoBaremo: canBaremar
       ? null
-      : 'No se registró sexo y/o edad del sujeto: no puede aplicarse el baremo (Tabla 9). Se informa solo la puntuación directa.',
+      : ageYears != null && ageYears < 16
+        ? 'El STAI no se barema para menores de 16 años. Se informa solo la puntuación directa; use STAIC u otro instrumento infantil adecuado.'
+        : 'No se registró sexo y/o edad del sujeto: no puede aplicarse el baremo (Tabla 9). Se informa solo la puntuación directa.',
   };
 }
 

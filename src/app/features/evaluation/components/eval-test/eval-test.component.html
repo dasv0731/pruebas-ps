@@ -108,7 +108,7 @@
     <div class="questions-container"
       [class.section-blocked]="currentSection.conditional && !isConditionalEnabled(currentSection)">
       <div *ngFor="let q of currentSection.questions" class="question-row"
-        [ngClass]="{ 'unanswered': highlightUnanswered && answers[q.index] === undefined && isConditionalEnabled(currentSection) }">
+        [ngClass]="{ 'unanswered': highlightUnanswered && answers[q.index] === undefined && (!currentSection.conditional || isConditionalEnabled(currentSection)) }">
         <div class="question-text">{{ q.text }}</div>
         <div class="options-group">
           <label
@@ -188,7 +188,7 @@
       <div *ngIf="questionType === 'NUMERIC'" class="questions-container"
         [class.section-blocked]="section.conditional && !isConditionalEnabled(section)">
         <div *ngFor="let q of section.questions" class="question-row"
-          [ngClass]="{ 'unanswered': highlightUnanswered && answers[q.index] === undefined && isConditionalEnabled(section) }">
+          [ngClass]="{ 'unanswered': highlightUnanswered && answers[q.index] === undefined && (!section.conditional || isConditionalEnabled(section)) }">
           <div class="question-text">{{ q.text }}</div>
           <div class="options-group">
             <label

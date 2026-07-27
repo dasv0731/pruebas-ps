@@ -8,6 +8,7 @@ export const STAIC_CONFIG: TestConfig = {
   optionsPerQuestion: 3,
   questionType: 'NUMERIC',
   scoringType: 'LOCAL',
+  paginateBySection: true,
   sections: [
     {
       title: 'Primera Parte: Ansiedad - Estado',

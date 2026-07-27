@@ -50,12 +50,28 @@
     </div>
 
     <div class="form-group full-width extraction-block" *ngIf="isEdit">
+      <label for="analysisPromptId">Enfoque del análisis con IA</label>
+      <p class="hint">Seleccione el enfoque principal. La IA siempre analiza la entrevista completa y prioriza el área elegida.</p>
+      <div class="prompt-summaries" aria-label="Resumen de enfoques disponibles">
+        <button
+          *ngFor="let prompt of promptOptions"
+          type="button"
+          class="prompt-summary"
+          [class.selected]="form.analysisPromptId === prompt.id"
+          [disabled]="!canEditExtractionRequest()"
+          (click)="form.analysisPromptId = prompt.id; onExtractionChange()"
+        >
+          <strong>{{ prompt.title }}</strong>
+          <span>{{ prompt.summary }}</span>
+        </button>
+      </div>
+
       <label for="extractionRequest">
-        Aspectos a resaltar para el análisis con IA
+        Instrucción adicional para la IA
         <span class="optional-tag">(opcional)</span>
       </label>
       <p class="hint">
-        Indique aquí qué quiere que la IA destaque o profundice de esta entrevista
+        Añada aquí qué quiere que la IA destaque o profundice además del enfoque elegido
         (p. ej. "evaluar coherencia de la versión sobre el incidente del 12 de marzo",
         "identificar indicadores de victimización secundaria", "centrarse en la
         relación con la madre"). Si lo deja vacío, el análisis se hará solo con la

@@ -111,7 +111,8 @@ const GROUPS: Record<string, GroupCol> = {
   'ADULT|FEMALE|rasgo': ADULT_M_RASGO,
 };
 
-export function staiAgeGroup(ageYears: number): 'ADOL' | 'ADULT' {
+export function staiAgeGroup(ageYears: number): 'ADOL' | 'ADULT' | null {
+  if (ageYears < 16) return null;
   return ageYears <= 19 ? 'ADOL' : 'ADULT';
 }
 

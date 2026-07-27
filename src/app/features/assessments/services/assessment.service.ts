@@ -17,6 +17,8 @@ export interface SessionInput {
   assessmentId: string;
   assessmentName: string;
   status: SessionStatus;
+  subjectAgeYears: number;
+  subjectSex: 'MALE' | 'FEMALE';
   answers?: string;
   currentQuestion?: number;
   startedAt?: string;
@@ -205,7 +207,18 @@ export class AssessmentService {
     return false;
   }
 
-  async saveInterpretation(scoringId: string, content: string, aiModel: string, source: 'AI' | 'MANUAL' = 'AI') {
+  async saveInterpretation(
+    scoringId: string,
+    content: string,
+    aiModel: string,
+    source: 'AI' | 'MANUAL' = 'AI',
+    metadata?: {
+      promptId?: string;
+      promptVersion?: number;
+      inputSnapshot?: Record<string, unknown>;
+      structuredContent?: Record<string, unknown>;
+    },
+  ) {
     const existing = await client.models.AssessmentInterpretation.list({
       filter: { scoringId: { eq: scoringId } },
     });
@@ -229,6 +242,10 @@ export class AssessmentService {
       isCurrent: true,
       aiModel,
       generatedAt: new Date().toISOString(),
+      promptId: metadata?.promptId,
+      promptVersion: metadata?.promptVersion,
+      inputSnapshot: metadata?.inputSnapshot ? JSON.stringify(metadata.inputSnapshot) : null,
+      structuredContent: metadata?.structuredContent ? JSON.stringify(metadata.structuredContent) : null,
     });
     if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
     await this.markReportsStaleForSessionFromScoring(scoringId);

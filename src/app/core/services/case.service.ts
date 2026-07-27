@@ -14,8 +14,8 @@ export interface CaseInput {
   caseType?: string;
   description?: string;
   status: CaseStatus;
-  startDate?: string;
-  endDate?: string;
+  startDate?: string | null;
+  endDate?: string | null;
   notes?: string;
 }
 
@@ -37,7 +37,7 @@ export class CaseService {
   }
 
   async create(input: CaseInput) {
-    const { data, errors } = await client.models.Case.create(input);
+    const { data, errors } = await client.models.Case.create(this.normalizeDateFields(input));
     if (errors) {
       throw new Error(errors.map((e) => e.message).join(', '));
     }
@@ -47,7 +47,7 @@ export class CaseService {
   async update(id: string, input: Partial<CaseInput>) {
     const { data, errors } = await client.models.Case.update({
       id,
-      ...input,
+      ...this.normalizeDateFields(input),
     });
     if (errors) {
       throw new Error(errors.map((e) => e.message).join(', '));
@@ -66,5 +66,13 @@ export class CaseService {
   async isLocked(id: string): Promise<boolean> {
     const caseData = await this.getById(id);
     return caseData?.status === 'COMPLETED';
+  }
+
+  /** GraphQL date fields accept an ISO date or null, never an empty string. */
+  private normalizeDateFields<T extends Partial<CaseInput>>(input: T): T {
+    const normalized = { ...input };
+    if (normalized.startDate === '') normalized.startDate = null;
+    if (normalized.endDate === '') normalized.endDate = null;
+    return normalized;
   }
 }

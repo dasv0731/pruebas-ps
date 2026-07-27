@@ -159,6 +159,10 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
 
         if (segments[4] === 'assessments') {
           this.activeTab = 'assessments';
+          this.breadcrumbs.push({
+            label: 'Pruebas',
+            url: `/cases/${caseId}/subjects/${subjectId}/assessments`,
+          });
           if (segments[5] && segments[6]) {
             const label = TEST_SEGMENT_LABELS[segments[6]];
             if (label) {
@@ -167,6 +171,10 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
           }
         } else if (segments[4] === 'interviews') {
           this.activeTab = 'interviews';
+          this.breadcrumbs.push({
+            label: 'Entrevistas',
+            url: `/cases/${caseId}/subjects/${subjectId}/interviews`,
+          });
           if (segments[5]) {
             if (segments[5] === 'new') {
               this.breadcrumbs.push({ label: 'Nueva entrevista', url: '' });
@@ -176,8 +184,16 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
           }
         } else if (segments[4] === 'summary') {
           this.activeTab = 'summary';
+          this.breadcrumbs.push({
+            label: 'Resumen',
+            url: `/cases/${caseId}/subjects/${subjectId}/summary`,
+          });
         } else {
           this.activeTab = 'summary';
+          this.breadcrumbs.push({
+            label: 'Resumen',
+            url: `/cases/${caseId}/subjects/${subjectId}/summary`,
+          });
         }
       }
     } catch {
@@ -197,12 +213,8 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
   selectSubject(subject: SubjectNav) {
     this.showSubjectDropdown = false;
     if (subject.id === this.currentSubjectId) return;
-    
     const tabPath = this.activeTab || 'summary';
-    // Navegar al caso primero y luego al implicado para forzar recarga
-    this.router.navigateByUrl(`/cases/${this.currentCaseId}`, { skipLocationChange: true }).then(() => {
-      this.router.navigate(['/cases', this.currentCaseId, 'subjects', subject.id, tabPath]);
-    });
+    this.router.navigate(['/cases', this.currentCaseId, 'subjects', subject.id, tabPath]);
   }
 
   navigateTab(tab: string) {

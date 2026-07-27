@@ -178,6 +178,10 @@ export class AssessmentResultsComponent implements OnInit {
     return this.scoring.source === 'TEA' ? 'TEA Corrige' : 'Baremo local';
   }
 
+  isAutomaticInterpretation(): boolean {
+    return this.assessment?.shortName === 'STAI' || this.assessment?.shortName === 'STAIC';
+  }
+
   async generateInterpretation() {
     if (!this.scoring) return;
 
@@ -219,15 +223,15 @@ export class AssessmentResultsComponent implements OnInit {
         aiData = this.buildFallbackData();
       }
 
-      const response: AIResponse = await this.aiService.generateAssessmentInterpretation(
-        aiData, systemPrompt, maxTokens
-      );
+      const response: AIResponse = await this.aiService.generateAssessmentInterpretation(shortName, aiData);
 
       if (response.success && response.content) {
         await this.assessmentService.saveInterpretation(
           this.scoring.id,
           response.content,
-          response.model || 'deepseek-chat'
+          response.model || 'deepseek-chat',
+          'AI',
+          response,
         );
 
         this.interpretation = response.content;

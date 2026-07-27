@@ -14,6 +14,7 @@ export interface InterviewInput {
   interviewDate: string;
   transcript?: string;
   extractionRequest?: string;
+  analysisPromptId?: string;
   status: InterviewStatus;
 }
 
@@ -78,7 +79,14 @@ export class InterviewService {
   async saveAnalysis(
     interviewId: string,
     content: string,
-    opts: { source: 'AI' | 'MANUAL'; aiModel?: string },
+    opts: {
+      source: 'AI' | 'MANUAL';
+      aiModel?: string;
+      promptId?: string;
+      promptVersion?: number;
+      inputSnapshot?: Record<string, unknown>;
+      structuredContent?: Record<string, unknown>;
+    },
   ) {
     const existing = await client.models.InterviewAnalysis.list({
       filter: { interviewId: { eq: interviewId } },
@@ -101,6 +109,10 @@ export class InterviewService {
       isStale: false,
       aiModel: opts.aiModel ?? null,
       generatedAt: new Date().toISOString(),
+      promptId: opts.promptId,
+      promptVersion: opts.promptVersion,
+      inputSnapshot: opts.inputSnapshot ? JSON.stringify(opts.inputSnapshot) : undefined,
+      structuredContent: opts.structuredContent ? JSON.stringify(opts.structuredContent) : undefined,
     });
     if (errors) throw new Error(errors.map((e) => e.message).join(', '));
     return data;

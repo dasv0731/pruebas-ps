@@ -118,8 +118,8 @@ const schema = a.schema({
       caseId: a.id().required(),
       firstName: a.string().required(),
       lastName: a.string().required(),
-      dateOfBirth: a.date(),
-      sex: a.ref('Sex'),
+      dateOfBirth: a.date().required(),
+      sex: a.ref('Sex').required(),
       documentId: a.string(),
       subjectType: a.ref('SubjectType').required(),
       status: a.ref('SubjectStatus').required(),
@@ -175,8 +175,9 @@ const schema = a.schema({
       status: a.ref('SessionStatus').required(),
       startedAt: a.datetime(),
       completedAt: a.datetime(),
-      subjectAgeYears: a.integer(),
-      subjectSex: a.ref('Sex'),
+      // Frozen at session creation so scoring always uses the applied-test data.
+      subjectAgeYears: a.integer().required(),
+      subjectSex: a.ref('Sex').required(),
       evaluationSessionId: a.id(),
       subject: a.belongsTo('Subject', 'subjectId'),
       scoring: a.hasMany('AssessmentScoring', 'sessionId'),
@@ -206,6 +207,7 @@ const schema = a.schema({
     })
     .authorization((allow) => [
       allow.owner(),
+      allow.authenticated().to(['read']),
     ]),
 
   // ──────────────────────────────────────────────
@@ -222,10 +224,15 @@ const schema = a.schema({
       isCurrent: a.boolean().required(),
       aiModel: a.string(),
       generatedAt: a.datetime(),
+      promptId: a.string(),
+      promptVersion: a.integer(),
+      inputSnapshot: a.json(),
+      structuredContent: a.json(),
       scoring: a.belongsTo('AssessmentScoring', 'scoringId'),
     })
     .authorization((allow) => [
       allow.owner(),
+      allow.authenticated().to(['read']),
     ]),
 
   // ──────────────────────────────────────────────
@@ -238,6 +245,7 @@ const schema = a.schema({
       interviewDate: a.date().required(),
       transcript: a.string(),
       extractionRequest: a.string(),
+      analysisPromptId: a.string(),
       reopenedAt: a.datetime(),
       status: a.ref('InterviewStatus').required(),
       subject: a.belongsTo('Subject', 'subjectId'),
@@ -262,6 +270,10 @@ const schema = a.schema({
       isStale: a.boolean(),
       aiModel: a.string(),
       generatedAt: a.datetime(),
+      promptId: a.string(),
+      promptVersion: a.integer(),
+      inputSnapshot: a.json(),
+      structuredContent: a.json(),
       interview: a.belongsTo('Interview', 'interviewId'),
     })
     .authorization((allow) => [
@@ -283,6 +295,9 @@ const schema = a.schema({
       isStale: a.boolean(),
       aiModel: a.string(),
       generatedAt: a.datetime(),
+      promptId: a.string(),
+      promptVersion: a.integer(),
+      inputSnapshot: a.json(),
     })
     .authorization((allow) => [
       allow.owner(),
@@ -303,6 +318,9 @@ const schema = a.schema({
       isStale: a.boolean(),
       aiModel: a.string(),
       generatedAt: a.datetime(),
+      promptId: a.string(),
+      promptVersion: a.integer(),
+      inputSnapshot: a.json(),
     })
     .authorization((allow) => [
       allow.owner(),
@@ -361,8 +379,8 @@ const schema = a.schema({
       expiresAt: a.datetime().required(),
       assessmentSessionIds: a.json().required(),
       subjectName: a.string().required(),
-      subjectAgeYears: a.integer(),
-      subjectSex: a.ref('Sex'),
+      subjectAgeYears: a.integer().required(),
+      subjectSex: a.ref('Sex').required(),
       createdAt: a.datetime(),
     })
     .authorization((allow) => [
@@ -381,6 +399,9 @@ generateAIContent: a
       extractionRequest: a.string(),
       systemPrompt: a.string(),
       maxTokens: a.integer(),
+      assessmentCode: a.string(),
+      interviewPromptId: a.string(),
+      reportPromptId: a.string(),
     })
     .returns(a.json())
     .handler(a.handler.function(aiGenerate))
@@ -429,14 +450,14 @@ generateAIContent: a
 
   evalValidateCode: a
     .query()
-    .arguments({ code: a.string().required() })
+    .arguments({ code: a.string().required(), operation: a.string().required() })
     .returns(a.json())
     .handler(a.handler.function(evalPortal))
     .authorization((allow) => [allow.publicApiKey()]),
 
   evalGetTest: a
     .query()
-    .arguments({ code: a.string().required(), sessionId: a.string().required() })
+    .arguments({ code: a.string().required(), sessionId: a.string().required(), operation: a.string().required() })
     .returns(a.json())
     .handler(a.handler.function(evalPortal))
     .authorization((allow) => [allow.publicApiKey()]),
@@ -448,6 +469,7 @@ generateAIContent: a
       sessionId: a.string().required(),
       answersJson: a.string().required(),
       final: a.boolean().required(),
+      operation: a.string().required(),
     })
     .returns(a.json())
     .handler(a.handler.function(evalPortal))
@@ -455,7 +477,7 @@ generateAIContent: a
 
   evalComplete: a
     .mutation()
-    .arguments({ code: a.string().required() })
+    .arguments({ code: a.string().required(), operation: a.string().required() })
     .returns(a.json())
     .handler(a.handler.function(evalPortal))
     .authorization((allow) => [allow.publicApiKey()]),

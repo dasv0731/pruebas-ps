@@ -13,6 +13,10 @@ export interface AIResponse {
   /** True si la transcripción se truncó por longitud y el análisis es parcial. */
   truncated?: boolean;
   error?: string;
+  promptId?: string;
+  promptVersion?: number;
+  inputSnapshot?: Record<string, unknown>;
+  structuredContent?: Record<string, unknown>;
 }
 
 @Injectable({
@@ -21,25 +25,26 @@ export interface AIResponse {
 export class AIService {
 
   async generateAssessmentInterpretation(
+    assessmentCode: string,
     data: string,
-    systemPrompt?: string,
-    maxTokens?: number
   ): Promise<AIResponse> {
-    return this.callAI('ASSESSMENT_INTERPRETATION', data, systemPrompt, maxTokens);
+    return this.callAI('ASSESSMENT_INTERPRETATION', data, undefined, undefined, undefined, assessmentCode);
   }
 
-  async generateInterviewAnalysis(transcript: string, extractionRequest?: string): Promise<AIResponse> {
-    return this.callAI('INTERVIEW_ANALYSIS', transcript, undefined, undefined, extractionRequest);
+  async generateInterviewAnalysis(
+    transcript: string,
+    interviewPromptId: string,
+    extractionRequest?: string,
+  ): Promise<AIResponse> {
+    return this.callAI('INTERVIEW_ANALYSIS', transcript, undefined, undefined, extractionRequest, undefined, interviewPromptId);
   }
 
-  async generateSubjectAssessmentReport(interpretations: string[]): Promise<AIResponse> {
-    const data = JSON.stringify({ interpretations });
-    return this.callAI('SUBJECT_ASSESSMENT_REPORT', data);
+  async generateSubjectAssessmentReport(interpretations: unknown[], reportPromptId: string, instruction?: string): Promise<AIResponse> {
+    return this.callAI('SUBJECT_ASSESSMENT_REPORT', JSON.stringify({ interpretations }), undefined, undefined, instruction, undefined, undefined, reportPromptId);
   }
 
-  async generateSubjectInterviewReport(analyses: string[]): Promise<AIResponse> {
-    const data = JSON.stringify({ analyses });
-    return this.callAI('SUBJECT_INTERVIEW_REPORT', data);
+  async generateSubjectInterviewReport(analyses: string[], reportPromptId: string, instruction?: string): Promise<AIResponse> {
+    return this.callAI('SUBJECT_INTERVIEW_REPORT', JSON.stringify({ analyses }), undefined, undefined, instruction, undefined, undefined, reportPromptId);
   }
 
   private static readonly SECCION_NO_DISPONIBLE =
@@ -70,13 +75,19 @@ export class AIService {
     data: string,
     systemPrompt?: string,
     maxTokens?: number,
-    extractionRequest?: string
+    extractionRequest?: string,
+    assessmentCode?: string,
+    interviewPromptId?: string,
+    reportPromptId?: string,
   ): Promise<AIResponse> {
     try {
       const payload: any = { type, data };
       if (systemPrompt) payload.systemPrompt = systemPrompt;
       if (maxTokens) payload.maxTokens = maxTokens;
       if (extractionRequest) payload.extractionRequest = extractionRequest;
+      if (assessmentCode) payload.assessmentCode = assessmentCode;
+      if (interviewPromptId) payload.interviewPromptId = interviewPromptId;
+      if (reportPromptId) payload.reportPromptId = reportPromptId;
 
       const response = await client.queries.generateAIContent(payload);
 

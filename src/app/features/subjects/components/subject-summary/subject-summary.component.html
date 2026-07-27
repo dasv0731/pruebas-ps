@@ -11,7 +11,6 @@
         <h2>Resumen: {{ subject?.firstName }} {{ subject?.lastName }}</h2>
       </div>
     </div>
-
     <div class="status-grid">
       <div class="status-item">
         <span class="status-number">{{ interpretations.length }} / {{ totalScoredTests }}</span>
@@ -50,6 +49,16 @@
           {{ generatingAssessment ? 'Generando...' : (assessmentReport ? 'Regenerar con IA' : 'Generar con IA') }}
         </button>
       </div>
+    </div>
+    <div class="report-prompt-picker" *ngIf="!caseLocked">
+      <p>Enfoque para integrar todas las pruebas disponibles</p>
+      <div class="prompt-cards">
+        <button *ngFor="let prompt of assessmentPromptOptions" type="button" class="prompt-card"
+          [class.selected]="assessmentPromptId === prompt.id" (click)="assessmentPromptId = prompt.id">
+          <strong>{{ prompt.title }}</strong><span>{{ prompt.summary }}</span>
+        </button>
+      </div>
+      <textarea [(ngModel)]="assessmentInstruction" rows="3" placeholder="Instrucción adicional opcional para este consolidado de pruebas..."></textarea>
     </div>
 
     <div *ngIf="interpretations.length === 0" class="empty-state">
@@ -100,6 +109,17 @@
           {{ generatingInterview ? 'Generando...' : (interviewReport ? 'Regenerar con IA' : 'Generar con IA') }}
         </button>
       </div>
+    </div>
+
+    <div class="report-prompt-picker" *ngIf="!caseLocked">
+      <p>Enfoque para integrar todos los análisis de entrevistas disponibles</p>
+      <div class="prompt-cards">
+        <button *ngFor="let prompt of interviewPromptOptions" type="button" class="prompt-card"
+          [class.selected]="interviewPromptId === prompt.id" (click)="interviewPromptId = prompt.id">
+          <strong>{{ prompt.title }}</strong><span>{{ prompt.summary }}</span>
+        </button>
+      </div>
+      <textarea [(ngModel)]="interviewInstruction" rows="3" placeholder="Instrucción adicional opcional para este consolidado de entrevistas..."></textarea>
     </div>
 
     <div *ngIf="analyses.length === 0" class="empty-state">
