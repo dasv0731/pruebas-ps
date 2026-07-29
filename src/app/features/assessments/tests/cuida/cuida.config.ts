@@ -221,7 +221,7 @@ export const CUIDA_CONFIG: TestConfig = {
     {
       title: 'CUIDA – Cuadernillo de preguntas',
       instructions: '',
-      legend: [],
+      legend: ['1 = En desacuerdo', '2 = Algo en desacuerdo', '3 = Algo de acuerdo', '4 = De acuerdo'],
       questions: CUIDA_QUESTIONS.map((text, i) => ({
         index: i + 1,
         text: `${i + 1}. ${text}`,

@@ -36,6 +36,8 @@ export interface TestConfig {
   minAge?: number;
   maxAge?: number;
   optionLabels?: string[];
+  /** Oculta la leyenda sticky cuando las opciones ya son autoexplicativas. */
+  showOptionLegend?: boolean;
   sections: TestSection[];
   /** Si está presente, se muestra una pantalla de instrucciones antes de comenzar */
   globalInstructions?: string;

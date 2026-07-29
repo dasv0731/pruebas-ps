@@ -188,6 +188,7 @@ export const TAMAI_CONFIG: TestConfig = {
   minAge: 8,
   maxAge: 18,
   optionLabels: ['SÍ', 'NO'],
+  showOptionLegend: false,
   globalInstructions: TAMAI_INSTRUCTIONS,
   paginateBySection: true,
   sections: built.sections,

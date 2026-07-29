@@ -26,6 +26,7 @@ export class EvalTestComponent implements OnInit, OnDestroy {
   highlightUnanswered = false;
   questionType = 'NUMERIC';
   optionLabels: string[] = [];
+  showOptionLegend = true;
   shortName = '';
   loading = true;
   submitting = false;
@@ -55,6 +56,7 @@ export class EvalTestComponent implements OnInit, OnDestroy {
   get isLastSection(): boolean { return this.currentSectionIndex === this.sections.length - 1; }
 
   get currentLegend(): string[] {
+    if (!this.showOptionLegend) return [];
     const section = this.paginateBySection
       ? this.currentSection
       : this.sections.find((item) => item.questions.some((q) => this.currentPageQuestions.includes(q)));
@@ -114,6 +116,7 @@ export class EvalTestComponent implements OnInit, OnDestroy {
       this.questionType = config.questionType;
       this.totalQuestions = this.testLoader.getTotalQuestions(this.shortName);
       this.optionLabels = config.optionLabels || [];
+      this.showOptionLegend = config.showOptionLegend !== false;
 
       if (config.questionsPerPage) {
         this.questionsPerPage = config.questionsPerPage;
