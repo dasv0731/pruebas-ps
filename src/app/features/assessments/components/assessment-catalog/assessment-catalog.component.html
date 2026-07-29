@@ -14,7 +14,7 @@
 
     <h3 class="section-title">Seleccionar pruebas a aplicar</h3>
     <div class="select-grid">
-      <div *ngFor="let a of assessments" class="select-card">
+      <div *ngFor="let a of assessments" class="select-card" [class.select-card-disabled]="!isAssessmentEligible(a)">
         <label class="select-label">
           <input
             type="checkbox"
@@ -25,6 +25,7 @@
           <div class="select-info">
             <span class="select-name">{{ a.shortName }} - {{ a.name }}</span>
             <span class="select-meta">{{ a.totalQuestions }} preguntas | {{ a.scoringType === 'TEA' ? 'TEA Corrige' : 'Baremo local' }}</span>
+            <span *ngIf="!isAssessmentEligible(a)" class="select-ineligible">{{ getIneligibilityReason(a) }}</span>
           </div>
         </label>
       </div>
@@ -42,7 +43,9 @@
     </div>
 
     <div *ngIf="!evaluationSession && getSelectionCount() === 0" class="eval-action">
-      <p>Seleccione las pruebas arriba y luego genere la sesión para el evaluado.</p>
+      <p *ngIf="latestCompletedEvaluationSession">La última sesión terminó el {{ latestCompletedEvaluationSession.createdAt | date:'medium' }}. Cree una nueva solo si necesita una nueva aplicación.</p>
+      <p *ngIf="!latestCompletedEvaluationSession">Seleccione las pruebas arriba y luego genere la sesión para el evaluado.</p>
+      <button *ngIf="latestCompletedEvaluationSession && !newSessionMode" class="btn btn-secondary" (click)="beginNewSession()" [disabled]="caseLocked">Nueva sesión</button>
     </div>
 
     <div *ngIf="!evaluationSession && getSelectionCount() > 0" class="eval-action">
@@ -51,7 +54,7 @@
         class="btn btn-primary"
         (click)="generateEvaluationSession()"
         [disabled]="generatingSession || caseLocked">
-        {{ generatingSession ? 'Generando...' : 'Generar sesión de evaluación' }}
+        {{ generatingSession ? 'Generando...' : (newSessionMode ? 'Crear nueva sesión de evaluación' : 'Generar sesión de evaluación') }}
       </button>
     </div>
 

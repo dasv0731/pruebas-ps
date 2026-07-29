@@ -13,6 +13,7 @@
   },
   "private": true,
   "dependencies": {
+    "@aws-sdk/client-sqs": "^3.1016.0",
     "@angular/animations": "^19.2.20",
     "@angular/common": "^19.2.20",
     "@angular/compiler": "^19.2.20",

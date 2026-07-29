@@ -8,6 +8,8 @@ export const CDI_CONFIG: TestConfig = {
   optionsPerQuestion: 3,
   questionType: 'TEXT_OPTIONS',
   scoringType: 'LOCAL',
+  minAge: 7,
+  maxAge: 15,
   sections: [
     {
       title: 'CDI - Inventario de Depresión Infantil',

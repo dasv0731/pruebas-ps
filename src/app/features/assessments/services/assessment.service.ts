@@ -181,7 +181,7 @@ export class AssessmentService {
 
   async getInterpretation(scoringId: string) {
     const data = await listAll((args) => client.models.AssessmentInterpretation.list({
-      filter: { scoringId: { eq: scoringId }, isCurrent: { eq: true } },
+      filter: { scoringId: { eq: scoringId }, isCurrent: { eq: true }, status: { eq: 'COMPLETED' } },
       ...args,
     }));
     return data.length > 0 ? data[0] : null;

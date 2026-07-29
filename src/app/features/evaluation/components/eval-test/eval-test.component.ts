@@ -54,6 +54,14 @@ export class EvalTestComponent implements OnInit, OnDestroy {
   }
   get isLastSection(): boolean { return this.currentSectionIndex === this.sections.length - 1; }
 
+  get currentLegend(): string[] {
+    const section = this.paginateBySection
+      ? this.currentSection
+      : this.sections.find((item) => item.questions.some((q) => this.currentPageQuestions.includes(q)));
+    if (section?.legend?.length) return section.legend;
+    return this.optionLabels.map((label, index) => `${index + 1} = ${label}`);
+  }
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,

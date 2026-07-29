@@ -133,12 +133,12 @@
     <div class="modal-body">
       <div *ngIf="newSubjectError" class="error-msg">{{ newSubjectError }}</div>
       <div class="modal-grid">
-        <label class="modal-field">Nombre *<input [(ngModel)]="newSubject.firstName" name="modalFirstName" required></label>
-        <label class="modal-field">Apellido *<input [(ngModel)]="newSubject.lastName" name="modalLastName" required></label>
+        <label class="modal-field" [class.field-invalid]="newSubjectAttempted && !newSubject.firstName.trim()">Nombre *<input [(ngModel)]="newSubject.firstName" name="modalFirstName" required></label>
+        <label class="modal-field" [class.field-invalid]="newSubjectAttempted && !newSubject.lastName.trim()">Apellido *<input [(ngModel)]="newSubject.lastName" name="modalLastName" required></label>
         <label class="modal-field">Tipo *<select [(ngModel)]="newSubject.subjectType" name="modalSubjectType"><option *ngFor="let option of subjectTypeLabels | keyvalue" [value]="option.key">{{ option.value }}</option></select></label>
-        <label class="modal-field">Sexo *<select [(ngModel)]="newSubject.sex" name="modalSex" required><option [ngValue]="undefined" disabled>Seleccionar</option><option value="MALE">Masculino</option><option value="FEMALE">Femenino</option></select></label>
-        <label class="modal-field">Fecha de nacimiento *<input type="date" [(ngModel)]="newSubject.dateOfBirth" name="modalDateOfBirth" required></label>
-        <label class="modal-field">Documento *<input [(ngModel)]="newSubject.documentId" name="modalDocumentId" required></label>
+        <label class="modal-field" [class.field-invalid]="newSubjectAttempted && !newSubject.sex">Sexo *<select [(ngModel)]="newSubject.sex" name="modalSex" required><option [ngValue]="undefined" disabled>Seleccionar</option><option value="MALE">Masculino</option><option value="FEMALE">Femenino</option></select></label>
+        <label class="modal-field" [class.field-invalid]="newSubjectAttempted && !newSubject.dateOfBirth">Fecha de nacimiento *<input type="date" [(ngModel)]="newSubject.dateOfBirth" name="modalDateOfBirth" required></label>
+        <label class="modal-field" [class.field-invalid]="newSubjectAttempted && !newSubject.documentId?.trim()">Documento *<input [(ngModel)]="newSubject.documentId" name="modalDocumentId" required></label>
         <label class="modal-field">Teléfono<input type="tel" [(ngModel)]="newSubject.contactPhone" name="modalPhone"></label>
         <label class="modal-field">Email<input type="email" [(ngModel)]="newSubject.contactEmail" name="modalEmail"></label>
         <label class="modal-field full">Dirección<input [(ngModel)]="newSubject.address" name="modalAddress"></label>

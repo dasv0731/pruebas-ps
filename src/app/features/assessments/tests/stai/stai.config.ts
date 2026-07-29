@@ -8,6 +8,8 @@ export const STAI_CONFIG: TestConfig = {
   optionsPerQuestion: 4,
   questionType: 'NUMERIC',
   scoringType: 'LOCAL',
+  minAge: 16,
+  paginateBySection: true,
   sections: [
     {
       title: 'Parte 1: Ansiedad - Estado',

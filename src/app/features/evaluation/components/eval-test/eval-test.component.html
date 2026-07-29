@@ -29,6 +29,9 @@
     <h2>{{ session?.assessmentName }}</h2>
 
     <div class="page-indicator">Página {{ currentPage + 1 }} de {{ totalPages }}</div>
+    <div *ngIf="currentLegend.length" class="sticky-legend" aria-label="Opciones de respuesta">
+      <span *ngFor="let item of currentLegend">{{ item }}</span>
+    </div>
 
     <div class="questions-container">
       <div *ngFor="let q of currentPageQuestions" class="question-row"
@@ -82,6 +85,9 @@
 
     <div class="page-indicator">
       Sección {{ currentSectionIndex + 1 }} de {{ sections.length }} — {{ currentSection.title }}
+    </div>
+    <div *ngIf="currentLegend.length" class="sticky-legend" aria-label="Opciones de respuesta">
+      <span *ngFor="let item of currentLegend">{{ item }}</span>
     </div>
 
     <!-- Gate condicional -->

@@ -30,6 +30,16 @@ export interface SubjectInput {
 })
 export class SubjectService {
 
+  private normalizeOptionalFields(input: Partial<SubjectInput>): Partial<SubjectInput> {
+    const normalized = { ...input };
+    for (const field of ['documentId', 'contactPhone', 'contactEmail', 'address', 'notes'] as const) {
+      if (typeof normalized[field] === 'string' && !normalized[field]!.trim()) {
+        normalized[field] = undefined;
+      }
+    }
+    return normalized;
+  }
+
   async listByCase(caseId: string) {
     return listAll((args) => client.models.Subject.list({
       filter: { caseId: { eq: caseId } },
@@ -50,7 +60,7 @@ export class SubjectService {
       throw new Error('La fecha de nacimiento y el sexo son obligatorios');
     }
     const { data, errors } = await client.models.Subject.create({
-      ...input,
+      ...(this.normalizeOptionalFields(input) as SubjectInput),
       dateOfBirth: input.dateOfBirth,
       sex: input.sex,
     });
@@ -63,7 +73,7 @@ export class SubjectService {
   async update(id: string, input: Partial<SubjectInput>) {
     const { data, errors } = await client.models.Subject.update({
       id,
-      ...input,
+      ...this.normalizeOptionalFields(input),
     });
     if (errors) {
       throw new Error(errors.map((e) => e.message).join(', '));

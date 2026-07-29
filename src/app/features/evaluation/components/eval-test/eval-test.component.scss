@@ -57,6 +57,23 @@
   letter-spacing: 0.03em;
 }
 
+.sticky-legend {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  margin: 0 0 1rem;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  background: #eff6ff;
+  color: #1e3a5f;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
 .q-num {
   font-weight: bold;
   color: #3498db;

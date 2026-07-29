@@ -33,6 +33,7 @@ export class SubjectSummaryComponent implements OnInit {
   caseLocked = false;
   generatingAssessment = false;
   totalScoredTests = 0;
+  uninterpretedTests = 0;
   totalInterviews = 0;
   totalCompletedInterviews = 0;
   generatingInterview = false;
@@ -109,6 +110,7 @@ export class SubjectSummaryComponent implements OnInit {
           }
         }
       }
+      this.uninterpretedTests = this.totalScoredTests - this.interpretations.length;
 
       const interviews = await this.interviewService.listBySubject(this.subjectId);
       this.totalInterviews = interviews.filter((i: any) => i.status === 'COMPLETED' || i.status === 'ANALYZED').length;
@@ -162,8 +164,8 @@ export class SubjectSummaryComponent implements OnInit {
   // ── Consolidado pruebas ──
 
   async generateAssessmentReport() {
-    if (this.interpretations.length === 0) {
-      this.error = 'No hay interpretaciones de pruebas para consolidar.';
+    if (this.totalScoredTests === 0 || this.uninterpretedTests > 0) {
+      this.error = 'Todas las pruebas calificadas deben tener una interpretación vigente antes de consolidar.';
       return;
     }
     try {
@@ -248,18 +250,22 @@ export class SubjectSummaryComponent implements OnInit {
   // ── Informe final del implicado ──
 
   canGenerateSubjectReport(): boolean {
+    if (this.uninterpretedTests > 0) return false;
+    if (this.totalScoredTests > 0 && !this.hasCurrentAssessmentReport()) return false;
     return this.hasCurrentAssessmentReport() || this.hasCurrentInterviewReport();
   }
 
   getMissingConsolidado(): 'pruebas' | 'entrevistas' | null {
-    if (!this.hasCurrentAssessmentReport()) return 'pruebas';
+    if (this.totalScoredTests > 0 && !this.hasCurrentAssessmentReport()) return 'pruebas';
     if (!this.hasCurrentInterviewReport()) return 'entrevistas';
     return null;
   }
 
   async generateSubjectReport() {
     if (!this.canGenerateSubjectReport()) {
-      this.error = 'Necesita al menos un consolidado (pruebas o entrevistas) para generar el informe final.';
+      this.error = this.uninterpretedTests > 0
+        ? `Faltan ${this.uninterpretedTests} interpretación(es) de pruebas antes de generar el informe final.`
+        : 'Necesita un consolidado vigente para generar el informe final.';
       return;
     }
     const missing = this.getMissingConsolidado();

@@ -2,10 +2,11 @@ import type { Schema } from '../../../data/resource';
 import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/data';
 import { getAmplifyDataClientConfig } from '@aws-amplify/backend/function/runtime';
+import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
 import { computeScore } from './scoring';
-import { getAssessmentPrompt } from '../../ai-generate/src/assessment-prompts';
 
 let client: ReturnType<typeof generateClient<Schema>> | null = null;
+const sqsClient = new SQSClient({});
 
 async function getClient() {
   if (client) return client;
@@ -165,20 +166,9 @@ export const handler = async (event: any): Promise<any> => {
 
         if (computed) {
           const scoring = await persistScoring(dataClient, sessionId, computed, r.data?.owner);
-          try {
-            await generateAutomaticInterpretation(
-              dataClient,
-              scoring,
-              shortName,
-              computed,
-              evalSession,
-              r.data?.owner,
-            );
-          } catch (error) {
-            console.error('[eval-portal] Automatic interpretation failed:', error);
-          }
+          await queueAutomaticInterpretation(dataClient, scoring, shortName, computed, evalSession);
           await dataClient.models.AssessmentSession.update({ id: sessionId, status: 'SCORED' });
-          return { ok: true, status: 'SCORED' };
+          return { ok: true, status: 'SCORED', interpretationStatus: 'PENDING' };
         }
         // CUIDA/TAMAI/PAI: sin auto-score (se corrigen en TEA). Queda COMPLETED.
         return { ok: true, status: 'COMPLETED' };
@@ -225,51 +215,20 @@ async function persistScoring(dataClient: any, sessionId: string, computed: any,
   return created.data;
 }
 
-async function generateAutomaticInterpretation(
+async function queueAutomaticInterpretation(
   dataClient: any,
   scoring: any,
   shortName: string,
   computed: any,
   evalSession: any,
-  owner?: string,
 ): Promise<void> {
   if (!scoring?.id) throw new Error('No se pudo crear el scoring para interpretar');
-  const prompt = getAssessmentPrompt(shortName);
   const inputSnapshot = {
     testCode: shortName,
     result: computed.scores,
     subjectSex: evalSession.subjectSex ?? null,
     subjectAgeYears: evalSession.subjectAgeYears ?? null,
   };
-  const response = await fetch(`${(process.env['AI_BASE_URL'] || 'https://api.deepseek.com/anthropic').replace(/\/$/, '')}/v1/messages`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': process.env['DEEPSEEK_API_KEY'] || '',
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model: process.env['AI_MODEL'] || 'deepseek-v4-flash',
-      max_tokens: prompt.maxTokens,
-      system: prompt.system,
-      messages: [{ role: 'user', content: JSON.stringify(inputSnapshot) }],
-    }),
-  });
-  if (!response.ok) {
-    throw new Error(`AI API error: ${response.status} - ${await response.text()}`);
-  }
-  const payload: any = await response.json();
-  const text = Array.isArray(payload?.content)
-    ? payload.content.find((block: any) => block?.type === 'text' && typeof block?.text === 'string')?.text
-    : payload?.content;
-  if (typeof text !== 'string' || !text.trim()) {
-    throw new Error(`La IA no devolvio contenido de texto: ${JSON.stringify(payload).slice(0, 500)}`);
-  }
-  const parsed = JSON.parse(text.trim().replace(/^```json\s*|\s*```$/g, ''));
-  if (!parsed?.narrative || typeof parsed.narrative !== 'string') {
-    throw new Error('La IA no devolvio una narrativa estructurada');
-  }
-
   const existing = await dataClient.models.AssessmentInterpretation.list({
     filter: { scoringId: { eq: scoring.id } },
   });
@@ -278,23 +237,23 @@ async function generateAutomaticInterpretation(
   }
   const created = await dataClient.models.AssessmentInterpretation.create({
     scoringId: scoring.id,
-    content: parsed.narrative.trim(),
+    content: 'La interpretación automática está en proceso.',
     source: 'AI',
-    status: 'COMPLETED',
+    status: 'PENDING',
     version: (existing.data?.length ?? 0) + 1,
     isCurrent: true,
     aiModel: process.env['AI_MODEL'] || 'deepseek-v4-flash',
-    generatedAt: new Date().toISOString(),
-    promptId: prompt.id,
-    promptVersion: prompt.version,
     inputSnapshot: JSON.stringify(inputSnapshot),
-    structuredContent: JSON.stringify({
-      narrative: parsed.narrative.trim(),
-      summary: typeof parsed.summary === 'string' ? parsed.summary : '',
-      findings: Array.isArray(parsed.findings) ? parsed.findings : [],
-      limitations: Array.isArray(parsed.limitations) ? parsed.limitations : [],
-      reviewFlags: Array.isArray(parsed.reviewFlags) ? parsed.reviewFlags : [],
-    }),
   });
   if (created.errors) throw new Error(created.errors.map((error: any) => error.message).join(', '));
+  const queueUrl = process.env['INTERPRETATION_QUEUE_URL'];
+  if (!queueUrl) throw new Error('La cola de interpretaciones no está configurada');
+  await sqsClient.send(new SendMessageCommand({
+    QueueUrl: queueUrl,
+    MessageBody: JSON.stringify({
+      interpretationId: created.data.id,
+      shortName,
+      inputSnapshot,
+    }),
+  }));
 }

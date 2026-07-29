@@ -45,7 +45,7 @@
         <button
           class="btn btn-primary"
           (click)="generateAssessmentReport()"
-          [disabled]="generatingAssessment || interpretations.length === 0 || interpretations.length < totalScoredTests || caseLocked">
+          [disabled]="generatingAssessment || totalScoredTests === 0 || uninterpretedTests > 0 || caseLocked">
           {{ generatingAssessment ? 'Generando...' : (assessmentReport ? 'Regenerar con IA' : 'Generar con IA') }}
         </button>
       </div>
@@ -61,11 +61,11 @@
       <textarea [(ngModel)]="assessmentInstruction" rows="3" placeholder="Instrucción adicional opcional para este consolidado de pruebas..."></textarea>
     </div>
 
-    <div *ngIf="interpretations.length === 0" class="empty-state">
+    <div *ngIf="totalScoredTests === 0" class="empty-state">
       No hay interpretaciones de pruebas disponibles. Genere las interpretaciones desde "Ver resultados" de cada prueba.
     </div>
-    <div *ngIf="interpretations.length > 0 && interpretations.length < totalScoredTests" class="pending-msg">
-      Faltan {{ totalScoredTests - interpretations.length }} prueba(s) por interpretar con IA antes de consolidar.
+    <div *ngIf="uninterpretedTests > 0" class="pending-msg">
+      Faltan {{ uninterpretedTests }} prueba(s) por interpretar con IA antes de consolidar y generar el informe final.
     </div>
     <div *ngIf="assessmentReportStale && assessmentReportContent" class="alert-warning">
       El consolidado de pruebas está desactualizado porque cambió una corrección o interpretación. Regenérelo.
@@ -178,7 +178,7 @@
     </div>
 
     <div *ngIf="!canGenerateSubjectReport() && !subjectReportContent" class="empty-state">
-      Necesita al menos uno de los dos consolidados (pruebas o entrevistas) para generar el informe final.
+      Todas las pruebas calificadas deben estar interpretadas y consolidadas antes de generar el informe final.
     </div>
     <div *ngIf="canGenerateSubjectReport() && getMissingConsolidado()" class="pending-msg">
       Falta el consolidado de {{ getMissingConsolidado() }}. El informe puede generarse,

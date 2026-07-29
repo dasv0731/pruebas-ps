@@ -8,6 +8,8 @@ export const STAIC_CONFIG: TestConfig = {
   optionsPerQuestion: 3,
   questionType: 'NUMERIC',
   scoringType: 'LOCAL',
+  minAge: 9,
+  maxAge: 15,
   paginateBySection: true,
   sections: [
     {

@@ -375,6 +375,7 @@ export const PAI_CONFIG: TestConfig = {
   optionsPerQuestion: 4,
   questionType: 'NUMERIC',
   scoringType: 'TEA',
+  minAge: 18,
   optionLabels: ['F', 'LV', 'BV', 'CV'],
   globalInstructions: PAI_INSTRUCTIONS,
   questionsPerPage: 20,

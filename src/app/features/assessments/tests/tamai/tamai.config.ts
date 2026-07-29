@@ -185,6 +185,8 @@ export const TAMAI_CONFIG: TestConfig = {
   optionsPerQuestion: 2,
   questionType: 'NUMERIC',
   scoringType: 'TEA',
+  minAge: 8,
+  maxAge: 18,
   optionLabels: ['SÍ', 'NO'],
   globalInstructions: TAMAI_INSTRUCTIONS,
   paginateBySection: true,

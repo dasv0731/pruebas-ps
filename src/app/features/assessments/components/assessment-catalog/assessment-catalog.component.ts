@@ -6,6 +6,7 @@ import { SubjectService } from '../../../../core/services/subject.service';
 import { EvaluationService } from '../../../evaluation/services/evaluation.service';
 import { PrintService, PrintData } from '../../services/print.service';
 import { CaseService } from '../../../../core/services/case.service';
+import { getTestConfig } from '../../tests/test-registry';
 
 @Component({
   selector: 'app-assessment-catalog',
@@ -21,6 +22,8 @@ export class AssessmentCatalogComponent implements OnInit, OnDestroy {
   assessments: any[] = [];
   sessions: any[] = [];
   evaluationSession: any = null;
+  latestCompletedEvaluationSession: any = null;
+  newSessionMode = false;
   evaluationUrl = '';
   loading = true;
   interpretationStatus: Record<string, boolean> = {};
@@ -87,6 +90,7 @@ export class AssessmentCatalogComponent implements OnInit, OnDestroy {
       this.sessions = await this.assessmentService.listSessionsBySubject(this.subjectId);
       await this.refreshScoringStatus();
       this.evaluationSession = await this.evaluationService.getEvaluationSessionBySubject(this.subjectId);
+      this.latestCompletedEvaluationSession = await this.evaluationService.getLatestCompletedSessionBySubject(this.subjectId);
       if (this.evaluationSession) {
         this.evaluationUrl = `${window.location.origin}/evaluate?code=${this.evaluationSession.accessCode}`;
       }
@@ -164,9 +168,30 @@ export class AssessmentCatalogComponent implements OnInit, OnDestroy {
   isCheckboxDisabled(assessmentId: string): boolean {
     if (this.caseLocked) return true;
     const hasSession = this.sessions.some((s: any) => s.assessmentId === assessmentId);
-    if (hasSession) return true;
+    if (hasSession && !this.newSessionMode) return true;
+    const assessment = this.assessments.find((item) => item.id === assessmentId);
+    if (assessment && !this.isAssessmentEligible(assessment)) return true;
     if (this.hasActiveEvaluationSession()) return true;
     return false;
+  }
+
+  isAssessmentEligible(assessment: any): boolean {
+    if (!this.subject?.dateOfBirth) return false;
+    const config = getTestConfig(assessment.shortName);
+    if (!config) return false;
+    const age = this.calculateAgeYears(this.subject.dateOfBirth);
+    return (config.minAge === undefined || age >= config.minAge) &&
+      (config.maxAge === undefined || age <= config.maxAge);
+  }
+
+  getIneligibilityReason(assessment: any): string {
+    if (!this.subject?.dateOfBirth) return 'Registre la fecha de nacimiento para validar la aplicabilidad.';
+    const config = getTestConfig(assessment.shortName);
+    if (!config) return 'No se encontró la configuración de esta prueba.';
+    const age = this.calculateAgeYears(this.subject.dateOfBirth);
+    if (config.minAge !== undefined && age < config.minAge) return `Disponible desde los ${config.minAge} años.`;
+    if (config.maxAge !== undefined && age > config.maxAge) return `Disponible hasta los ${config.maxAge} años.`;
+    return '';
   }
 
   toggleAssessment(assessmentId: string, event: any) {
@@ -181,7 +206,7 @@ export class AssessmentCatalogComponent implements OnInit, OnDestroy {
     // Assessments seleccionados que NO tienen sesión aún
     return this.assessments.filter(
       (a) => this.selectedAssessmentIds.has(a.id) &&
-        !this.sessions.some((s: any) => s.assessmentId === a.id)
+        (this.newSessionMode || !this.sessions.some((s: any) => s.assessmentId === a.id))
     );
   }
 
@@ -251,6 +276,7 @@ export class AssessmentCatalogComponent implements OnInit, OnDestroy {
       );
 
       this.evaluationUrl = `${window.location.origin}/evaluate?code=${this.evaluationSession.accessCode}`;
+      this.newSessionMode = false;
 
       // Actualizar selección
       this.selectedAssessmentIds = new Set(
@@ -321,6 +347,13 @@ export class AssessmentCatalogComponent implements OnInit, OnDestroy {
       'subjects', this.subjectId,
       'assessments', sessionId, 'results',
     ]);
+  }
+
+  beginNewSession() {
+    if (!confirm('Se creará una nueva sesión y una nueva URL. Las respuestas de sesiones anteriores se conservarán en el historial. ¿Continuar?')) return;
+    this.newSessionMode = true;
+    this.selectedAssessmentIds = new Set();
+    this.error = '';
   }
 
   isTeaSession(session: any): boolean {

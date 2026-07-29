@@ -4,6 +4,7 @@ import { cdiScore } from '../functions/cdi-score/resource';
 import { staiScore } from '../functions/stai-score/resource';
 import { cuidaInterpret } from '../functions/cuida-interpret/resource';
 import { evalPortal } from '../functions/eval-portal/resource';
+import { assessmentInterpret } from '../functions/assessment-interpret/resource';
 const schema = a.schema({
 
   // ──────────────────────────────────────────────
@@ -486,6 +487,7 @@ generateAIContent: a
   allow.resource(staiScore),
   allow.resource(cuidaInterpret),
   allow.resource(evalPortal),
+  allow.resource(assessmentInterpret),
 ]);
 
 export type Schema = ClientSchema<typeof schema>;

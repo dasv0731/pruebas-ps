@@ -54,6 +54,16 @@ export class EvaluationService {
     return active.length > 0 ? active[0] : null;
   }
 
+  async getLatestCompletedSessionBySubject(subjectId: string) {
+    const data = await listAll<any>((args) => (client.models as any).EvaluationSession.list({
+      filter: { subjectId: { eq: subjectId } },
+      ...args,
+    }));
+    return data
+      .filter((session: any) => session.status === 'COMPLETED' || session.status === 'EXPIRED')
+      .sort((a: any, b: any) => String(b.createdAt).localeCompare(String(a.createdAt)))[0] || null;
+  }
+
   async pauseSession(sessionId: string) {
     const { data, errors } = await (client.models as any).EvaluationSession.update({
       id: sessionId,

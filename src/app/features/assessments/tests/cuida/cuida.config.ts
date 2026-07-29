@@ -214,6 +214,7 @@ export const CUIDA_CONFIG: TestConfig = {
   optionsPerQuestion: 4,
   questionType: 'NUMERIC',
   scoringType: 'TEA',
+  minAge: 18,
   globalInstructions: CUIDA_INSTRUCTIONS,
   questionsPerPage: 20,
   sections: [

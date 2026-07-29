@@ -9,7 +9,7 @@
 
   <form *ngIf="!loading" (ngSubmit)="onSubmit()" class="subject-form">
     <div class="form-row">
-      <div class="form-group">
+      <div class="form-group" [class.field-invalid]="submitted && !form.firstName.trim()">
         <label for="firstName">Nombre *</label>
         <input
           id="firstName"
@@ -20,7 +20,7 @@
           placeholder="Nombre"
         />
       </div>
-      <div class="form-group">
+      <div class="form-group" [class.field-invalid]="submitted && !form.lastName.trim()">
         <label for="lastName">Apellido *</label>
         <input
           id="lastName"
@@ -34,7 +34,7 @@
     </div>
 
     <div class="form-row">
-      <div class="form-group">
+      <div class="form-group" [class.field-invalid]="submitted && !form.documentId?.trim()">
         <label for="subjectType">Tipo *</label>
         <select id="subjectType" [(ngModel)]="form.subjectType" name="subjectType">
           <option *ngFor="let opt of typeOptions | keyvalue" [value]="opt.key">
@@ -45,7 +45,7 @@
     </div>
 
     <div class="form-row">
-      <div class="form-group">
+      <div class="form-group" [class.field-invalid]="submitted && !form.dateOfBirth">
         <label for="documentId">Identificación *</label>
         <input
           id="documentId"
@@ -56,7 +56,7 @@
           placeholder="Cédula o documento"
         />
       </div>
-      <div class="form-group">
+      <div class="form-group" [class.field-invalid]="submitted && !form.sex">
         <label for="dateOfBirth">Fecha de nacimiento *</label>
         <input
           id="dateOfBirth"

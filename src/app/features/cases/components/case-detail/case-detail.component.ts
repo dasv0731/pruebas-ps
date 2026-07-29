@@ -40,6 +40,7 @@ export class CaseDetailComponent implements OnInit {
   creatingSubject = false;
   editingSubjectId = '';
   newSubjectError = '';
+  newSubjectAttempted = false;
   newSubject: SubjectInput = this.emptySubject();
 
   constructor(
@@ -144,6 +145,7 @@ export class CaseDetailComponent implements OnInit {
   }
 
   async createSubject() {
+    this.newSubjectAttempted = true;
     if (!this.newSubject.firstName.trim() || !this.newSubject.lastName.trim()) {
       this.newSubjectError = 'Nombre y apellido son obligatorios';
       return;
@@ -161,6 +163,7 @@ export class CaseDetailComponent implements OnInit {
         await this.subjectService.create(this.newSubject);
       }
       this.newSubjectOpen = false;
+      this.newSubjectAttempted = false;
       await this.loadData();
     } catch (err: any) {
       this.newSubjectError = err.message || 'Error al crear el implicado';

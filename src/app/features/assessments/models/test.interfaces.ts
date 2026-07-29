@@ -33,6 +33,8 @@ export interface TestConfig {
   optionsPerQuestion: number;
   questionType: 'NUMERIC' | 'TEXT_OPTIONS';
   scoringType: 'LOCAL' | 'TEA';
+  minAge?: number;
+  maxAge?: number;
   optionLabels?: string[];
   sections: TestSection[];
   /** Si está presente, se muestra una pantalla de instrucciones antes de comenzar */

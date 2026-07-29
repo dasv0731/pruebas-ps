@@ -37,6 +37,7 @@ export class SubjectFormComponent implements OnInit {
     notes: '',
   };
   sexTouched = false;
+  submitted = false;
 
   constructor(
     private subjectService: SubjectService,
@@ -83,6 +84,7 @@ export class SubjectFormComponent implements OnInit {
   }
 
   async onSubmit() {
+    this.submitted = true;
     this.sexTouched = true;
 
     if (!this.form.firstName || !this.form.lastName) {
