@@ -29,6 +29,9 @@ export class AppComponent implements OnInit, OnDestroy {
   loginPassword = '';
   loginError = '';
   loggingIn = false;
+  passwordChangeRequired = false;
+  newPassword = '';
+  confirmNewPassword = '';
   private hubUnsubscribe: (() => void) | null = null;
 
   constructor(
@@ -45,9 +48,13 @@ export class AppComponent implements OnInit, OnDestroy {
 
     this.isPublicRoute = window.location.pathname.startsWith('/evaluate');
 
-    // Do not query the persisted Cognito session during bootstrap. In some
-    // browsers that lookup can block the first paint of the auth screen.
-    if (!this.isPublicRoute) this.checkingAuth = false;
+    if (!this.isPublicRoute) {
+      void this.authService.checkAuth().then((authenticated) => {
+        this.isAuthenticated = authenticated;
+        this.checkingAuth = false;
+        if (authenticated && this.router.url === '/login') void this.router.navigate(['/cases']);
+      });
+    }
 
     this.hubUnsubscribe = Hub.listen('auth', ({ payload }) => {
       if (payload.event === 'signedIn') {
@@ -64,9 +71,16 @@ export class AppComponent implements OnInit, OnDestroy {
     try {
       this.loggingIn = true;
       this.loginError = '';
-      await this.authService.login(this.loginEmail, this.loginPassword);
-      this.isAuthenticated = true;
-      await this.router.navigate(['/cases']);
+      const result = await this.authService.login(this.loginEmail, this.loginPassword);
+      if (result.isSignedIn) {
+        this.isAuthenticated = true;
+        await this.router.navigate(['/cases']);
+      } else if (result.nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED') {
+        this.passwordChangeRequired = true;
+        this.loginPassword = '';
+      } else {
+        this.loginError = 'El inicio de sesión requiere un paso adicional no compatible con esta aplicación.';
+      }
     } catch (err: any) {
       if (err.name === 'UserAlreadyAuthenticatedException') {
         this.isAuthenticated = true;
@@ -74,6 +88,28 @@ export class AppComponent implements OnInit, OnDestroy {
         return;
       }
       this.loginError = err.message || 'No se pudo iniciar sesión. Verifique sus credenciales.';
+    } finally {
+      this.loggingIn = false;
+    }
+  }
+
+  async onCompleteNewPassword() {
+    if (!this.newPassword || this.newPassword !== this.confirmNewPassword || this.loggingIn) {
+      this.loginError = 'Ingrese y confirme la nueva contraseña.';
+      return;
+    }
+    try {
+      this.loggingIn = true;
+      this.loginError = '';
+      const result = await this.authService.completeNewPassword(this.newPassword);
+      if (!result.isSignedIn) throw new Error('No se pudo completar el cambio de contraseña.');
+      this.passwordChangeRequired = false;
+      this.newPassword = '';
+      this.confirmNewPassword = '';
+      this.isAuthenticated = true;
+      await this.router.navigate(['/cases']);
+    } catch (err: any) {
+      this.loginError = err.message || 'No se pudo cambiar la contraseña.';
     } finally {
       this.loggingIn = false;
     }

@@ -8,7 +8,7 @@
   </div>
 
   <div *ngIf="!checkingAuth && !isAuthenticated" class="auth-screen">
-    <form class="auth-card" (ngSubmit)="onSignIn()">
+    <form *ngIf="!passwordChangeRequired; else changePasswordForm" class="auth-card" (ngSubmit)="onSignIn()">
       <div class="auth-brand">
         <span class="brand-mark" aria-hidden="true">P</span>
         <strong>Peritajes Psicológicos</strong>
@@ -27,6 +27,20 @@
       </button>
       <p class="auth-public-link">¿Eres persona evaluada? <a routerLink="/evaluate">Acceder con código</a></p>
     </form>
+    <ng-template #changePasswordForm>
+      <form class="auth-card" (ngSubmit)="onCompleteNewPassword()">
+        <div class="auth-brand"><span class="brand-mark" aria-hidden="true">P</span><strong>Peritajes Psicológicos</strong></div>
+        <p>Por seguridad, cambie su contraseña temporal para continuar.</p>
+        <label for="new-password">Nueva contraseña</label>
+        <input id="new-password" name="newPassword" type="password" [(ngModel)]="newPassword" autocomplete="new-password" required>
+        <label for="confirm-new-password">Confirmar nueva contraseña</label>
+        <input id="confirm-new-password" name="confirmNewPassword" type="password" [(ngModel)]="confirmNewPassword" autocomplete="new-password" required>
+        <div *ngIf="loginError" class="auth-error">{{ loginError }}</div>
+        <button class="btn btn-primary auth-submit" type="submit" [disabled]="loggingIn">
+          {{ loggingIn ? 'Actualizando...' : 'Cambiar contraseña y continuar' }}
+        </button>
+      </form>
+    </ng-template>
   </div>
 
   <div *ngIf="!checkingAuth && isAuthenticated" class="app-container">

@@ -5,7 +5,9 @@ import {
   signOut,
   getCurrentUser,
   fetchAuthSession,
+  confirmSignIn,
   type SignInInput,
+  type SignInOutput,
 } from 'aws-amplify/auth';
 
 export interface AuthUser {
@@ -38,13 +40,20 @@ export class AuthService {
     }
   }
 
-  async login(email: string, password: string): Promise<void> {
+  async login(email: string, password: string): Promise<SignInOutput> {
     const input: SignInInput = {
       username: email,
       password,
     };
-    await signIn(input);
-    await this.checkAuth();
+    const result = await signIn(input);
+    if (result.isSignedIn) await this.checkAuth();
+    return result;
+  }
+
+  async completeNewPassword(newPassword: string): Promise<SignInOutput> {
+    const result = await confirmSignIn({ challengeResponse: newPassword });
+    if (result.isSignedIn) await this.checkAuth();
+    return result;
   }
 
   async logout(): Promise<void> {
