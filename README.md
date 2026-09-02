@@ -7,9 +7,15 @@ Aplicacion Angular para gestionar peritajes psicologicos forenses. El flujo prin
 ## Stack
 
 - Angular 19 con componentes standalone y lazy loading.
-- AWS Amplify Gen 2: Cognito, AppSync, DynamoDB y Lambdas.
-- Correccion automatica: STAI/STAIC y CDI.
+- AWS Amplify Gen 2: Cognito, AppSync, DynamoDB, Lambdas y SQS.
+- Correccion automatica: STAI/STAIC y CDI, puntuadas en servidor.
 - Correccion externa en TEACorrige: CUIDA, TAMAI y PAI.
+- Interpretaciones de IA con prompts de catalogo y trazabilidad (`promptId`,
+  `promptVersion`, `inputSnapshot`). La interpretacion automatica de las pruebas
+  autocorregibles se procesa de forma **asincrona** mediante una cola SQS y la
+  funcion `assessment-interpret`, para no alargar el envio del evaluado.
+
+Estado actual, pendientes y validaciones abiertas: `docs/estado-del-proyecto.md`.
 
 ## Desarrollo local
 
@@ -84,11 +90,19 @@ Los tests se ejecutan con Karma:
 npm test -- --watch=false --browsers=ChromeHeadless
 ```
 
-Actualmente Karma/ChromeHeadless puede no finalizar en este entorno. Las validaciones de runtime pendientes estan documentadas en `MEMORIA-pruebas-ps.md` y `docs/arquitectura-ui-y-flujos.md`.
+Karma/ChromeHeadless no finaliza en este entorno, asi que los tests unitarios no son
+ejecutables aqui: la verificacion real son los cuatro comandos de arriba. Las validaciones
+que requieren la aplicacion corriendo estan listadas en `docs/estado-del-proyecto.md`.
 
 ## Documentacion
 
+- `CLAUDE.md`: instrucciones para agentes que trabajen en el repositorio.
+- `docs/estado-del-proyecto.md`: **punto de entrada**. Que esta hecho, que falta y que validar.
 - `docs/arquitectura-ui-y-flujos.md`: inventario de pantallas, rutas, procesos y decisiones URL/modal.
 - `docs/superpowers/specs/`: especificaciones de features.
 - `docs/superpowers/plans/`: planes de implementacion.
-- `MEMORIA-pruebas-ps.md`: memoria portable del proyecto, fuera del repositorio.
+- `.superpowers/sdd/progress.md`: bitacora de sesiones de desarrollo.
+
+Los identificadores de infraestructura (Cognito, AppSync, colas), los usuarios y los
+secretos **no se versionan aqui**: este repositorio es publico. Viven en la memoria
+privada del proyecto.
